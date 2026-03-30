@@ -94,6 +94,7 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    implementation(compose.desktop.currentOs)
 }
 
 compose.desktop {

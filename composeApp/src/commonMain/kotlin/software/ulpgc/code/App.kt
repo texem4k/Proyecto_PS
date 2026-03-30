@@ -22,15 +22,16 @@ import proyecto_ps.composeapp.generated.resources.compose_multiplatform
 @Composable
 @Preview
 fun App() {
+
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
+                .safeContentPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            HomeScreen()
             Button(onClick = { showContent = !showContent }) {
                 Text("Click me!")
             }
@@ -47,3 +48,5 @@ fun App() {
         }
     }
 }
+
+
