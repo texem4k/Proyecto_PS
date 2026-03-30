@@ -1,15 +1,15 @@
-package software.ulpgc.code.application
+package software.ulpgc.code.architecture.io
 
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Task
 import software.ulpgc.code.architecture.model.Topic
 
 interface Storage {
-    fun tasks(): Sequence<Task>
     fun topics(): Sequence<Topic>
     fun tags(): Sequence<Tag>
+    fun tasks(): Sequence<Task>
 
-    fun addTags(vararg tags: Tag)
-    fun addTopic(topic: Topic)
-    fun addTask(task: Task)
+    fun addTopics(topics: List<Topic>)
+    fun addTags(tags: List<Tag>)
+    fun addTasks(tasks: List<Task>)
 }
