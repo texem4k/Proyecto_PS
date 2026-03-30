@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.architecture.model.Task
@@ -25,7 +26,7 @@ fun UpcomingTasksPanel(tasks: List<Task>) {
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(8.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth(0.8f),
         contentAlignment = Alignment.Center
     ) {
         Card(modifier = Modifier.fillMaxWidth(),
@@ -35,16 +36,28 @@ fun UpcomingTasksPanel(tasks: List<Task>) {
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    Text(text= title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp, top = 4.dp),
+                        textAlign = TextAlign.Center)
+                }
                 LazyColumn(
                     modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(tasks, key = { it.title }) { task ->
+                    var index=0
+                    items(tasks) { task ->
+                        if (index>=4) {
+                            return@items
+                        }
+                        index++
                         Card(modifier = Modifier.fillMaxWidth(0.95f),RoundedCornerShape(8.dp)) {
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.titleSmall,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
@@ -52,7 +65,7 @@ fun UpcomingTasksPanel(tasks: List<Task>) {
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
                         }
                         Spacer(Modifier.height(10.dp))
