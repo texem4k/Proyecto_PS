@@ -3,7 +3,7 @@ package software.ulpgc.code.architecture.model
 import kotlin.uuid.Uuid
 
 data class Tag(
-    var id: Uuid,
+    val id: Uuid = Uuid.random(),
     var name: String,
-    var topicid: Int
+    var topicId: Uuid
 )

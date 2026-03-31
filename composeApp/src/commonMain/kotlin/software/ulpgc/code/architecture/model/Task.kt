@@ -2,11 +2,13 @@ package software.ulpgc.code.architecture.model
 
 import kotlin.uuid.Uuid
 
-data class Task (
-    var id: Uuid,
-    var type: Int,
+open class Task (
+    val id: Uuid = Uuid.random(),
+    var priority: Int,
     var name: String,
-    var userid: Int,
+    var userId: Uuid,
     var description: String,
-    var topicid: Int
+    var topicId: Uuid,
+    var tags: List<Tag>? = null,
+    var time: Time
 )

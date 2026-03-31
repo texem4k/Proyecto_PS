@@ -11,6 +11,10 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -27,7 +31,7 @@ kotlin {
     sourceSets.all {
         languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -37,26 +41,26 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm()
-    
+
     js {
         browser()
         binaries.executable()
     }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         binaries.executable()
     }
-    
+
     sourceSets {
         commonMain {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
 
-        // Añade esto:
+        // AÃ±ade esto:
         androidMain {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
