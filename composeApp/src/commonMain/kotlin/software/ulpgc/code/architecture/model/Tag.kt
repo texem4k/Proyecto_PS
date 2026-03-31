@@ -1,7 +1,9 @@
 package software.ulpgc.code.architecture.model
 
-data class Tags(
-    var id: Int,
+import kotlin.uuid.Uuid
+
+data class Tag(
+    var id: Uuid,
     var name: String,
     var topicid: Int
 )

@@ -1,4 +1,8 @@
 package software.ulpgc.code.architecture.model
 
-class TaskTag {
-}
+import kotlin.uuid.Uuid
+
+data class TaskTag(
+    var taskid: Int,
+    var tagid: Int
+)

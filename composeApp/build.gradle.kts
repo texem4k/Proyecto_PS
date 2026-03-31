@@ -16,6 +16,17 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
+
+
+    sourceSets {
+        commonMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+    }
     
     listOf(
         iosArm64(),
@@ -41,6 +52,15 @@ kotlin {
     }
     
     sourceSets {
+        commonMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+
+        // Añade esto:
+        androidMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
