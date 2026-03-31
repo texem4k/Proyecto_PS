@@ -18,10 +18,24 @@ import org.jetbrains.compose.resources.painterResource
 
 import proyecto_ps.composeapp.generated.resources.Res
 import proyecto_ps.composeapp.generated.resources.compose_multiplatform
+import software.ulpgc.code.application.io.DatabaseDriverFactory
+import software.ulpgc.code.application.io.JSONParser
+import software.ulpgc.code.application.io.SQLiteDBManager
 
 @Composable
 @Preview
-fun App() {
+fun App(driverFactory: DatabaseDriverFactory) {
+    var seedData by remember { mutableStateOf<JSONParser.DBData?>(null) }
+    LaunchedEffect(Unit) {
+        seedData = JSONParser().loadDBData("dbDefaults.json")
+    }
+
+    if (seedData == null) {
+        TODO()
+    } else {
+        val dbManager = SQLiteDBManager(driverFactory, seedData!!)
+    }
+    
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(

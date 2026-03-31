@@ -1,0 +1,112 @@
+--  ./gradlew generateCommonMainAppDatabaseInterface
+PRAGMA foreign_keys = 1;
+
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE Topic (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    color INTEGER NOT NULL
+);
+
+CREATE TABLE Tag (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    topicId INTEGER NOT NULL,
+    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Task (
+    id INTEGER PRIMARY KEY,
+    type INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    userId INTEGER NOT NULL,
+    description TEXT,
+    topicId INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Time (
+    id INTEGER PRIMARY KEY,
+    taskId INTEGER NOT NULL,
+    type INTEGER NOT NULL,
+    start TEXT NOT NULL,
+    end TEXT NOT NULL,
+    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
+);
+
+CREATE TABLE TaskTag (
+    taskId INTEGER NOT NULL,
+    tagId INTEGER NOT NULL,
+    PRIMARY KEY (taskId, tagId),
+    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE,
+    FOREIGN KEY (tagId) REFERENCES Tag(id) ON DELETE CASCADE
+);
+
+-- Extras
+
+countUsers:
+SELECT COUNT(*) FROM User;
+
+-- Inserciones
+
+insertUser:
+INSERT INTO User(id, name) VALUES(?, ?);
+
+insertTopic:
+INSERT INTO Topic(id, name, color) VALUES(?, ?, ?);
+
+insertTag:
+INSERT INTO Tag(id, name, topicId) VALUES(?, ?, ?);
+
+insertTask:
+INSERT INTO Task(id, type , name , userId, description , topicId) VALUES (?, ?, ?, ?,  ?, ?);
+
+insertTime:
+INSERT INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
+
+insertTaskTag:
+INSERT INTO TaskTag(taskId, tagId) VALUES(?, ?);
+
+-- Actualizaciones
+
+updateTopic:
+UPDATE Topic SET name = ?, color = ? WHERE id = ?;
+
+updateTag:
+UPDATE Tag SET name = ?, topicId = ? WHERE id = ?;
+
+updateTask:
+UPDATE Task SET type = ?, name = ?, userId = ?, description = ?, topicId = ? WHERE id = ?;
+
+updateTime:
+UPDATE Time SET type = ?, start = ?, end = ? WHERE id = ?;
+
+-- Borraciones
+
+deleteTopic:
+DELETE FROM Topic WHERE id = ?;
+
+deleteTag:
+DELETE FROM Tag WHERE id = ?;
+
+deleteTask:
+DELETE FROM Task WHERE id = ?;
+
+deleteTaskTagsForTask:
+DELETE FROM TaskTag WHERE taskId = ?;
+
+-- Seleciones
+
+getTopics:
+SELECT * FROM Topic;
+
+getTags:
+SELECT * FROM Tag;
+
+getTasks:
+SELECT * FROM Task;
