@@ -30,7 +30,8 @@ class TaskFactory {
         description: String,
         topicId: Uuid,
         tags: List<Tag>,
-        time: Time
+        time: Time,
+        Interval: Time
         ) : PeriodicTask {
         return PeriodicTask(
             priority = priority,
