@@ -2,44 +2,44 @@ package software.ulpgc.code.architecture.model
 
 import kotlin.uuid.Uuid
 
+data class TaskParams(
+    val priority: Int,
+    val name: String,
+    val userId: Uuid,
+    val description: String,
+    val topicId: Uuid,
+    val tags: List<Tag>,
+    val time: Time
+)
+
 class TaskFactory {
     fun createTask(
-        priority: Int,
-        name: String,
-        userId: Uuid,
-        description: String,
-        topicId: Uuid,
-        tags: List<Tag>,
-        time: Time
+        params: TaskParams,
         ): Task {
         return Task(
-            priority = priority,
-            name = name,
-            userId = userId,
-            description = description,
-            topicId = topicId,
-            tags = tags,
-            time = time
+            priority = params.priority,
+            name = params.name,
+            userId = params.userId,
+            description = params.description,
+            topicId = params.topicId,
+            tags = params.tags,
+            time = params.time
         )
     }
 
     fun createPeriodicTask(
-        priority: Int,
-        name: String,
-        userId: Uuid,
-        description: String,
-        topicId: Uuid,
-        tags: List<Tag>,
-        time: Time
+        params: TaskParams,
+        interval: Interval,
         ) : PeriodicTask {
         return PeriodicTask(
-            priority = priority,
-            name = name,
-            userId = userId,
-            description = description,
-            topicId = topicId,
-            tags = tags,
-            time = time
+            priority = params.priority,
+            name = params.name,
+            userId = params.userId,
+            description = params.description,
+            topicId = params.topicId,
+            tags = params.tags,
+            time = params.time,
+            interval = interval
         )
     }
 }

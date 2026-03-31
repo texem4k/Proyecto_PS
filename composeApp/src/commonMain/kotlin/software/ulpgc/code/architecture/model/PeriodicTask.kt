@@ -9,7 +9,8 @@ class PeriodicTask (
     description: String,
     topicId: Uuid,
     tags: List<Tag>? = null,
-    time: Time
+    time: Time,
+    interval: Interval
 ) : Task(
     priority = priority,
     name = name,
