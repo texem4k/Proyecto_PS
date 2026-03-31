@@ -16,6 +16,6 @@ fun main() = application {
         },
         title = "Proyecto_PS",
     ) {
-        App()
+        App(JavaDatabaseDriverFactory())
     }
 }

@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import app.cash.sqldelight.gradle.SqlDelightExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -56,6 +57,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -115,9 +118,12 @@ compose.desktop {
 }
 
 sqldelight {
-    databases {
-        create("AppDatabase") {
-            packageName.set("software.ulpgc.db")
+    configure<SqlDelightExtension> {
+        databases {
+            create("AppDatabase") {
+                packageName.set("software.ulpgc.db")
+            }
         }
+        linkSqlite.set(false)
     }
 }
