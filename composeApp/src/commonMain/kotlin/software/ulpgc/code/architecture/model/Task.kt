@@ -11,6 +11,6 @@ open class Task (
     var userId: Uuid,
     var description: String,
     var topicId: Uuid,
-    var tags: List<Tag>? = listOf(),
+    var tags: MutableList<Tag>? = mutableListOf<Tag>(),
     var time: Time
 )
