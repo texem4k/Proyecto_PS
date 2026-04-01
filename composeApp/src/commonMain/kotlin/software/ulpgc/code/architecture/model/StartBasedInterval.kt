@@ -4,7 +4,7 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class StartBasedInterval(
-    id: Uuid = Uuid.random(),
+    id: Uuid,
     start: Instant,
     end: Instant,
     taskId: Uuid

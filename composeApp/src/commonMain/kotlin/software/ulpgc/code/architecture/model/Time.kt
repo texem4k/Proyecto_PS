@@ -4,8 +4,7 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 abstract class Time(
-
-    val id: Uuid = Uuid.random(),
+    val id: Uuid,
     var start: Instant,
     var end: Instant,
     var taskId: Uuid

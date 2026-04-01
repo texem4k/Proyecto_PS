@@ -4,16 +4,18 @@ import software.ulpgc.code.architecture.io.DBState
 import kotlin.uuid.Uuid
 
 class PeriodicTask (
-    dbState: DBState = DBState.DEFAULT,
+    id: Uuid,
+    dbState: DBState,
     priority: Int,
     name: String,
     userId: Uuid,
     description: String,
     topicId: Uuid,
-    tags: MutableList<Tag>? = null,
+    tags: MutableList<Tag> = mutableListOf<Tag>(),
     time: Time,
     interval: Interval
 ) : Task(
+    id = id,
     dbState = dbState,
     priority = priority,
     name = name,

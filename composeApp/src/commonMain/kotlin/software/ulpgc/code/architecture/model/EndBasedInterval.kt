@@ -1,11 +1,10 @@
 package software.ulpgc.code.architecture.model
 
-import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class EndBasedInterval(
-    id: Uuid = Uuid.random(),
+    id: Uuid,
     start: Instant,
     end: Instant,
     taskId: Uuid

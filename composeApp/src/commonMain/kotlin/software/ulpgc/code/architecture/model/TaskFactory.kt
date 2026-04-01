@@ -5,16 +5,19 @@ import kotlin.uuid.Uuid
 
 class TaskFactory {
     fun createTask(
+        id: Uuid = Uuid.random(),
+        dbState: DBState = DBState.NEW,
         priority: Int,
         name: String,
         userId: Uuid,
         description: String,
         topicId: Uuid,
-        tags: MutableList<Tag>?,
+        tags: MutableList<Tag> = mutableListOf<Tag>(),
         time: Time
         ): Task {
         return Task(
-            dbState =  DBState.NEW,
+            id = id,
+            dbState =  dbState,
             priority = priority,
             name = name,
             userId = userId,
@@ -26,17 +29,20 @@ class TaskFactory {
     }
 
     fun createTask(
+        id: Uuid = Uuid.random(),
+        dbState: DBState = DBState.NEW,
         priority: Int,
         name: String,
         userId: Uuid,
         description: String,
         topicId: Uuid,
-        tags: MutableList<Tag>?,
+        tags: MutableList<Tag> = mutableListOf<Tag>(),
         time: Time,
         interval: Interval,
         ) : PeriodicTask {
         return PeriodicTask(
-            dbState =  DBState.NEW,
+            id = id,
+            dbState =  dbState,
             priority = priority,
             name = name,
             userId = userId,

@@ -4,6 +4,6 @@ import software.ulpgc.code.architecture.io.DBState
 import kotlin.uuid.Uuid
 
 interface Entity {
-    val id: Uuid?
+    val id: Uuid
     var dbState: DBState
 }
