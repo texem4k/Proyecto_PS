@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.model
 
+import software.ulpgc.code.architecture.io.DBState
 import kotlin.uuid.Uuid
 
 class TaskFactory {
@@ -13,6 +14,7 @@ class TaskFactory {
         time: Time
         ): Task {
         return Task(
+            dbState =  DBState.NEW,
             priority = priority,
             name = name,
             userId = userId,
@@ -34,6 +36,7 @@ class TaskFactory {
         interval: Interval,
         ) : PeriodicTask {
         return PeriodicTask(
+            dbState =  DBState.NEW,
             priority = priority,
             name = name,
             userId = userId,

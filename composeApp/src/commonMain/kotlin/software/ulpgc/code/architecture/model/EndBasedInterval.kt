@@ -6,7 +6,9 @@ import kotlin.uuid.Uuid
 
 class EndBasedInterval(
     id: Uuid = Uuid.random(),
-    start: Instant = Clock.System.now(),
+    start: Instant,
     end: Instant,
     taskId: Uuid
-) : Time(id, start, end, taskId)
+) : Time(id, start, end, taskId) {
+    override val type: Int = 2
+}

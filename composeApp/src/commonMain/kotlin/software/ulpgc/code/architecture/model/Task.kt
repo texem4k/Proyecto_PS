@@ -4,8 +4,8 @@ import software.ulpgc.code.architecture.io.DBState
 import kotlin.uuid.Uuid
 
 open class Task (
-    var dbState: DBState = DBState.DEFAULT,
-    val id: Uuid = Uuid.random(),
+    override var dbState: DBState = DBState.DEFAULT,
+    override val id: Uuid? = Uuid.random(),
     var priority: Int,
     var name: String,
     var userId: Uuid,
@@ -13,4 +13,4 @@ open class Task (
     var topicId: Uuid,
     var tags: MutableList<Tag>? = mutableListOf<Tag>(),
     var time: Time
-)
+) : Entity
