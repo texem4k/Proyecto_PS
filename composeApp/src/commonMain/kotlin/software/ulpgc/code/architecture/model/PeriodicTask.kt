@@ -13,7 +13,7 @@ class PeriodicTask (
     topicId: Uuid,
     tags: MutableList<Tag> = mutableListOf<Tag>(),
     time: Time,
-    interval: Interval
+    var interval: Interval
 ) : Task(
     id = id,
     dbState = dbState,
