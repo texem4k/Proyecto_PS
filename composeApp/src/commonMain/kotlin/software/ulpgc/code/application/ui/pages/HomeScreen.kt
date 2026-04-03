@@ -31,9 +31,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import software.ulpgc.code.application.ui.FilterContent
 import software.ulpgc.code.application.ui.Screen
+import software.ulpgc.code.application.ui.TaskFilters
 import software.ulpgc.code.architecture.model.Topic
 
 
@@ -45,12 +48,35 @@ fun HomeScreen(
     topics: List<Topic>,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
+    filters: TaskFilters
 ) {
 
+
+    var showFilters by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         SearchBar(text = searchText, onTextChange = onSearchTextChange, onSearch = { onNavigate(Screen.RESULTS) })
 
+        Button(onClick = { showFilters = true }) {
+            Text("Filtrado de tareas")
+        }
+        Row() {
+            if (showFilters) {
+                ModalBottomSheet(
+                    onDismissRequest = { showFilters = false }
+                ) {
+                    FilterContent(
+                        onApply = { newFilters ->
+                            filters.topics = newFilters.topics
+                            filters.status = newFilters.status
+                            filters.priority = newFilters.priority
+                            filters.hasFilter = newFilters.hasFilter
+                            showFilters = false
+                            onNavigate(Screen.RESULTS)
+                        })
+                }
+            }
+        }
         Box(modifier = Modifier.weight(1f)) {
             val group = tareas.groupBy { it.topicId }
             LazyVerticalGrid(

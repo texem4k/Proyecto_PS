@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import software.ulpgc.code.application.ui.pages.CreateTaskScreen
 import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
+import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.model.EndBasedInterval
 import software.ulpgc.code.architecture.model.TaskFactory
 import software.ulpgc.code.architecture.model.Topic
@@ -50,6 +51,7 @@ val tareas = listOf(
 fun App() {
     var screen by remember { mutableStateOf(Screen.HOME) }
     var searchText by remember { mutableStateOf("") }
+    var filters by remember { mutableStateOf(TaskFilters()) }
 
 
     MaterialTheme {
@@ -66,6 +68,7 @@ fun App() {
                         tareas, topics,
                         searchText,
                         onSearchTextChange = { searchText = it },
+                        filters
                     )
                 }
                 Screen.CREATE_TASK -> CreateTaskScreen(
