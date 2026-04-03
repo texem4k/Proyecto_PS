@@ -1,8 +1,16 @@
 package software.ulpgc.code.architecture.model
 
-data class Task (
-    val title: String,
-    val topic: String,
-    val dueDate: String,
-    val priority: Int // 1 = más urgente
-    )
+import software.ulpgc.code.architecture.io.DBState
+import kotlin.uuid.Uuid
+
+open class Task (
+    override val id: Uuid,
+    override var dbState: DBState,
+    var priority: Int,
+    var name: String,
+    var userId: Uuid,
+    var description: String,
+    var topicId: Uuid,
+    var tags: MutableList<Tag>,
+    var time: Time
+) : Entity
