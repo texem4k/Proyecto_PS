@@ -10,17 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.topics
 import software.ulpgc.code.architecture.model.Task
 
 
 @Composable
-fun UpcomingTasksPanel(tasks: List<Task>) {
-    //val listState = rememberLazyListState()
+fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
+    val maxHeight = if (total) 600.dp else 310.dp
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     Box(
         modifier = Modifier
             .widthIn(max=300.dp)
-            .heightIn(max=400.dp)
+            .heightIn(max=maxHeight)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp)
@@ -46,22 +48,17 @@ fun UpcomingTasksPanel(tasks: List<Task>) {
                 LazyColumn(
                     modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    var index=0
                     items(tasks) { task ->
-                        if (index>=4) {
-                            return@items
-                        }
-                        index++
-                        Card(modifier = Modifier.fillMaxWidth(0.95f),RoundedCornerShape(8.dp)) {
+                        Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
                             Text(
-                                text = task.title,
+                                text = task.name,
                                 style = MaterialTheme.typography.titleSmall,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${task.topic} · ${task.dueDate}",
+                                text = "${topics.find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -71,38 +68,36 @@ fun UpcomingTasksPanel(tasks: List<Task>) {
                         Spacer(Modifier.height(10.dp))
                     }
                 }
+            if (selectedTask != null && !total) {
+                AlertDialog(
+                    onDismissRequest = { selectedTask = null },
+                    title = { Text(selectedTask!!.name) },
+                    text = {
+                        Text("Tema: ${topics.find { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha: ${selectedTask!!.time.end}")
+                    },
+                    confirmButton = {
+                        Button(onClick = { selectedTask = null }) {
+                            Text("Cerrar")
+                        }
+                    }
+                )
+            } else if (selectedTask != null && total){
+                AlertDialog(
+                    onDismissRequest = { selectedTask = null },
+                    title = { Text("Estas seguro que quieres eliminar la tarea")
+                            },
+                    confirmButton = {
+                        Button(onClick = { selectedTask = null }) {
+                            Text("No")
+                        }
+                        Button(onClick = {  }) {
+                            Text("Eliminar")
+                        }
+                    }
+                )
+            }
 
         }
     }
 
 }
-
-
-/*
-@Composable
-fun TaskCard(task: Task) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        ) {
-        Column(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = task.title,
-                style = MaterialTheme.typography.titleSmall,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "${task.topic} · ${task.dueDate}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-*/
