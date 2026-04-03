@@ -74,8 +74,9 @@ fun App() {
                 Screen.DELETE_TASK -> DeleteTaskScreen(
                     onNavigate = { screen = it }, tareas
                 )
-
-                else -> {}
+                Screen.RESULTS -> SearchTaskScreen(
+                    onNavigate = { screen = it }, tareas, searchText, onSearchTextChange = { searchText = it }, filters
+                )
 
             }
         }
