@@ -18,6 +18,7 @@ kotlinx-coroutines = "1.10.2"
 kotlinxSerializationJson = "1.7.1"
 material3 = "1.10.0-alpha05"
 sqldelight = "2.3.2"
+kotlinx-datetime = "0.6.1"
 
 [libraries]
 android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "androidDriver" }
@@ -43,6 +44,7 @@ kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-s
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "androidDriver" }
 sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "androidDriver" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

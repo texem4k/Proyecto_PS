@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.Screen
-import software.ulpgc.code.architecture.model.Task
+import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
 fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, tareas: List<Task>) {

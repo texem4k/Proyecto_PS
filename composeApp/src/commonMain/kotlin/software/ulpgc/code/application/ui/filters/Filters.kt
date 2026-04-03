@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.filters
 
 data class TaskFilters(
     var hasFilter : Boolean = false,

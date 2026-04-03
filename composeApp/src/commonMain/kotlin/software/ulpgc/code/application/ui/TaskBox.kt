@@ -11,7 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.topics
-import software.ulpgc.code.architecture.model.Task
+import software.ulpgc.code.architecture.model.tasks.Task
 
 
 @Composable

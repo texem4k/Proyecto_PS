@@ -1,13 +1,12 @@
-package software.ulpgc.code.architecture.model
+package software.ulpgc.code.architecture.model.times
 
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-abstract class Time(
+abstract class Time internal constructor(
     val id: Uuid,
     var start: Instant,
     var end: Instant,
-    var taskId: Uuid
 ) {
     abstract val type: Int
 }

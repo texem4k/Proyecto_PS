@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.model.Task
+import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -34,9 +34,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
-import software.ulpgc.code.application.ui.FilterContent
+import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.Screen
-import software.ulpgc.code.application.ui.TaskFilters
+import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.model.Topic
 
 

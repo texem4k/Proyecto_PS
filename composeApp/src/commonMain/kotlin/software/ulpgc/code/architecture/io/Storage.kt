@@ -1,7 +1,7 @@
 package software.ulpgc.code.architecture.io
 
 import software.ulpgc.code.architecture.model.Tag
-import software.ulpgc.code.architecture.model.Task
+import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.Topic
 
 interface Storage {

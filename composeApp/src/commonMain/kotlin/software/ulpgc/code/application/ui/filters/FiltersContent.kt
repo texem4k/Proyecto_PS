@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.filters
 
 
 import androidx.compose.foundation.layout.Column
