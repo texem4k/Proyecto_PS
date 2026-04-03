@@ -3,7 +3,7 @@ package software.ulpgc.code.architecture.model
 import software.ulpgc.code.architecture.io.DBState
 import kotlin.uuid.Uuid
 
-class TaskFactory {
+object TaskFactory {
     fun createTask(
         id: Uuid = Uuid.random(),
         dbState: DBState = DBState.NEW,
@@ -55,9 +55,10 @@ class TaskFactory {
     }
 
     fun toPeriodicTask(task: Task, interval: Interval): PeriodicTask {
+        task.dbState = DBState.DELETED
         return PeriodicTask(
             id = task.id,
-            dbState = task.dbState,
+            dbState = DBState.UPDATED,
             priority = task.priority,
             name = task.name,
             userId = task.userId,
@@ -70,9 +71,10 @@ class TaskFactory {
     }
 
     fun toTask(periodicTask: PeriodicTask): Task {
+        periodicTask.dbState = DBState.DELETED
         return Task(
             id = periodicTask.id,
-            dbState = periodicTask.dbState,
+            dbState = DBState.UPDATED,
             priority = periodicTask.priority,
             name = periodicTask.name,
             userId = periodicTask.userId,

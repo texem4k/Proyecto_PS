@@ -3,12 +3,9 @@ package software.ulpgc.code.architecture.model
 import kotlinx.coroutines.*
 import kotlinx.coroutines.delay
 import software.ulpgc.code.architecture.io.Store
-import kotlin.time.Clock
 
 class TaskMonitor(
     private val store: Store,
-    private val checker: PeriodicTaskChecker,
-    private val renewer: PeriodicTaskRenewer
 ) {
     private val monitorScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -27,10 +24,10 @@ class TaskMonitor(
     private fun checkExpiredTasks() {
         store.tasks()
             .filterIsInstance<PeriodicTask>()
-            .filter { checker.needsRenewal(it) }
+            .filter { PeriodicTaskChecker.needsRenewal(it) }
             .forEach { task ->
-                checker.markAsDeleted(task)
-                renewer.renew(task)
+                PeriodicTaskChecker.markAsDeleted(task)
+                PeriodicTaskRenewer.renew(task)
             }
     }
 

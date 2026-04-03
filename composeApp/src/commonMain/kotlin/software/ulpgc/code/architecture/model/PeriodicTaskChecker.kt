@@ -3,7 +3,7 @@ package software.ulpgc.code.architecture.model
 import software.ulpgc.code.architecture.io.DBState
 import kotlin.time.Clock
 
-class PeriodicTaskChecker {
+object PeriodicTaskChecker {
     fun needsRenewal(task: PeriodicTask): Boolean {
         val now = Clock.System.now()
         return task.dbState != DBState.DELETED && task.time.end <= now
