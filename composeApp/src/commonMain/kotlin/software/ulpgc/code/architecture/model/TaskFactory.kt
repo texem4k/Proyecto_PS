@@ -53,4 +53,33 @@ class TaskFactory {
             interval = interval
         )
     }
+
+    fun toPeriodicTask(task: Task, interval: Interval): PeriodicTask {
+        return PeriodicTask(
+            id = task.id,
+            dbState = task.dbState,
+            priority = task.priority,
+            name = task.name,
+            userId = task.userId,
+            description = task.description,
+            topicId = task.topicId,
+            tags = task.tags,
+            time = task.time,
+            interval = interval
+        )
+    }
+
+    fun toTask(periodicTask: PeriodicTask): Task {
+        return Task(
+            id = periodicTask.id,
+            dbState = periodicTask.dbState,
+            priority = periodicTask.priority,
+            name = periodicTask.name,
+            userId = periodicTask.userId,
+            description = periodicTask.description,
+            topicId = periodicTask.topicId,
+            tags = periodicTask.tags,
+            time = periodicTask.time
+        )
+    }
 }
