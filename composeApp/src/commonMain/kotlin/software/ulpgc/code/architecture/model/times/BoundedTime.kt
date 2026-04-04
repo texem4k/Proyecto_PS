@@ -1,13 +1,12 @@
-package software.ulpgc.code.architecture.model
+package software.ulpgc.code.architecture.model.times
 
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-class EndBasedInterval(
+class BoundedTime internal constructor(
     id: Uuid,
     start: Instant,
     end: Instant,
-    taskId: Uuid
-) : Time(id, start, end, taskId) {
+) : Time(id, start, end) {
     override val type: Int = 2
 }

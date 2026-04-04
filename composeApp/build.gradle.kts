@@ -83,6 +83,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -127,6 +128,7 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    implementation(compose.desktop.currentOs)
 }
 
 compose.desktop {
