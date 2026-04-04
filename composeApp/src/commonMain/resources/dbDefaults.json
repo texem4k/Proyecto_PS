@@ -81,5 +81,41 @@
     {"id": "00000000-0000-0000-0000-000026033152", "name": "Itinerario", "topicId": "00000000-0000-0000-0000-000026033110"},
     {"id": "00000000-0000-0000-0000-000026033153", "name": "Visado", "topicId": "00000000-0000-0000-0000-000026033110"}
   ],
-  "Tasks": []
+  "Tasks": [
+    {
+      "id": "00000000-0000-0000-0000-000026033200",
+      "priority": 2,
+      "name": "Refactorizar módulo de autenticación",
+      "userId": 0,
+      "description": "Revisar y limpiar el código del módulo de login, separar responsabilidades y mejorar la legibilidad.",
+      "topicId": "00000000-0000-0000-0000-000026033100",
+      "time": {
+        "start": "2026-04-05T09:00:00Z",
+        "end": "2026-04-05T11:00:00Z"
+      },
+      "interval": "NONE",
+      "tags": [
+        "00000000-0000-0000-0000-000026033100",
+        "00000000-0000-0000-0000-000026033104"
+      ],
+      "dbState": "NEW"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000026033201",
+      "priority": 1,
+      "name": "Tomar medicación",
+      "userId": 0,
+      "description": "Tomar las pastillas después del desayuno.",
+      "topicId": "00000000-0000-0000-0000-000026033101",
+      "time": {
+        "start": "2026-04-05T08:30:00Z",
+        "end": null
+      },
+      "interval": "DAY",
+      "tags": [
+        "00000000-0000-0000-0000-000026033113"
+      ],
+      "dbState": "NEW"
+    }
+  ]
 }

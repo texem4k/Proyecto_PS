@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.topics
+import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
 
 @Composable
-fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
+fun UpcomingTasksPanel(task: , topics:  title: String, total: Boolean) {
     val maxHeight = if (total) 600.dp else 310.dp
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -48,7 +48,7 @@ fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
                 LazyColumn(
                     modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(tasks) { task ->
+                    items(store.tasks().toList()) { task ->
                         Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
                             Text(
                                 text = task.name,
@@ -58,7 +58,7 @@ fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${topics.find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
+                                text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -73,7 +73,7 @@ fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
                     onDismissRequest = { selectedTask = null },
                     title = { Text(selectedTask!!.name) },
                     text = {
-                        Text("Tema: ${topics.find { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha: ${selectedTask!!.time.end}")
+                        Text("Tema: ${store.topics().find { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha: ${selectedTask!!.time.end}")
                     },
                     confirmButton = {
                         Button(onClick = { selectedTask = null }) {
