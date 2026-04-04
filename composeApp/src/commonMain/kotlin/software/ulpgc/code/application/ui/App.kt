@@ -8,6 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
@@ -21,17 +24,25 @@ import software.ulpgc.code.architecture.io.Store
 
 
 @Composable
-fun App(databaseDriverFactory: DatabaseDriverFactory) {
+fun App(
+    databaseDriverFactory: DatabaseDriverFactory,
+    dbDispatcher: CoroutineDispatcher,
+    onStoreCreated: (Store) -> Unit = {}
+) {
     var screen by remember { mutableStateOf(Screen.HOME) }
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(TaskFilters()) }
 
-    var store by remember { mutableStateOf<Storage?>(null) }
+    var store by remember { mutableStateOf<Store?>(null) }
 
     LaunchedEffect(Unit) {
-        val seedData = JSONParser().loadDBData("dbDefaults.json")
-        store = Store(SQLiteDBManager(databaseDriverFactory, seedData))
+        val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
+        val newStore = Store({SQLiteDBManager(databaseDriverFactory, seedData)}, dbDispatcher)
+        store = newStore
+        onStoreCreated(newStore)
     }
+
+    val storeReady = store?.ready?.collectAsState()?.value ?: false
 
     MaterialTheme {
         Column(
@@ -40,7 +51,7 @@ fun App(databaseDriverFactory: DatabaseDriverFactory) {
                 .safeContentPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (store != null) {
+            if (storeReady) {
                 when (screen) {
                     Screen.HOME -> {
                         HomeScreen(

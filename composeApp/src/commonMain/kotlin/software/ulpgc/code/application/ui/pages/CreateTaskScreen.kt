@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Instant as DatetimeInstant
 import kotlinx.datetime.LocalDate
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
@@ -38,6 +39,7 @@ import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Tag
+import kotlin.time.Instant
 
 data class FormState(
     val taskName: String = "",
@@ -328,9 +330,12 @@ fun formatDate(digits: String): String {
 
 fun isValidDate(date: LocalDate?, type: String):String {
     if (date != null) {
-        if(date< Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date){
+        if(date < Clock.System.now().toDatetime().toLocalDateTime(TimeZone.currentSystemDefault()).date){
             return "La fecha $type no puede ser anterior a la fecha actual"
         }
     }
     return ""
 }
+
+private fun Instant.toDatetime(): DatetimeInstant =
+    DatetimeInstant.fromEpochMilliseconds(this.toEpochMilliseconds())
