@@ -5,5 +5,4 @@ data class TaskFilters(
     var status: Set<String> = emptySet(),
     var priority: Set<String> = emptySet(),
     var topics: Set<String> = emptySet(),
-    //val tags: Set<Tags> = emptySet(),
 )

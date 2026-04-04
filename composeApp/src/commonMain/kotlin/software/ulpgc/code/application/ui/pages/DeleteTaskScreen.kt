@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
-import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
 fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
@@ -38,7 +37,7 @@ fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
             }
         }
         Box(modifier = Modifier.weight(0.5f)) {
-            UpcomingTasksPanel(store, "Cual eliminamos", true)
+            UpcomingTasksPanel(store.tasks(), store.topics(), "Cual eliminamos", true)
         }
     }
 }

@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,7 +37,6 @@ import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.io.Storage
-import software.ulpgc.code.architecture.model.Topic
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +86,7 @@ fun HomeScreen(
             ) {
                 items(group.entries.toList()) { (titulo, tareasGrupo) ->
                     val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                    UpcomingTasksPanel(tareasGrupo, topicName, false)
+                    UpcomingTasksPanel(tareasGrupo.asSequence(), store.topics(), topicName, false)
                 }
             }
         }
