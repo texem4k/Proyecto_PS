@@ -17,9 +17,9 @@ import software.ulpgc.code.architecture.model.tasks.Task
 
 class Store (private val managerFactory: () -> DBManager, private val dbDispatcher: CoroutineDispatcher = Dispatchers.Default): Storage {
 
-    private val topics: MutableList<Topic> = mutableListOf()
-    private val tags: MutableList<Tag> = mutableListOf()
-    private val tasks: MutableList<Task> = mutableListOf()
+    private val topics: MutableSet<Topic> = mutableSetOf()
+    private val tags: MutableSet<Tag> = mutableSetOf()
+    private val tasks: MutableSet<Task> = mutableSetOf()
 
     private val storeScope = CoroutineScope(dbDispatcher + SupervisorJob())
 
@@ -51,9 +51,9 @@ class Store (private val managerFactory: () -> DBManager, private val dbDispatch
     }
 
     private suspend fun storeRequired() = withContext(dbDispatcher) {
-        insertRequired(dbObjects().filter { it.isNew() })
-        updateRequired(dbObjects().filter { it.isUpdated() })
         deleteRequired(dbObjects().filter { it.isDeleted() })
+        updateRequired(dbObjects().filter { it.isUpdated() })
+        insertRequired(dbObjects().filter { it.isNew() })
     }
 
     private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence()
@@ -81,9 +81,9 @@ class Store (private val managerFactory: () -> DBManager, private val dbDispatch
 
     fun dispose() {
         storeScope.launch {
-            storeRequired()         // ✅ flush pending changes first, on the right thread
+            storeRequired()
         }.invokeOnCompletion {
-            storeScope.cancel()     // ✅ then cancel the scope
+            storeScope.cancel()
         }
     }
 
