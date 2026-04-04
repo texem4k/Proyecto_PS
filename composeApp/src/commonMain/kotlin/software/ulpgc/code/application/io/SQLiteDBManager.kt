@@ -38,12 +38,11 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
 
     override fun tasks(): List<Task> {
         val raws = dbQuery.getTasks().executeAsList()
-        raws.map { raw ->
+        return raws.map { raw ->
             val time = dbQuery.getTimeFor(raw.id, { id, _, type, start, end -> TimeFactory().createTime(Instant.parse(start), Instant.parse(end), type.toInt(), Uuid.parse(id)) }).executeAsOne()
             val tagList = dbQuery.getTagsFor(raw.id) { _, tagId -> Uuid.parse(tagId) }.executeAsList().toMutableList()
             Task(raw.priority.toInt(), raw.name, Uuid.parse(raw.userId), raw.description, Uuid.parse(raw.topicId), time, TaskInterval.entries[raw.interval.toInt()], tagList, Uuid.parse(raw.id), DBState.DEFAULT)
         }
-        return listOf()
     }
 
     override fun insert(objects: Sequence<DBObject>) {
