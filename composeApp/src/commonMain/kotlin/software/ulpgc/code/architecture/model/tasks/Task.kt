@@ -16,4 +16,6 @@ class Task (
     var tags: MutableList<Uuid> = mutableListOf(),
     val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW,
-) : DBObject
+) : DBObject {
+    fun copy() = Task(priority, name, userId, description, topicId, time, interval, tags.map { it }.toMutableList(), id)
+}

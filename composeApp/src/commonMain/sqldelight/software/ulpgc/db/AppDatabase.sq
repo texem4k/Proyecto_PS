@@ -56,22 +56,22 @@ SELECT COUNT(*) FROM User;
 -- Inserciones
 
 insertUser:
-INSERT INTO User(id, name) VALUES(?, ?);
+INSERT OR IGNORE INTO User(id, name) VALUES(?, ?);
 
 insertTopic:
-INSERT INTO Topic(id, name, color) VALUES(?, ?, ?);
+INSERT OR IGNORE INTO Topic(id, name, color) VALUES(?, ?, ?);
 
 insertTag:
-INSERT INTO Tag(id, name, topicId) VALUES(?, ?, ?);
+INSERT OR IGNORE INTO Tag(id, name, topicId) VALUES(?, ?, ?);
 
 insertTask:
-INSERT INTO Task(id, name, priority, userId, description, interval, topicId) VALUES (?, ?, ?, ?, ?, ?,  ?);
+INSERT OR IGNORE INTO Task(id, name, priority, userId, description, interval, topicId) VALUES (?, ?, ?, ?, ?, ?,  ?);
 
 insertTime:
-INSERT INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
+INSERT OR IGNORE INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
 
 insertTaskTag:
-INSERT INTO TaskTag(taskId, tagId) VALUES(?, ?);
+INSERT OR IGNORE INTO TaskTag(taskId, tagId) VALUES(?, ?);
 
 -- Actualizaciones
 
