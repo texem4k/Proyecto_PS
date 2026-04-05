@@ -9,4 +9,10 @@ abstract class Time internal constructor(
     var end: Instant,
 ) {
     abstract val type: Int
+
+    override fun toString(): String {
+        return "$type, $start, $end, $id"
+    }
+
+
 }

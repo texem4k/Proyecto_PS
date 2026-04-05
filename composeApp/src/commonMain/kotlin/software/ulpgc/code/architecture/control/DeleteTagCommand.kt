@@ -10,6 +10,6 @@ class DeleteTagCommand(private val store: Storage, private val tag: Tag): Comman
 
     override fun execute(): Command {
         tag.dbState = DBState.DELETED
-
+        return CreateTagCommand(store, tag)
     }
 }
