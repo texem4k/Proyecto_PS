@@ -10,7 +10,7 @@ import software.ulpgc.code.architecture.model.times.TimeFactory
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
-class CommandBuilder (private val store: Storage) {
+class CommandBuilder internal constructor (private val store: Storage) {
     private val args: MutableMap<String, String> = mutableMapOf()
 
     fun set(argName: String, argValue: String): CommandBuilder {
