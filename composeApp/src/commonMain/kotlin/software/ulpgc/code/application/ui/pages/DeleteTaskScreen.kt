@@ -15,10 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.Screen
-import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.io.Storage
 
 @Composable
-fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, tareas: List<Task>) {
+fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
 
     Column (modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -37,7 +37,7 @@ fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, tareas: List<Task>) {
             }
         }
         Box(modifier = Modifier.weight(0.5f)) {
-            UpcomingTasksPanel(tareas, "Cual eliminamos", true)
+            UpcomingTasksPanel(store.tasks(), store.topics(), "Cual eliminamos", true)
         }
     }
 }

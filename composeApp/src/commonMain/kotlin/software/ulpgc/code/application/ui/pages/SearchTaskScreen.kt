@@ -16,13 +16,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.collections.forEach
 
 @Composable
 fun SearchTaskScreen(
     onNavigate: (Screen) -> Unit,
-    tasks: List<Task>,
+    store: Storage,
     value: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters
@@ -34,7 +35,7 @@ fun SearchTaskScreen(
     if (filters.hasFilter) {
         filters.topics.forEach { topicFilter ->
             topics.add(topicFilter)
-            val temp = tasks.filter { it.name == topicFilter }
+            val temp = store.tasks().filter { it.name == topicFilter }.toList()
             val temp1 = search.toMutableList()
             search = temp + temp1
         }
@@ -42,7 +43,7 @@ fun SearchTaskScreen(
             priority.add(prior)
         }
     } else {
-        search = tasks.filter { it.name.contains(value, true) }
+        search = store.tasks().filter { it.name.contains(value, true) }.toList()
     }
 
 
@@ -104,7 +105,7 @@ fun SearchTaskScreen(
 
             if (search.isNotEmpty()) {
                 Box(modifier = Modifier.weight(0.5f)) {
-                    UpcomingTasksPanel(search, "Resultados", true)
+                    UpcomingTasksPanel(store.tasks(), store.topics(), "Resultados", true)
                 }
             } else {
                 Box(modifier = Modifier.weight(0.5f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {

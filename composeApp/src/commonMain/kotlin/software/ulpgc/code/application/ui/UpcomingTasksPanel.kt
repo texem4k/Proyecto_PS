@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.topics
+import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.tasks.Task
 
 
 @Composable
-fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
+fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: String, total: Boolean) {
     val maxHeight = if (total) 600.dp else 310.dp
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -48,7 +48,7 @@ fun UpcomingTasksPanel(tasks: List<Task>, title: String, total: Boolean) {
                 LazyColumn(
                     modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(tasks) { task ->
+                    items(tasks.toList()) { task ->
                         Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
                             Text(
                                 text = task.name,

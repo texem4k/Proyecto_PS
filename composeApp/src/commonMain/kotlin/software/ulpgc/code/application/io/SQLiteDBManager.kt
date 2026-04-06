@@ -12,7 +12,7 @@ import software.ulpgc.db.AppDatabase
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val seedData: JSONParser.DBData) : DBManager {
+class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val seedData: DBData) : DBManager {
     private val database = AppDatabase(databaseDriverFactory.createDriver())
     private val dbQuery = database.appDatabaseQueries
 
@@ -37,11 +37,12 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
     }
 
     override fun tasks(): List<Task> {
-        return dbQuery.getTasks { id, name, priority, userId, description, interval, topicId ->
-            val time = dbQuery.getTimeFor(id, { id, _, type, start, end -> TimeFactory().createTime(Instant.parse(start), Instant.parse(end), type.toInt(), Uuid.parse(id)) }).executeAsOne()
-            val tagList = dbQuery.getTagsFor(id) { _, tagId -> Uuid.parse(tagId) }.executeAsList().toMutableList()
-            Task(priority.toInt(), name, Uuid.parse(userId), description, Uuid.parse(topicId), time, TaskInterval.entries[interval.toInt()], tagList, Uuid.parse(id), DBState.DEFAULT)
-        }.executeAsList()
+        val raws = dbQuery.getTasks().executeAsList()
+        return raws.map { raw ->
+            val time = dbQuery.getTimeFor(raw.id, { id, _, type, start, end -> TimeFactory().createTime(Instant.parse(start), Instant.parse(end), type.toInt(), Uuid.parse(id)) }).executeAsOne()
+            val tagList = dbQuery.getTagsFor(raw.id) { _, tagId -> Uuid.parse(tagId) }.executeAsList().toMutableList()
+            Task(raw.priority.toInt(), raw.name, Uuid.parse(raw.userId), raw.description, Uuid.parse(raw.topicId), time, TaskInterval.entries[raw.interval.toInt()], tagList, Uuid.parse(raw.id), DBState.DEFAULT)
+        }
     }
 
     override fun insert(objects: Sequence<DBObject>) {

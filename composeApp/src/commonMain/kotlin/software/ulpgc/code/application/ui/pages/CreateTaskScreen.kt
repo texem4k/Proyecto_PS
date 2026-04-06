@@ -30,12 +30,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Instant as DatetimeInstant
 import kotlinx.datetime.LocalDate
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.application.ui.Screen
+import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.model.Tag
+import kotlin.time.Instant
 
 data class FormState(
     val taskName: String = "",
@@ -51,15 +55,13 @@ data class FormState(
 
 
 @Composable
-fun CreateTaskScreen(onNavigate: (Screen) -> Unit) {
+fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
 
     var expandedTopics by remember { mutableStateOf(false) }
     var expandedTag by remember { mutableStateOf(false) }
     var form by remember { mutableStateOf(FormState()) }
-    val topics = listOf("Estudios", "Proyectos", "Topico1", "Topico2")
-    val tags = mapOf("Estudios" to listOf("Ninguno" ,"PS", "PWM"),"Proyectos" to listOf("Ninguna" ,"PS"), "Topico1" to listOf("Tag1"), "Topico2" to listOf("Tag2", "Tag3"))
-    var selectedTopic by remember { mutableStateOf(topics[0]) }
-    var selectedTag by remember { mutableStateOf("Ninguno") }
+    var selectedTopic by remember { mutableStateOf(store.topics().first()) }
+    var selectedTag by remember { mutableStateOf<Tag?>(null) }
 
     var createTask by remember { mutableStateOf(false) }
     var dateError by remember { mutableStateOf(false) }
@@ -177,7 +179,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit) {
 
         Box() {
             Button(onClick = { expandedTopics = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                Text(text = selectedTopic)
+                Text(selectedTopic.name)
             }
 
 
@@ -185,9 +187,9 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit) {
                 expanded = expandedTopics,
                 onDismissRequest = { expandedTopics = false }
             ) {
-                topics.forEach { topic ->
+                store.topics().forEach { topic ->
                     DropdownMenuItem(
-                        text = { Text(topic) },
+                        text = { Text(topic.name) },
                         onClick = {
                             selectedTopic = topic
                             expandedTopics = false
@@ -201,7 +203,11 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit) {
 
         Box(){
             Button(onClick = { expandedTag = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                Text(text = selectedTag)
+                if (selectedTag != null) {
+                    Text(selectedTag!!.name)
+                } else {
+                    Text("Ninguno")
+                }
             }
 
             DropdownMenu(
@@ -209,9 +215,9 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit) {
                 onDismissRequest = { expandedTag = false },
                 offset = DpOffset(0.dp, 0.dp)
             ) {
-                tags.getValue(selectedTopic).forEach { tag ->
+                store.tags().filter { tag -> tag.topicId == selectedTopic.id} .forEach { tag ->
                     DropdownMenuItem(
-                        text = { Text(tag) },
+                        text = { Text(tag.name) },
                         onClick = {
                             selectedTag = tag
                             expandedTag = false
@@ -324,9 +330,12 @@ fun formatDate(digits: String): String {
 
 fun isValidDate(date: LocalDate?, type: String):String {
     if (date != null) {
-        if(date< Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date){
+        if(date < Clock.System.now().toDatetime().toLocalDateTime(TimeZone.currentSystemDefault()).date){
             return "La fecha $type no puede ser anterior a la fecha actual"
         }
     }
     return ""
 }
+
+private fun Instant.toDatetime(): DatetimeInstant =
+    DatetimeInstant.fromEpochMilliseconds(this.toEpochMilliseconds())

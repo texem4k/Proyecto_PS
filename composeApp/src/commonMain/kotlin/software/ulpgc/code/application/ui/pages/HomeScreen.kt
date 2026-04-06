@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -37,15 +36,14 @@ import androidx.compose.ui.text.input.ImeAction
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.model.Topic
+import software.ulpgc.code.architecture.io.Storage
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigate: (Screen) -> Unit,
-    tareas: List<Task>,
-    topics: List<Topic>,
+    store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters
@@ -78,7 +76,7 @@ fun HomeScreen(
             }
         }
         Box(modifier = Modifier.weight(1f)) {
-            val group = tareas.groupBy { it.topicId }
+            val group = store.tasks().groupBy { it.topicId }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxWidth(0.5f),
@@ -87,8 +85,8 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(64.dp)
             ) {
                 items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                    val topicName = topics.find { it.id == titulo }?.name ?: "Sin tópico"
-                    UpcomingTasksPanel(tareasGrupo, topicName, false)
+                    val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+                    UpcomingTasksPanel(tareasGrupo.asSequence(), store.topics(), topicName, false)
                 }
             }
         }

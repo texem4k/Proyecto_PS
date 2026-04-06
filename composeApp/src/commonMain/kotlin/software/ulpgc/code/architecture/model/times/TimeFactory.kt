@@ -14,12 +14,16 @@ class TimeFactory() {
     ): Time {
         return when (type) {
             0 -> createTime(start, (end-start).inWholeHours, id)
-            1 -> createTime(end, (end-start).inWholeHours, id)
+            1 -> createTime((end-start).inWholeHours, end, id)
             2 -> createTime(start, end, id)
             else -> createTime(Clock.System.now(), 1L)
         }
     }
 
+    fun parse(time: String): Time {
+        val (type, start , end, id) = time.split(", ")
+        return createTime(Instant.parse(start), Instant.parse(end), type.toInt(), Uuid.parse(id))
+    }
     fun createTime(
         start: Instant,
         durationHours: Long,
@@ -27,8 +31,8 @@ class TimeFactory() {
     ): StartBasedTime = StartBasedTime(id, start, (start + durationHours.hours))
 
     fun createTime(
+        durationHours: Long,
         end: Instant,
-        durationHours: Double,
         id: Uuid = Uuid.random()
     ): EndBasedTime = EndBasedTime(id, (end - durationHours.hours), end)
 
