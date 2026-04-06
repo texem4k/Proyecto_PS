@@ -7,7 +7,7 @@ import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import software.ulpgc.code.architecture.model.times.Time
 import kotlin.uuid.Uuid
 
-class UpdateTaskCommand(private val currentTask: Task, private val newTask: Task): Command {
+class UpdateTaskCommand internal constructor (private val currentTask: Task, private val newTask: Task): Command {
 
     constructor(currentTask: Task, priority: Int, name: String, description: String, topicId: Uuid,
                 time: Time, interval: TaskInterval, tags: MutableList<Uuid>) :

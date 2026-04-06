@@ -4,7 +4,7 @@ import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.Tag
 import kotlin.uuid.Uuid
 
-class UpdateTagCommand (private val currentTag: Tag,private val newTag: Tag): Command {
+class UpdateTagCommand internal constructor (private val currentTag: Tag,private val newTag: Tag): Command {
 
     constructor(currentTag: Tag, newName: String, newTopicId: Uuid) : this(
         currentTag, Tag(newName, newTopicId, currentTag.id),
