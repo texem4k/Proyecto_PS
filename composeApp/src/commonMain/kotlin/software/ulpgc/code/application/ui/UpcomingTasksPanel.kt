@@ -10,13 +10,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.model.Topic
+import software.ulpgc.code.architecture.control.CommandBuilder
+import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.CommandType
+import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
 
 @Composable
-fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: String, total: Boolean) {
+fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, total: Boolean, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}) {
     val maxHeight = if (total) 600.dp else 310.dp
+    val tasks = tareas ?: store.tasks().toList()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     Box(
@@ -48,7 +52,7 @@ fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: St
                 LazyColumn(
                     modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(tasks.toList()) { task ->
+                    items(tasks) { task ->
                         Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
                             Text(
                                 text = task.name,
@@ -58,7 +62,7 @@ fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: St
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${topics.find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
+                                text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -73,9 +77,17 @@ fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: St
                     onDismissRequest = { selectedTask = null },
                     title = { Text(selectedTask!!.name) },
                     text = {
-                        Text("Tema: ${topics.find { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha: ${selectedTask!!.time.end}")
+                        Text("Descripción: ${selectedTask!!.description}\nTema: ${store.topics().find
+                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha de comienzo: " +
+                                "${selectedTask!!.time.start.toString().substring(0, 16)}\nFecha de final: ${selectedTask!!
+                                    .time.end.toString().substring(0, 16)}\nPrioridad: ${selectedTask!!.priority}")
                     },
                     confirmButton = {
+                        Button(onClick = {
+                            onEdit(selectedTask!!)
+                        }) {
+                            Text("Editar tarea")
+                        }
                         Button(onClick = { selectedTask = null }) {
                             Text("Cerrar")
                         }
@@ -90,14 +102,18 @@ fun UpcomingTasksPanel(tasks: Sequence<Task>, topics: Sequence<Topic>, title: St
                         Button(onClick = { selectedTask = null }) {
                             Text("No")
                         }
-                        Button(onClick = {  }) {
+                        Button(onClick = {
+                            onDelete(selectedTask!!)
+                            CommandLauncher.launch(CommandBuilder(store).set("id", selectedTask!!
+                                .id.toString()).build(CommandType.DELETE_TASK))
+                            selectedTask = null
+                            onDeleted()
+                        }) {
                             Text("Eliminar")
                         }
                     }
                 )
             }
-
         }
     }
-
 }

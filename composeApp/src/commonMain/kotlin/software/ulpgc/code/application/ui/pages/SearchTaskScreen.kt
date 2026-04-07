@@ -105,7 +105,7 @@ fun SearchTaskScreen(
 
             if (search.isNotEmpty()) {
                 Box(modifier = Modifier.weight(0.5f)) {
-                    UpcomingTasksPanel(store.tasks(), store.topics(), "Resultados", true)
+                    UpcomingTasksPanel(store, search, title = "Resultados", total = true)
                 }
             } else {
                 Box(modifier = Modifier.weight(0.5f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {

@@ -18,7 +18,7 @@ import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
 
 @Composable
-fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
+fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage,  onDeleted: () -> Unit = {}) {
 
     Column (modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -37,7 +37,7 @@ fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
             }
         }
         Box(modifier = Modifier.weight(0.5f)) {
-            UpcomingTasksPanel(store.tasks(), store.topics(), "Cual eliminamos", true)
+            UpcomingTasksPanel(store, title = "Cual eliminamos", total = true, onDeleted = onDeleted)
         }
     }
 }

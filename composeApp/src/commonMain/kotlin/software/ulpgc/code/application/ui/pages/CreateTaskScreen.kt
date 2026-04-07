@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -19,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,53 +29,77 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Instant as DatetimeInstant
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.application.ui.Screen
+import software.ulpgc.code.architecture.control.CommandBuilder
+import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.CommandType
 import software.ulpgc.code.architecture.io.Storage
-import software.ulpgc.code.architecture.model.Tag
+import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.model.tasks.TaskInterval
+import software.ulpgc.code.architecture.model.times.Time
+import software.ulpgc.code.architecture.model.times.TimeFactory
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 data class FormState(
-    val taskName: String = "",
-    val taskDescription: String = "",
-    val taskTopic: String = "",
-    val taskTag: String = "",
+    var taskName: String = "",
+    var taskDescription: String = "",
+    var taskTopic: Uuid? = null,
+    var taskTag: Uuid? = null,
     var taskStartDateString: String = "",
-    var taskStartDate: LocalDate? = null,
+    var taskStartDate: Instant? = null,
     var taskFinalDateString: String = "",
-    var taskFinalDate: LocalDate? = null,
-    val taskDuration: String = "",
+    var taskFinalDate: Instant? = null,
+    var taskInterval: TaskInterval = TaskInterval.NONE,
+    var taskDuration: String = "",
+    var taskPriority: String = "",
+    var taskStartHour: String="",
+    var taskFinalHour: String=""
 )
 
-
 @Composable
-fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
+fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? = null) {
 
     var expandedTopics by remember { mutableStateOf(false) }
     var expandedTag by remember { mutableStateOf(false) }
     var form by remember { mutableStateOf(FormState()) }
-    var selectedTopic by remember { mutableStateOf(store.topics().first()) }
-    var selectedTag by remember { mutableStateOf<Tag?>(null) }
-
     var createTask by remember { mutableStateOf(false) }
-    var dateError by remember { mutableStateOf(false) }
+    var formError by remember { mutableStateOf(false) }
     var messageError: String? by remember { mutableStateOf("") }
-
     val checkedState = remember { mutableStateOf(false) }
     var expand by remember { mutableStateOf(false) }
     var selectedPeriod by remember { mutableStateOf("Periodo") }
 
-
-
     val scrollState = rememberScrollState()
+    LaunchedEffect(task) {
+        if (task != null) {
+
+            form = FormState(
+                taskName = task.name,
+                taskDescription = task.description,
+                taskTopic = task.topicId,
+                taskPriority = task.priority.toString(),
+                taskStartDate = task.time.start,
+                taskStartDateString = task.time.start.toFormattedDate(TimeZone.currentSystemDefault()),
+                taskFinalDate = task.time.end,
+                taskFinalDateString = task.time.end.toFormattedDate(TimeZone.currentSystemDefault()),
+                taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
+                taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault())
+            )
+        } else {
+            form = FormState()
+        }
+    }
 
 
     Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -112,8 +138,26 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
         TextField(
             value = form.taskDescription,
             onValueChange = { form = form.copy(taskDescription = it) },
-            placeholder = { Text("") },
+            placeholder = {Text("")},
             label = { Text("Descripción") },
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        TextField(
+            value = form.taskPriority,
+            onValueChange = { newValue ->
+                if (newValue.isEmpty()) {
+                    form = form.copy(taskPriority = newValue)
+                } else if (newValue.all { it.isDigit() }) {
+                    val number = newValue.toIntOrNull()
+                    if (number != null && number in 1..10) {
+                        form = form.copy(taskPriority = newValue)
+                    }
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            placeholder = { Text("Seleccione del 1 al 10") },
+            label = { Text("Prioridad") },
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -123,6 +167,13 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        TimeTextField(
+            value = form.taskStartHour,
+            onValueChange = {form = form.copy(taskStartHour = it) },
+            modifier = Modifier.padding(bottom = 16.dp),
+            type="inicio"
+        )
+
 
         DateTextField(
             value = form.taskFinalDateString,
@@ -130,56 +181,41 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 32.dp)) {
-
-            Checkbox(
-                checked = checkedState.value,
-                onCheckedChange = { isChecked ->
-                    checkedState.value = isChecked  //Activó las tareas periódicas
-                }
-            )
-            Text("Tarea periódica")
-        }
-        if(checkedState.value) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box() {
-                    Button(onClick = { expand = true }) {
-                        Text(selectedPeriod)
-                    }
-
-                    DropdownMenu(
-                        expanded = expand,
-                        onDismissRequest = { expand = false }
-                    ) {
-                        val periods = listOf("Diario", "Semanal", "Quincenal","Mensual","Semestral", "Anual")
-                        for (x in periods) {
-                            DropdownMenuItem(
-                                text = { Text(x) },
-                                onClick = {
-                                    selectedPeriod = "Periodo seleccionado: $x"
-                                    expand = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
+        TimeTextField(
+            value = form.taskFinalHour,
+            onValueChange = {form = form.copy(taskFinalHour = it) },
+            modifier = Modifier.padding(bottom = 16.dp),
+            type="finalización"
+        )
 
         TextField(
             value = form.taskDuration,
-            onValueChange = { form = form.copy(taskDuration = it) },
-            placeholder = {Text("")},
-            modifier = Modifier.padding(bottom = 16.dp,top = 16.dp),
-            label = {Text("Duración de la tarea (en horas)")},
+            onValueChange = { newValue ->
+                if (newValue.isEmpty()) {
+                    form = form.copy(taskDuration = newValue)
+                } else if (newValue.all { it.isDigit() }) {
+                    val number = newValue.toIntOrNull()
+                    if (number != null && number in 0..100) {
+                        form = form.copy(taskDuration = newValue)
+                    }
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.padding(bottom = 16.dp, top = 16.dp),
+            label = { Text("Duración de la tarea (en horas)") },
         )
+
 
         Text("* Selecciona el tópico:")
 
-        Box() {
+        Box {
             Button(onClick = { expandedTopics = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                Text(selectedTopic.name)
+                if (form.taskTopic != null) {
+                    Text(store.topics().filter { topic -> topic.id==form.taskTopic }.first().name)
+                } else {
+                    form.taskTopic = store.topics().first().id
+                    Text(store.topics().first().name)
+                }
             }
 
 
@@ -191,7 +227,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     DropdownMenuItem(
                         text = { Text(topic.name) },
                         onClick = {
-                            selectedTopic = topic
+                            form.taskTopic = topic.id
                             expandedTopics = false
                         }
                     )
@@ -201,10 +237,10 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
         Text("Selecciona el tag asociado al tópico asociado:")
 
 
-        Box(){
+        Box{
             Button(onClick = { expandedTag = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                if (selectedTag != null) {
-                    Text(selectedTag!!.name)
+                if (form.taskTag != null) {
+                    Text(store.tags().filter { tag -> tag.id==form.taskTag }.first().name)
                 } else {
                     Text("Ninguno")
                 }
@@ -215,11 +251,11 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                 onDismissRequest = { expandedTag = false },
                 offset = DpOffset(0.dp, 0.dp)
             ) {
-                store.tags().filter { tag -> tag.topicId == selectedTopic.id} .forEach { tag ->
+                store.tags().filter { tag -> tag.topicId == form.taskTopic} .forEach { tag ->
                     DropdownMenuItem(
                         text = { Text(tag.name) },
                         onClick = {
-                            selectedTag = tag
+                            form.taskTag = tag.id
                             expandedTag = false
                         }
                     )
@@ -227,91 +263,217 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage) {
             }
         }
 
+        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 8.dp)) {
 
+            Checkbox(
+                checked = checkedState.value,
+                onCheckedChange = { isChecked ->
+                    checkedState.value = isChecked
+                }
+            )
+            Text("Tarea periódica")
+        }
+        if(checkedState.value) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box {
+                    Button(onClick = { expand = true }) {
+                        Text(selectedPeriod)
+                    }
 
+                    DropdownMenu(
+                        expanded = expand,
+                        onDismissRequest = { expand = false },
+                        modifier = Modifier.fillMaxWidth(0.15f)
+                    ) {
 
-
+                        val periods = listOf("Ninguno","Diario", "Semanal","Mensual", "Anual")
+                        for (i in 0..4) {
+                            DropdownMenuItem(
+                                text = { Text(periods[i]) },
+                                onClick = {
+                                    selectedPeriod = "Periodo seleccionado: ${periods[i]}"
+                                    expand = false
+                                    form.taskInterval= TaskInterval.entries[i]
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
         Button(colors = ButtonDefaults.buttonColors(
             containerColor = Color.Blue,
             contentColor = Color.White,
 
-        ),
+            ),
             modifier= Modifier.padding(top = 32.dp),
             onClick = {
+                try {
+
+                    println("confirmando cambios")
                 createTask = true
                 var m=""
+                var time: Time? = null
+
+                //Error si no añade nombre a la tarea
                 if(form.taskName.isEmpty() && createTask){
+                    println("Error nombre")
                     messageError="La tarea debe tener algún nombre"
-                    dateError=true
+                    formError=true
                 }
 
+                //Error si no se rellena algún campo fecha
                 else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty() && createTask) {
+                    println("Falta rellenar campo fecha")
                     messageError = "Debes rellenar al menos un campo de fecha"
-                    dateError=true
+                    formError=true
                 }
-                else if(form.taskStartDateString.length == 8 && createTask){
 
+                //Caso 1. Si añade fecha inicial y duración
+                else if(form.taskStartDateString.length == 8 && !form.taskDuration.isEmpty() && createTask){
+                    println("Caso 1")
                     try {
+                        if(form.taskStartHour.isEmpty()){
+                            messageError = "La hora de inicio no puede estar vacío"
+                            formError=true
+                        }
 
-                        form.taskStartDate = LocalDate(
-                            form.taskStartDateString.substring(4, 8).toInt(),
-                            form.taskStartDateString.substring(2, 4).toInt(),
-                            form.taskStartDateString.take(2).toInt()
-                        )
+//                        if(form.taskStartDate.toString().isEmpty()){
+//                            form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+//                        }
+                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
                         m=isValidDate(form.taskStartDate,"inicial")
-                        println(m)
                         if(!m.isEmpty()){
                             throw IllegalArgumentException(m)
                         }
+                        time = TimeFactory().createTime(form.taskStartDate!!,form.taskDuration.toLong())
                     }
                     catch (e: Exception) {
-                        println(e)
-                        if(e.toString().contains("Argument") && e.message.toString() == m) {
-                            messageError = m
-                        }
-                        else{
-                            messageError = "Los valores de día y mes deben ser correctos (0-31/1-12)"
-                        }
-                        dateError=true
+                        messageError = validateDateErrorMessage(e, m)
+                        formError=true
                     }
                 }
-                else if(form.taskFinalDateString.length == 8 && createTask) {
+
+                //Caso 2. Añade fecha final, sin fecha inicial ni duración
+                else if(form.taskFinalDateString.length == 8 && form.taskStartDateString.isEmpty() && form.taskDuration.isEmpty() && createTask){
+                    try {
+                        if(form.taskFinalHour.isEmpty()){
+                            messageError = "La hora de finalización no puede estar vacío"
+                            formError=true
+                        }
+//                        if(form.taskFinalDate.toString().isEmpty()){
+//                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+//                        }
+                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+                        m = isValidDate(form.taskFinalDate, "final")
+                        if (!m.isEmpty()) {
+                            throw IllegalArgumentException(m)
+                        }
+                        time = TimeFactory().createTime(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            .toInstant(TimeZone.currentSystemDefault()),form.taskDuration.toLong())
+                    }
+                    catch (e: Exception) {
+                        messageError = validateDateErrorMessage(e, m)
+                        formError=true
+                    }
+                }
+
+                //Caso 3. Añade fecha final, con duración
+                else if(form.taskFinalDateString.length == 8  && !form.taskDuration.isEmpty() && createTask) {
                     try{
-                        form.taskFinalDate = LocalDate(
-                            form.taskFinalDateString.substring(4, 8).toInt(),
-                            form.taskFinalDateString.substring(2, 4).toInt(),
-                            form.taskFinalDateString.take(2).toInt())
+
+                        if(form.taskFinalHour.isEmpty()){
+                            messageError = "La hora de finalización no puede estar vacío"
+                            formError=true
+                        }
+
+//                        if(form.taskFinalDate.toString().isEmpty()) {
+//                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+//                        }
+                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+
+
                         m=isValidDate(form.taskFinalDate,"final")
                         if(!m.isEmpty()){
                             throw IllegalArgumentException(m)
                         }
 
+                        time = TimeFactory().createTime(form.taskDuration.toLong(), form.taskFinalDate!!)
 
                     } catch (e: Exception) {
-                        if(e.toString().contains("Argument") && e.message.toString() == m) {
-                            messageError = m
-                        }
-                        else{
-                            messageError = "Los valores de día y mes deben ser correctos (0-31/1-12)"
-                        }
-                        dateError=true
+                        messageError = validateDateErrorMessage(e, m)
+                        formError=true
                     }
 
                 }
-            }){
-            Text("Crear tarea")
-            }
 
-        if (dateError) {
+                //Caso 4. Añade fecha final/inicial, sin duración
+                else if(form.taskStartDateString.length==8 && form.taskFinalDateString.length==8 && form.taskDuration.isEmpty() && createTask){
+                    try{
+
+                        if(form.taskStartHour.isEmpty() || form.taskFinalHour.isEmpty()){
+                            messageError = "La hora final e inicial no puede estar vacío"
+                            formError=true
+                        }
+
+                        if(form.taskFinalDate.toString().isEmpty() && form.taskStartDate.toString().isEmpty()) {
+                            form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+
+                        }
+//                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+//                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+
+                        time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
+                        if (!isValidDate(form.taskStartDate, "inicial").isEmpty() || !isValidDate(form.taskFinalDate, "final").isEmpty()) {
+                            throw IllegalArgumentException("Fecha final o inicial incorrecta")
+                        }
+                    } catch (e: Exception) {
+                        messageError = validateDateErrorMessage(e, m)
+                        formError=true
+                    }
+                }
+                val builder = CommandBuilder(store)
+                    .set("priority", form.taskPriority)
+                    .set("name", form.taskName)
+                    .set("userId","00000000-0000-0000-0000-000026033100")
+                    .set("description", form.taskDescription)
+                    .set("topicId", form.taskTopic.toString())
+                    .set("interval", form.taskInterval.toString())
+                    .set("tag", form.taskTag.toString())
+                    .set("time", time.toString())
+                if (task != null){
+                    CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
+                } else {
+                    CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
+                }
+                onNavigate(Screen.HOME)
+                } catch (e: Throwable) {
+                    messageError = e.message ?: "Error inesperado"
+                    formError = true
+                }
+            }) {
+            if (task != null) {
+                Text("Editar tarea")
+            } else {
+                Text("Crear tarea")
+
+            }
+        }
+
+
+
+
+        if (formError) {
             AlertDialog(
-                onDismissRequest = { dateError = false },
+                onDismissRequest = { formError = false },
                 title = { Text("Error") },
                 text = {
                     messageError?.let { Text(it) }
                 },
                 confirmButton = {
                     Button(onClick = {
-                        dateError = false
+                        formError = false
                         createTask=false
                     }) {
                         Text("Aceptar")
@@ -328,14 +490,103 @@ fun formatDate(digits: String): String {
 }
 
 
-fun isValidDate(date: LocalDate?, type: String):String {
+fun isValidDate(date: Instant?, type: String):String {
     if (date != null) {
-        if(date < Clock.System.now().toDatetime().toLocalDateTime(TimeZone.currentSystemDefault()).date){
+        if(date < Clock.System.now().toDatetime()){
             return "La fecha $type no puede ser anterior a la fecha actual"
         }
     }
     return ""
 }
 
-private fun Instant.toDatetime(): DatetimeInstant =
-    DatetimeInstant.fromEpochMilliseconds(this.toEpochMilliseconds())
+private fun Instant.toDatetime(): Instant =
+    Instant.fromEpochMilliseconds(this.toEpochMilliseconds())
+
+
+fun createInstant(fecha: String, hora: String): Instant {
+    val parts = hora.split(':')
+    val hour = if (parts.size >= 2) parts[0].toIntOrNull() ?: 0 else 0
+    val minute = if (parts.size >= 2) parts[1].toIntOrNull() ?: 0 else 0
+
+    return LocalDateTime(
+        year = fecha.substring(4, 8).toInt(),
+        month = fecha.substring(2, 4).toInt(),
+        day = fecha.take(2).toInt(),
+        hour = hour,
+        minute = minute,
+        second = 0,
+        nanosecond = 0
+    ).toInstant(TimeZone.UTC)
+}
+
+fun validateDateErrorMessage(e: Exception, m:String): String{
+    if(e.toString().contains("Argument") && e.message.toString() == m) {
+        return m
+    }
+    return "Los valores de día y mes deben ser correctos (0-31/1-12)"
+}
+
+
+
+@Composable
+fun TimeTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    type: String
+) {
+    TextField(
+        value = value,
+        onValueChange = { newValue ->
+            // Extraemos solo dígitos
+            val digits = newValue.filter { it.isDigit() }
+
+            // Máximo 4 dígitos (hhmm)
+            if (digits.length > 4) return@TextField
+
+            // Validar horas (0-23) y minutos (0-59)
+            if (digits.length >= 2) {
+                val hours = digits.take(2).toInt()
+                if (hours > 23) return@TextField
+            }
+            if (digits.length >= 4) {
+                val minutes = digits.takeLast(2).toInt()
+                if (minutes > 59) return@TextField
+            }
+
+            // Formatear añadiendo ":" automáticamente
+            val formatted = when {
+                digits.length <= 2 -> digits
+                else -> "${digits.take(2)}:${digits.drop(2)}"
+            }
+
+            onValueChange(formatted)
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        placeholder = { Text("hh:mm") },
+        label = { Text("Hora de $type") },
+        modifier = modifier
+    )
+}
+
+
+fun Instant.toFormattedHour(
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): String {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    val hour = localDateTime.hour.toString().padStart(2, '0')
+    val minute = localDateTime.minute.toString().padStart(2, '0')
+    return "$hour:$minute"
+}
+
+
+
+fun Instant.toFormattedDate(
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): String {
+    val localDate = this.toLocalDateTime(timeZone).date
+    val day = localDate.dayOfMonth.toString().padStart(2, '0')
+    val month = localDate.monthNumber.toString().padStart(2, '0')
+    val year = localDate.year
+    return "$day/$month/$year"
+}
