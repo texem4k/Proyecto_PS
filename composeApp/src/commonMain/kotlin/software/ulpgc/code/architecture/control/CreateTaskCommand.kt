@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.control
 
+import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
@@ -13,6 +14,7 @@ class CreateTaskCommand internal constructor (private val store: Storage, privat
             this(store, Task(priority, name, userId, description, topicId, time, interval, tags))
 
     override fun execute(): Command {
+        task.dbState = DBState.NEW
         store.addTasks(listOf(task))
         return DeleteTaskCommand(store, task)
     }
