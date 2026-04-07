@@ -13,13 +13,13 @@ object CommandLauncher {
     }
 
     fun undo() {
-        if ( pivot < 1 ) { TODO("TIRAR ERROR") }
+        if ( pivot < 1 ) { return }
         pivot--
         commands[pivot] = commands[pivot].execute()
     }
 
     fun redo() {
-        if (pivot >= commands.size) { TODO("TIRAR ERROR") }
+        if (pivot >= commands.size) { return }
         commands[pivot] = commands[pivot].execute()
         pivot++
     }

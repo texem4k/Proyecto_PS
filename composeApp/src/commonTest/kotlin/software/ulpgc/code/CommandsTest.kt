@@ -4,6 +4,7 @@ import software.ulpgc.code.architecture.control.CommandBuilder
 import software.ulpgc.code.architecture.control.CommandType
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -15,7 +16,9 @@ import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
-private fun builder(store: MockStore) = CommandBuilder(store)
+private fun MockStore() = Store({ MockDBManager() })
+
+private fun builder(store: Storage) = CommandBuilder(store)
 
 private fun makeTime() = TimeFactory().createTime(Clock.System.now(), 1)
 
