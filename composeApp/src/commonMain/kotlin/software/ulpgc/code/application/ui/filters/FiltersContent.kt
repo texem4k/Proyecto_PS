@@ -1,7 +1,9 @@
 package software.ulpgc.code.application.ui.filters
 
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,56 +18,81 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.model.Priority
 
 @Composable
 fun FilterContent(
-    onApply: (TaskFilters) -> Unit
-    //Añadir lista de tópicos
+    onApply: (TaskFilters) -> Unit,
+    store: Storage
 ) {
+    val scrollState = rememberScrollState()
     var tempFilters by remember { mutableStateOf(TaskFilters()) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
         Text("Filtros", style = MaterialTheme.typography.titleLarge)
 
         Spacer(Modifier.height(16.dp))
-
+        val prior = mutableListOf<String>()
+        Priority.entries.forEach { entry ->
+            prior.add(entry.text)
+        }
         FilterChipGroup(
             title = "Prioridad",
-            options = listOf("Urgente", "Alta", "Media", "Baja"),
+            options = prior,
             selectedOptions = tempFilters.priority,
             onSelectionChange = {
                 tempFilters = tempFilters.copy(priority = it)
-            }
+            },
         )
 
+
+        val topics = mutableListOf<String>()
+        store.topics().forEach {
+            topics.add(it.name)
+        }
         FilterChipGroup(
             title = "Tópicos",
-            options = listOf("Estudios", "Topico1", "Topico2"),
+            options =topics,
             selectedOptions = tempFilters.topics, //tempFilters.topics
             onSelectionChange = {
                 tempFilters = tempFilters.copy(topics = it)//topics = it
             }
         )
 
+        val tags = mutableListOf<String>()
+        store.tags().forEach {
+            tags.add(it.name)
+        }
+
+        FilterChipGroup(
+            title = "Tags",
+            options =tags,
+            selectedOptions = tempFilters.tags, //tempFilters.topics
+            onSelectionChange = {
+                tempFilters = tempFilters.copy(tags = it)//topics = it
+            }
+        )
+
 
         Spacer(Modifier.height(24.dp))
-        if(!tempFilters.priority.isEmpty() || !tempFilters.topics.isEmpty() || !tempFilters.status.isEmpty()) {
-            tempFilters.hasFilter = true
-        }
         Button(
             onClick = {
                 val filtersToApply = tempFilters.copy(
                     hasFilter = tempFilters.priority.isNotEmpty() ||
                             tempFilters.topics.isNotEmpty()  ||
-                            tempFilters.status.isNotEmpty()
+                            tempFilters.status.isNotEmpty() ||
+                            tempFilters.tags.isNotEmpty()
                 )
                 onApply(filtersToApply)
             },

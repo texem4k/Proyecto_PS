@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.Headers
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
 
@@ -21,21 +22,7 @@ import software.ulpgc.code.architecture.io.Storage
 fun DeleteTaskScreen(onNavigate: (Screen) -> Unit, store: Storage,  onDeleted: () -> Unit = {}) {
 
     Column (modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Text(
-                text ="Eliminar tarea",
-                modifier = Modifier.align(Alignment.Center)
-            )
-            Button(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                onClick = { onNavigate(Screen.HOME) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            ) {
-                Text("✖\uFE0E")
-            }
-        }
+        Headers(onNavigate, "Eliminar tarea")
         Box(modifier = Modifier.weight(0.5f)) {
             UpcomingTasksPanel(store, title = "Cual eliminamos", total = true, onDeleted = onDeleted)
         }

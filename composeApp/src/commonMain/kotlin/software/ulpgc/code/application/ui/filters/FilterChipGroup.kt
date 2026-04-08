@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.architecture.model.Priority
 
 @Composable
 fun FilterChipGroup(
@@ -46,7 +47,7 @@ fun FilterChipGroup(
 
                         onSelectionChange(newSelection)
                     },
-                    label = { Text(option) }
+                    label = { Text(option) },
                 )
             }
         }

@@ -16,7 +16,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -28,9 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDateTime
@@ -39,6 +36,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
+import software.ulpgc.code.application.ui.Headers
 import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.control.CommandBuilder
 import software.ulpgc.code.architecture.control.CommandLauncher
@@ -67,6 +65,7 @@ data class FormState(
     var taskFinalHour: String=""
 )
 
+
 @Composable
 fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? = null) {
 
@@ -79,11 +78,11 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
     val checkedState = remember { mutableStateOf(false) }
     var expand by remember { mutableStateOf(false) }
     var selectedPeriod by remember { mutableStateOf("Periodo") }
+    var cabecera by remember { mutableStateOf(if (task != null) "Editar tarea" else "Crear tarea") }
 
     val scrollState = rememberScrollState()
     LaunchedEffect(task) {
         if (task != null) {
-
             form = FormState(
                 taskName = task.name,
                 taskDescription = task.description,
@@ -101,26 +100,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
         }
     }
 
-
     Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Text("Creación de tarea",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 32.dp).align(Alignment.Center)
-            )
-            Button(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                onClick = { onNavigate(Screen.HOME) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            ) {
-                Text("✖\uFE0E")
-            }
-        }
+        Headers(onNavigate, cabecera)
     }
     Column(
         modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f).padding(16.dp).verticalScroll(scrollState),
@@ -204,8 +185,6 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
             modifier = Modifier.padding(bottom = 16.dp, top = 16.dp),
             label = { Text("Duración de la tarea (en horas)") },
         )
-
-
         Text("* Selecciona el tópico:")
 
         Box {
@@ -217,7 +196,6 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     Text(store.topics().first().name)
                 }
             }
-
 
             DropdownMenu(
                 expanded = expandedTopics,
@@ -235,7 +213,6 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
             }
         }
         Text("Selecciona el tag asociado al tópico asociado:")
-
 
         Box{
             Button(onClick = { expandedTag = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
@@ -303,33 +280,24 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
         }
         Button(colors = ButtonDefaults.buttonColors(
             containerColor = Color.Blue,
-            contentColor = Color.White,
-
-            ),
+            contentColor = Color.White,),
             modifier= Modifier.padding(top = 32.dp),
             onClick = {
                 try {
-
-                    println("confirmando cambios")
                 createTask = true
                 var m=""
                 var time: Time? = null
 
-                //Error si no añade nombre a la tarea
                 if(form.taskName.isEmpty() && createTask){
-                    println("Error nombre")
                     messageError="La tarea debe tener algún nombre"
                     formError=true
                 }
 
-                //Error si no se rellena algún campo fecha
                 else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty() && createTask) {
-                    println("Falta rellenar campo fecha")
                     messageError = "Debes rellenar al menos un campo de fecha"
                     formError=true
                 }
 
-                //Caso 1. Si añade fecha inicial y duración
                 else if(form.taskStartDateString.length == 8 && !form.taskDuration.isEmpty() && createTask){
                     println("Caso 1")
                     try {
@@ -338,9 +306,6 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                             formError=true
                         }
 
-//                        if(form.taskStartDate.toString().isEmpty()){
-//                            form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-//                        }
                         form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
                         m=isValidDate(form.taskStartDate,"inicial")
                         if(!m.isEmpty()){
@@ -354,16 +319,13 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     }
                 }
 
-                //Caso 2. Añade fecha final, sin fecha inicial ni duración
                 else if(form.taskFinalDateString.length == 8 && form.taskStartDateString.isEmpty() && form.taskDuration.isEmpty() && createTask){
                     try {
                         if(form.taskFinalHour.isEmpty()){
                             messageError = "La hora de finalización no puede estar vacío"
                             formError=true
                         }
-//                        if(form.taskFinalDate.toString().isEmpty()){
-//                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-//                        }
+
                         form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
                         m = isValidDate(form.taskFinalDate, "final")
                         if (!m.isEmpty()) {
@@ -378,20 +340,14 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     }
                 }
 
-                //Caso 3. Añade fecha final, con duración
                 else if(form.taskFinalDateString.length == 8  && !form.taskDuration.isEmpty() && createTask) {
                     try{
-
                         if(form.taskFinalHour.isEmpty()){
                             messageError = "La hora de finalización no puede estar vacío"
                             formError=true
                         }
 
-//                        if(form.taskFinalDate.toString().isEmpty()) {
-//                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-//                        }
                         form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-
 
                         m=isValidDate(form.taskFinalDate,"final")
                         if(!m.isEmpty()){
@@ -404,13 +360,10 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                         messageError = validateDateErrorMessage(e, m)
                         formError=true
                     }
-
                 }
 
-                //Caso 4. Añade fecha final/inicial, sin duración
                 else if(form.taskStartDateString.length==8 && form.taskFinalDateString.length==8 && form.taskDuration.isEmpty() && createTask){
                     try{
-
                         if(form.taskStartHour.isEmpty() || form.taskFinalHour.isEmpty()){
                             messageError = "La hora final e inicial no puede estar vacío"
                             formError=true
@@ -421,8 +374,6 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                             form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
 
                         }
-//                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-//                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
 
                         time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
                         if (!isValidDate(form.taskStartDate, "inicial").isEmpty() || !isValidDate(form.taskFinalDate, "final").isEmpty()) {
@@ -457,12 +408,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 Text("Editar tarea")
             } else {
                 Text("Crear tarea")
-
             }
         }
-
-
-
 
         if (formError) {
             AlertDialog(
@@ -481,14 +428,12 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 }
             )
         }
-
     }
 }
 
 fun formatDate(digits: String): String {
     return digits.filter { it.isDigit() }.take(8)
 }
-
 
 fun isValidDate(date: Instant?, type: String):String {
     if (date != null) {
@@ -501,7 +446,6 @@ fun isValidDate(date: Instant?, type: String):String {
 
 private fun Instant.toDatetime(): Instant =
     Instant.fromEpochMilliseconds(this.toEpochMilliseconds())
-
 
 fun createInstant(fecha: String, hora: String): Instant {
     val parts = hora.split(':')
@@ -526,8 +470,6 @@ fun validateDateErrorMessage(e: Exception, m:String): String{
     return "Los valores de día y mes deben ser correctos (0-31/1-12)"
 }
 
-
-
 @Composable
 fun TimeTextField(
     value: String,
@@ -538,13 +480,10 @@ fun TimeTextField(
     TextField(
         value = value,
         onValueChange = { newValue ->
-            // Extraemos solo dígitos
             val digits = newValue.filter { it.isDigit() }
 
-            // Máximo 4 dígitos (hhmm)
             if (digits.length > 4) return@TextField
 
-            // Validar horas (0-23) y minutos (0-59)
             if (digits.length >= 2) {
                 val hours = digits.take(2).toInt()
                 if (hours > 23) return@TextField
@@ -554,7 +493,6 @@ fun TimeTextField(
                 if (minutes > 59) return@TextField
             }
 
-            // Formatear añadiendo ":" automáticamente
             val formatted = when {
                 digits.length <= 2 -> digits
                 else -> "${digits.take(2)}:${digits.drop(2)}"
@@ -588,5 +526,5 @@ fun Instant.toFormattedDate(
     val day = localDate.dayOfMonth.toString().padStart(2, '0')
     val month = localDate.monthNumber.toString().padStart(2, '0')
     val year = localDate.year
-    return "$day/$month/$year"
+    return "$day$month$year"
 }

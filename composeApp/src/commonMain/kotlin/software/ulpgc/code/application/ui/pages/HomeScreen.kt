@@ -110,7 +110,7 @@ fun HomeScreen(
                                 filters.hasFilter = newFilters.hasFilter
                                 showFilters = false
                                 onNavigate(Screen.RESULTS)
-                            }
+                            }, store
                         )
                     }
                 }
@@ -136,9 +136,7 @@ fun HomeScreen(
                         containerColor = Color.Blue,
                         contentColor = Color.White
                     ),
-                    onClick = {
-                        onNavigate(Screen.CREATE_TASK)
-                    }) {
+                    onClick = { onNavigate(Screen.CREATE_TASK) }) {
                     Text("Crear tarea")
                 }
                 Button(
