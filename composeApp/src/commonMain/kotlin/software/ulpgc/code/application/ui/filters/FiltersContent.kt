@@ -1,9 +1,7 @@
 package software.ulpgc.code.application.ui.filters
 
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,16 +19,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Priority
 
 @Composable
 fun FilterContent(
     onApply: (TaskFilters) -> Unit,
-    store: Storage
+    store: Storage,
+    onNavigate: (Screen) -> Unit,
+    onDismiss: () -> Unit = {}
+
 ) {
     val scrollState = rememberScrollState()
     var tempFilters by remember { mutableStateOf(TaskFilters()) }
+
 
     Column(
         modifier = Modifier
@@ -54,8 +57,11 @@ fun FilterContent(
             onSelectionChange = {
                 tempFilters = tempFilters.copy(priority = it)
             },
+            store,
+            onNavigate = onNavigate,
+            onDismiss = onDismiss
         )
-
+        Spacer(Modifier.height(16.dp))
 
         val topics = mutableListOf<String>()
         store.topics().forEach {
@@ -67,9 +73,12 @@ fun FilterContent(
             selectedOptions = tempFilters.topics, //tempFilters.topics
             onSelectionChange = {
                 tempFilters = tempFilters.copy(topics = it)//topics = it
-            }
+            },
+            store = store,
+            onNavigate = onNavigate,
+            onDismiss = onDismiss
         )
-
+        Spacer(Modifier.height(16.dp))
         val tags = mutableListOf<String>()
         store.tags().forEach {
             tags.add(it.name)
@@ -81,7 +90,10 @@ fun FilterContent(
             selectedOptions = tempFilters.tags, //tempFilters.topics
             onSelectionChange = {
                 tempFilters = tempFilters.copy(tags = it)//topics = it
-            }
+            },
+            store = store,
+            onNavigate = onNavigate,
+            onDismiss = onDismiss
         )
 
 

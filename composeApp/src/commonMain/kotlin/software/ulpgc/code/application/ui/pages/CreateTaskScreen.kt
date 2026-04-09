@@ -16,8 +16,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.NavigationDrawerItemDefaults.colors
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,7 +55,7 @@ data class FormState(
     var taskName: String = "",
     var taskDescription: String = "",
     var taskTopic: Uuid? = null,
-    var taskTag: Uuid? = null,
+    var taskTags: MutableList<Uuid> = mutableListOf(),
     var taskStartDateString: String = "",
     var taskStartDate: Instant? = null,
     var taskFinalDateString: String = "",
@@ -93,7 +95,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 taskFinalDate = task.time.end,
                 taskFinalDateString = task.time.end.toFormattedDate(TimeZone.currentSystemDefault()),
                 taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
-                taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault())
+                taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
+                taskDuration = task.time.end.minus(task.time.start).inWholeHours.toString()
             )
         } else {
             form = FormState()
@@ -145,28 +148,32 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
         DateTextField(
             value = form.taskStartDateString,
             onValueChange = { form = form.copy(taskStartDateString = it) }, label = "Fecha de inicio",
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            read = (task == null && form.taskFinalDateString.isNotEmpty() &&form.taskDuration.isNotEmpty()),
         )
 
         TimeTextField(
             value = form.taskStartHour,
             onValueChange = {form = form.copy(taskStartHour = it) },
             modifier = Modifier.padding(bottom = 16.dp),
-            type="inicio"
+            type="inicio",
+            read=(task == null && form.taskFinalDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
         )
 
 
         DateTextField(
             value = form.taskFinalDateString,
             onValueChange = { form = form.copy(taskFinalDateString = it) }, label = "Fecha de fin",
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            read = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
         )
 
         TimeTextField(
             value = form.taskFinalHour,
             onValueChange = {form = form.copy(taskFinalHour = it) },
             modifier = Modifier.padding(bottom = 16.dp),
-            type="finalización"
+            type="finalización",
+            read = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
         )
 
         TextField(
@@ -184,6 +191,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.padding(bottom = 16.dp, top = 16.dp),
             label = { Text("Duración de la tarea (en horas)") },
+            readOnly = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskFinalDateString.isNotEmpty())
         )
         Text("* Selecciona el tópico:")
 
@@ -216,8 +224,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
 
         Box{
             Button(onClick = { expandedTag = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                if (form.taskTag != null) {
-                    Text(store.tags().filter { tag -> tag.id==form.taskTag }.first().name)
+                if (form.taskTags.isNotEmpty()) {
+                    Text(store.tags().filter { tag -> form.taskTags.any { tag.id == it }}.first().name)
                 } else {
                     Text("Ninguno")
                 }
@@ -232,7 +240,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     DropdownMenuItem(
                         text = { Text(tag.name) },
                         onClick = {
-                            form.taskTag = tag.id
+                            form.taskTags.removeFirst()
+                            form.taskTags.add(tag.id)
                             expandedTag = false
                         }
                     )
@@ -298,8 +307,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     formError=true
                 }
 
-                else if(form.taskStartDateString.length == 8 && !form.taskDuration.isEmpty() && createTask){
-                    println("Caso 1")
+                else if(form.taskStartDateString.length == 8 && form.taskDuration.isNotEmpty() && createTask){
                     try {
                         if(form.taskStartHour.isEmpty()){
                             messageError = "La hora de inicio no puede estar vacío"
@@ -319,28 +327,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     }
                 }
 
-                else if(form.taskFinalDateString.length == 8 && form.taskStartDateString.isEmpty() && form.taskDuration.isEmpty() && createTask){
-                    try {
-                        if(form.taskFinalHour.isEmpty()){
-                            messageError = "La hora de finalización no puede estar vacío"
-                            formError=true
-                        }
-
-                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-                        m = isValidDate(form.taskFinalDate, "final")
-                        if (!m.isEmpty()) {
-                            throw IllegalArgumentException(m)
-                        }
-                        time = TimeFactory().createTime(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                            .toInstant(TimeZone.currentSystemDefault()),form.taskDuration.toLong())
-                    }
-                    catch (e: Exception) {
-                        messageError = validateDateErrorMessage(e, m)
-                        formError=true
-                    }
-                }
-
-                else if(form.taskFinalDateString.length == 8  && !form.taskDuration.isEmpty() && createTask) {
+                else if(form.taskFinalDateString.length == 8  && form.taskDuration.isNotEmpty() && createTask) {
                     try{
                         if(form.taskFinalHour.isEmpty()){
                             messageError = "La hora de finalización no puede estar vacío"
@@ -369,11 +356,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                             formError=true
                         }
 
-                        if(form.taskFinalDate.toString().isEmpty() && form.taskStartDate.toString().isEmpty()) {
-                            form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-                            form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-
-                        }
+                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
 
                         time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
                         if (!isValidDate(form.taskStartDate, "inicial").isEmpty() || !isValidDate(form.taskFinalDate, "final").isEmpty()) {
@@ -391,7 +375,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     .set("description", form.taskDescription)
                     .set("topicId", form.taskTopic.toString())
                     .set("interval", form.taskInterval.toString())
-                    .set("tag", form.taskTag.toString())
+                    .set("tags", form.taskTags.toString())
                     .set("time", time.toString())
                 if (task != null){
                     CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
@@ -475,10 +459,12 @@ fun TimeTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    type: String
+    type: String,
+    read: Boolean=false
 ) {
     TextField(
         value = value,
+        readOnly = read,
         onValueChange = { newValue ->
             val digits = newValue.filter { it.isDigit() }
 
@@ -503,7 +489,19 @@ fun TimeTextField(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         placeholder = { Text("hh:mm") },
         label = { Text("Hora de $type") },
-        modifier = modifier
+        modifier = modifier,
+        colors = TextFieldDefaults.colors(
+            // Si es readOnly, usamos Gris; si no, el color normal
+            focusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
+            unfocusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
+
+            // También puedes cambiar el color del texto para que se vea "desactivado"
+            focusedTextColor = if (read) Color.DarkGray else Color.Black,
+            unfocusedTextColor = if (read) Color.DarkGray else Color.Black,
+
+            // Ocultar la línea indicadora si es de solo lectura
+            focusedIndicatorColor = if (read) Color.Transparent else Color.Blue
+        ),
     )
 }
 

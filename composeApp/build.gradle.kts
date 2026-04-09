@@ -85,7 +85,11 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+            implementation(compose.materialIconsExtended)
+            //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
         }
+
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

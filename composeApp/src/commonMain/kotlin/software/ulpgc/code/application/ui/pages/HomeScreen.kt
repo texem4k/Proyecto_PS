@@ -110,7 +110,10 @@ fun HomeScreen(
                                 filters.hasFilter = newFilters.hasFilter
                                 showFilters = false
                                 onNavigate(Screen.RESULTS)
-                            }, store
+                            }, store,
+                            onNavigate = onNavigate,
+                            onDismiss = { showFilters = false }
+
                         )
                     }
                 }
