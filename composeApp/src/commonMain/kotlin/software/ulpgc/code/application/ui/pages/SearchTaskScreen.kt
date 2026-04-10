@@ -76,7 +76,7 @@ fun SearchTaskScreen(
                 }
                 Button(
                     modifier = Modifier.align(Alignment.CenterEnd),
-                    onClick = { onSearchTextChange(""); onNavigate(Screen.HOME) },
+                    onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.HOME) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
                 ) { Text("✖\uFE0E") }
             }
@@ -88,7 +88,7 @@ fun SearchTaskScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No ha habido coincidencia con $value")
-                    Button(onClick = { onSearchTextChange(""); onNavigate(Screen.HOME) }) {
+                    Button(onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.HOME) }) {
                         Text("Cerrar")
                     }
                 }
