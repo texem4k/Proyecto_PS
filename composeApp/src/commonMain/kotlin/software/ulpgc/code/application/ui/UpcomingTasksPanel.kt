@@ -73,12 +73,17 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     }
                 }
             if (selectedTask != null && !total) {
+
+                val tagNames = selectedTask!!.tags.mapNotNull { id ->
+                    store.tags().associateBy { it.id }[id]?.name
+                }
                 AlertDialog(
                     onDismissRequest = { selectedTask = null },
                     title = { Text(selectedTask!!.name) },
                     text = {
                         Text("Descripción: ${selectedTask!!.description}\nTema: ${store.topics().find
-                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nFecha de comienzo: " +
+                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nTags: " +tagNames.joinToString(", ")+
+                                "\nFecha de comienzo: " +
                                 "${selectedTask!!.time.start.toString().substring(0, 16)}\nFecha de final: ${selectedTask!!
                                     .time.end.toString().substring(0, 16)}\nPrioridad: ${selectedTask!!.priority}")
                     },

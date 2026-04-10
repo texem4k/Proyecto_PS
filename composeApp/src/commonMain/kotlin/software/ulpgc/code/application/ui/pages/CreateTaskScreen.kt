@@ -240,7 +240,9 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     DropdownMenuItem(
                         text = { Text(tag.name) },
                         onClick = {
-                            form.taskTags.removeFirst()
+                            if(form.taskTags.isNotEmpty()) {
+                                form.taskTags.removeFirst()
+                            }
                             form.taskTags.add(tag.id)
                             expandedTag = false
                         }
@@ -368,15 +370,19 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                         formError=true
                     }
                 }
-                val builder = CommandBuilder(store)
+                var builder = CommandBuilder(store)
                     .set("priority", form.taskPriority)
                     .set("name", form.taskName)
                     .set("userId","00000000-0000-0000-0000-000026033100")
                     .set("description", form.taskDescription)
                     .set("topicId", form.taskTopic.toString())
                     .set("interval", form.taskInterval.toString())
-                    .set("tags", form.taskTags.toString())
                     .set("time", time.toString())
+
+                if(form.taskTags.isNotEmpty()){
+                    builder=builder.set("tags", form.taskTags.joinToString(","))
+
+                }
                 if (task != null){
                     CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
                 } else {
