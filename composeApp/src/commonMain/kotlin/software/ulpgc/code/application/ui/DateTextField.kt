@@ -34,8 +34,8 @@ fun DateTextField(
         readOnly = read,
         colors = TextFieldDefaults.colors(
             // Si es readOnly, usamos Gris; si no, el color normal
-            focusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
-            unfocusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
+            focusedContainerColor = if (read) Color.Gray else Color.Unspecified,
+            unfocusedContainerColor = if (read) Color.Gray else Color.Unspecified,
 
             // También puedes cambiar el color del texto para que se vea "desactivado"
             focusedTextColor = if (read) Color.DarkGray else Color.Black,

@@ -1,40 +1,21 @@
 package software.ulpgc.code.application.ui.pages
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.NavigationDrawerItemDefaults.colors
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDateTime
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
@@ -48,6 +29,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import software.ulpgc.code.architecture.model.times.Time
 import software.ulpgc.code.architecture.model.times.TimeFactory
+import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -71,8 +53,6 @@ data class FormState(
 @Composable
 fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? = null) {
 
-    var expandedTopics by remember { mutableStateOf(false) }
-    var expandedTag by remember { mutableStateOf(false) }
     var form by remember { mutableStateOf(FormState()) }
     var createTask by remember { mutableStateOf(false) }
     var formError by remember { mutableStateOf(false) }
@@ -96,7 +76,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 taskFinalDateString = task.time.end.toFormattedDate(TimeZone.currentSystemDefault()),
                 taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
-                taskDuration = task.time.end.minus(task.time.start).inWholeHours.toString()
+                taskTags = task.tags.toMutableList(),
             )
         } else {
             form = FormState()
@@ -110,25 +90,31 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
         modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f).padding(16.dp).verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextField(
+
+
+        TextFieldCustom(
             value = form.taskName,
-            onValueChange = { form = form.copy(taskName = it) },
-            placeholder = {Text("")},
-            modifier = Modifier.padding(bottom = 16.dp),
-            label = {Text("* Nombre de la tarea")},
-            isError = form.taskName.isBlank(),
+            label = "* Nombre tarea",
+            onValueChange = {
+                form = form.copy(taskName = it)
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text) // Explícito pero innecesario
+
         )
 
-        TextField(
+        TextFieldCustom(
             value = form.taskDescription,
-            onValueChange = { form = form.copy(taskDescription = it) },
-            placeholder = {Text("")},
-            label = { Text("Descripción") },
-            modifier = Modifier.padding(bottom = 16.dp)
+            label = "Descripción",
+            onValueChange = {
+                form = form.copy(taskDescription = it)
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text) // Explícito pero innecesario
+
         )
 
-        TextField(
+        TextFieldCustom(
             value = form.taskPriority,
+            label = "Prioridad",
             onValueChange = { newValue ->
                 if (newValue.isEmpty()) {
                     form = form.copy(taskPriority = newValue)
@@ -140,10 +126,11 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { Text("Seleccione del 1 al 10") },
-            label = { Text("Prioridad") },
-            modifier = Modifier.padding(bottom = 16.dp)
+            placeholder = "Seleccione del 1 al 10"
         )
+
+
+        val read = task == null && form.taskStartDateString.isNotEmpty() &&form.taskFinalDateString.isNotEmpty()
 
         DateTextField(
             value = form.taskStartDateString,
@@ -191,65 +178,47 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.padding(bottom = 16.dp, top = 16.dp),
             label = { Text("Duración de la tarea (en horas)") },
-            readOnly = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskFinalDateString.isNotEmpty())
+            readOnly = read,
+            colors = TextFieldDefaults.colors(
+                // Si es readOnly, usamos Gris; si no, el color normal
+                focusedContainerColor = if (read) Color.Gray else Color.Unspecified,
+                unfocusedContainerColor = if (read) Color.Gray else Color.Unspecified,
+                // También puedes cambiar el color del texto para que se vea "desactivado"
+                focusedTextColor = if (read) Color.DarkGray else Color.Black,
+                unfocusedTextColor = if (read) Color.DarkGray else Color.Black,
+
+                // Ocultar la línea indicadora si es de solo lectura
+                focusedIndicatorColor = if (read) Color.Transparent else Color.Blue
+            ),
         )
-        Text("* Selecciona el tópico:")
 
-        Box {
-            Button(onClick = { expandedTopics = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                if (form.taskTopic != null) {
-                    Text(store.topics().filter { topic -> topic.id==form.taskTopic }.first().name)
-                } else {
-                    form.taskTopic = store.topics().first().id
-                    Text(store.topics().first().name)
-                }
-            }
+        DropdownCustom(
+            section="* Selecciona el tópico:",
+            items= store.topics().toList(),
+            selection = DropdownSelection.Single(form.taskTopic),
+            onItemSelected = {
+                form = form.copy(
+                    taskTopic=it,
+                    taskTags = mutableListOf())
+                },
+            itemId = {it.id},
+            itemName = {it.name}
+        )
 
-            DropdownMenu(
-                expanded = expandedTopics,
-                onDismissRequest = { expandedTopics = false }
-            ) {
-                store.topics().forEach { topic ->
-                    DropdownMenuItem(
-                        text = { Text(topic.name) },
-                        onClick = {
-                            form.taskTopic = topic.id
-                            expandedTopics = false
-                        }
-                    )
-                }
-            }
-        }
-        Text("Selecciona el tag asociado al tópico asociado:")
+        DropdownCustom(
+            section = "Selecciona el/los tag asociado al tópico asociado:",
+            items = store.tags().filter { it.topicId == form.taskTopic }.toList(),
+            selection = DropdownSelection.Multiple(form.taskTags),
+            onItemSelected = { id ->
+                val updatedTags = form.taskTags.toMutableList()
+                if (id in updatedTags) updatedTags.remove(id)
+                else updatedTags.add(id)
+                form = form.copy(taskTags = updatedTags) // ✅ Actualiza taskTags
+            },
+            itemId = { it.id },
+            itemName = { it.name }
+        )
 
-        Box{
-            Button(onClick = { expandedTag = true }, modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)) {
-                if (form.taskTags.isNotEmpty()) {
-                    Text(store.tags().filter { tag -> form.taskTags.any { tag.id == it }}.first().name)
-                } else {
-                    Text("Ninguno")
-                }
-            }
-
-            DropdownMenu(
-                expanded = expandedTag,
-                onDismissRequest = { expandedTag = false },
-                offset = DpOffset(0.dp, 0.dp)
-            ) {
-                store.tags().filter { tag -> tag.topicId == form.taskTopic} .forEach { tag ->
-                    DropdownMenuItem(
-                        text = { Text(tag.name) },
-                        onClick = {
-                            if(form.taskTags.isNotEmpty()) {
-                                form.taskTags.removeFirst()
-                            }
-                            form.taskTags.add(tag.id)
-                            expandedTag = false
-                        }
-                    )
-                }
-            }
-        }
 
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 8.dp)) {
 
@@ -291,7 +260,8 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
         }
         Button(colors = ButtonDefaults.buttonColors(
             containerColor = Color.Blue,
-            contentColor = Color.White,),
+            contentColor = Color.White,
+        ),
             modifier= Modifier.padding(top = 32.dp),
             onClick = {
                 try {
@@ -380,7 +350,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                     .set("time", time.toString())
 
                 if(form.taskTags.isNotEmpty()){
-                    builder=builder.set("tags", form.taskTags.joinToString(","))
+                    builder=builder.set("tags", form.taskTags.joinToString(", "))
 
                 }
                 if (task != null){
@@ -498,9 +468,8 @@ fun TimeTextField(
         modifier = modifier,
         colors = TextFieldDefaults.colors(
             // Si es readOnly, usamos Gris; si no, el color normal
-            focusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
-            unfocusedContainerColor = if (read) Color.DarkGray else Color.Unspecified,
-
+            focusedContainerColor = if (read) Color.Gray else Color.Unspecified,
+            unfocusedContainerColor = if (read) Color.Gray else Color.Unspecified,
             // También puedes cambiar el color del texto para que se vea "desactivado"
             focusedTextColor = if (read) Color.DarkGray else Color.Black,
             unfocusedTextColor = if (read) Color.DarkGray else Color.Black,
@@ -527,8 +496,98 @@ fun Instant.toFormattedDate(
     timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): String {
     val localDate = this.toLocalDateTime(timeZone).date
-    val day = localDate.dayOfMonth.toString().padStart(2, '0')
-    val month = localDate.monthNumber.toString().padStart(2, '0')
+    val day = localDate.day.toString().padStart(2, '0')
+    val month = localDate.month.number.toString().padStart(2, '0')
     val year = localDate.year
     return "$day$month$year"
+}
+
+
+
+@Composable
+fun TextFieldCustom(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    placeholder: String? = null
+) {
+    TextField(
+        value = value,
+        onValueChange = { onValueChange(it) }, // Sin condición
+        label = { Text(label) },
+        isError = label.contains("tarea") && value.isBlank(),
+        modifier = Modifier.padding(bottom = 16.dp),
+        keyboardOptions = keyboardOptions,
+        placeholder = placeholder?.let { { Text(it) } }
+    )
+}
+
+
+@Composable
+fun <T> DropdownCustom(
+    section: String,
+    items: List<T>,                    // Lista genérica (topics, priorities, etc.)
+    selection: DropdownSelection,              // ID del item seleccionado (nullable)
+    onItemSelected: (Uuid) -> Unit,     // Callback cuando se selecciona un item
+    itemId: (T) -> Uuid,                // Cómo obtener el ID de un item
+    itemName: (T) -> String            // Cómo obtener el nombre de un item
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+
+    Text(section)
+    Box {
+        Button(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth(0.15f).padding(bottom = 8.dp)
+        ) {
+            val displayText = when (selection) {
+                is DropdownSelection.Single -> {
+                    if (selection.id != null) {
+                        itemName(items.first { itemId(it) == selection.id })
+                    } else {
+                        onItemSelected(itemId(items.first()))
+                        itemName(items.first())
+                    }
+                }
+
+                is DropdownSelection.Multiple -> {
+                    if (selection.ids.isEmpty()) "Seleccionar..."
+                    else items.filter { itemId(it) in selection.ids }
+                        .joinToString(", ") { itemName(it) }
+                }
+            }
+            Text(displayText)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            items.forEach { item ->
+                val isSelected = when (selection) {
+                    is DropdownSelection.Single -> itemId(item) == selection.id
+                    is DropdownSelection.Multiple -> itemId(item) in selection.ids
+                }
+                DropdownMenuItem(
+                    text = { Text(itemName(item)) },
+                    onClick = {
+                        onItemSelected(itemId(item))
+                        if (selection is DropdownSelection.Single) expanded = false
+                        // En Multiple el menú se mantiene abierto para seguir seleccionando
+                    },
+                    trailingIcon = {
+                        if (isSelected) Icon(Icons.Default.Check, contentDescription = null)
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+sealed class DropdownSelection {
+    data class Single(val id: Uuid?) : DropdownSelection()
+    data class Multiple(val ids: MutableList<Uuid>) : DropdownSelection()
 }
