@@ -1,76 +1,30 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM).
+## Autores
+Arael Jesus Almeida González
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Texenery Bordón Rodríguez
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+Sergio Andrés Bañol Castaño
 
-### Build and Run Android Application
+Sergio Rodríguez Rubio
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
+Enrique Sosa Ojeda
 
-### Build and Run Desktop (JVM) Application
+Vidal De León Giménez
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
+----
+## Descripción del proyecto
+El propósito de ORDO es facilitar la organización personal y mejorar la productividad de los usuarios mediante la gestión eficiente de sus tareas, objetivos y proyectos. Para ello, se desarrolla una aplicación que permite crear y visualizar tareas con información relevante como nombre, descripción, tópico, duración o fecha.
 
-### Build and Run Web Application
+La funcionalidad principal consiste en actuar como un gestor de tareas, permitiendo a los usuarios organizar sus actividades por tópicos, añadir etiquetas y realizar búsquedas para encontrar fácilmente la información que necesitan.
 
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE's toolbar or run it directly from the terminal:
-- for the Wasm target (faster, modern browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-    ```
-- for the JS target (slower, supports older browsers):
-  - on macOS/Linux
-    ```shell
-    ./gradlew :composeApp:jsBrowserDevelopmentRun
-    ```
-  - on Windows
-    ```shell
-    .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
-    ```
+En una primera fase, el sistema está orientado a usuarios individuales, con la previsión de evolucionar hacia un entorno multiusuario que permite la colaboración en grupos de trabajo y la gestión compartida de tareas.
 
-### Build and Run iOS Application
+Desde el punto de vista funcional, el producto mínimo viable incluye la creación, gestión y organización de tareas, con futuras ampliaciones como calendarización, estadísticas de productividad y funcionalidades colaborativas.
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+----
+## Ejecución de la aplicación
+Inicialmente, todo el código desarrollado hasta ahora se encuentra en la siguiente ruta:
 
----
+[Ruta](composeApp/src/commonMain/kotlin/software/ulpgc/code)
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
-
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+Para iniciar la aplicación se deberá ejecutar desde el archivo [main.kt](composeApp/src/jvmMain/kotlin/software/ulpgc/code/main.kt).
