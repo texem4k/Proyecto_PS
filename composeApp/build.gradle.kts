@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import app.cash.sqldelight.gradle.SqlDelightExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,15 +9,32 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
+
+    sourceSets {
+        commonMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+    }
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -26,9 +44,9 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm()
-    
+
     js {
         browser()
         binaries.executable()
@@ -41,9 +59,19 @@ kotlin {
     }
     
     sourceSets {
+        commonMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+
+        // AÃ±ade esto:
+        androidMain {
+            languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
+        }
+
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.android.driver)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -54,13 +82,24 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+            implementation(compose.materialIconsExtended)
+            //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
         }
+
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        iosMain.dependencies {
+            implementation(libs.native.driver)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.sqlite.driver)
         }
     }
 }
@@ -94,6 +133,7 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    implementation(compose.desktop.currentOs)
 }
 
 compose.desktop {
@@ -105,5 +145,16 @@ compose.desktop {
             packageName = "software.ulpgc.code"
             packageVersion = "1.0.0"
         }
+    }
+}
+
+sqldelight {
+    configure<SqlDelightExtension> {
+        databases {
+            create("AppDatabase") {
+                packageName.set("software.ulpgc.db")
+            }
+        }
+        linkSqlite.set(false)
     }
 }

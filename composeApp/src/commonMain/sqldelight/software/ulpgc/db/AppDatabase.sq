@@ -1,0 +1,119 @@
+--  ./gradlew generateCommonMainAppDatabaseInterface
+PRAGMA foreign_keys = 1;
+
+CREATE TABLE User (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE Topic (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color INTEGER NOT NULL
+);
+
+CREATE TABLE Tag (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    topicId TEXT NOT NULL,
+    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Task (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    priority INTEGER NOT NULL,
+    userId TEXT NOT NULL,
+    description TEXT NOT NULL,
+    interval INTEGER NOT NULL,
+    topicId TEXT NOT NULL,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Time (
+    id TEXT PRIMARY KEY,
+    taskId TEXT NOT NULL,
+    type INTEGER NOT NULL,
+    start TEXT NOT NULL,
+    end TEXT NOT NULL,
+    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
+);
+
+CREATE TABLE TaskTag (
+    taskId TEXT NOT NULL,
+    tagId TEXT NOT NULL,
+    PRIMARY KEY (taskId, tagId),
+    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE,
+    FOREIGN KEY (tagId) REFERENCES Tag(id) ON DELETE CASCADE
+);
+
+-- Extras
+
+countUsers:
+SELECT COUNT(*) FROM User;
+
+-- Inserciones
+
+insertUser:
+INSERT OR IGNORE INTO User(id, name) VALUES(?, ?);
+
+insertTopic:
+INSERT OR IGNORE INTO Topic(id, name, color) VALUES(?, ?, ?);
+
+insertTag:
+INSERT OR IGNORE INTO Tag(id, name, topicId) VALUES(?, ?, ?);
+
+insertTask:
+INSERT OR IGNORE INTO Task(id, name, priority, userId, description, interval, topicId) VALUES (?, ?, ?, ?, ?, ?,  ?);
+
+insertTime:
+INSERT OR IGNORE INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
+
+insertTaskTag:
+INSERT OR IGNORE INTO TaskTag(taskId, tagId) VALUES(?, ?);
+
+-- Actualizaciones
+
+updateTopic:
+UPDATE Topic SET name = ?, color = ? WHERE id = ?;
+
+updateTag:
+UPDATE Tag SET name = ?, topicId = ? WHERE id = ?;
+
+updateTask:
+UPDATE Task SET name = ?, userId = ?, priority = ?, description = ?, interval = ?, topicId = ? WHERE id = ?;
+
+updateTime:
+UPDATE Time SET type = ?, start = ?, end = ? WHERE id = ?;
+
+-- Borraciones
+
+deleteTopic:
+DELETE FROM Topic WHERE id = ?;
+
+deleteTag:
+DELETE FROM Tag WHERE id = ?;
+
+deleteTask:
+DELETE FROM Task WHERE id = ?;
+
+deleteTaskTagsForTask:
+DELETE FROM TaskTag WHERE taskId = ?;
+
+-- Seleciones
+
+getTopics:
+SELECT * FROM Topic;
+
+getTags:
+SELECT * FROM Tag;
+
+getTasks:
+SELECT * FROM Task;
+
+getTagsFor:
+SELECT * FROM TaskTag WHERE taskId = ?;
+
+getTimeFor:
+SELECT * FROM Time WHERE taskId = ?;
