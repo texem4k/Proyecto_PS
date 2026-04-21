@@ -1,62 +1,26 @@
 package software.ulpgc.code.architecture.io
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import software.ulpgc.code.architecture.control.coroutines.Coroutine
+import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 
-class Store (private val managerFactory: () -> DBManager, private val dbDispatcher: CoroutineDispatcher = Dispatchers.Default): Storage {
+class Store (private val manager: DBManager): Storage,
+    Coroutine {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
     private val tags: MutableSet<Tag> = mutableSetOf()
     private val tasks: MutableSet<Task> = mutableSetOf()
 
-    private val storeScope = CoroutineScope(dbDispatcher + SupervisorJob())
-
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
 
-    private lateinit var manager: DBManager
-
     init {
-        startDBAutoStore()
+        CoroutineManager.add(this)
     }
-
-    private fun startDBAutoStore(intervalMs: Long = 60_000L) {
-        storeScope.launch {
-            manager = managerFactory()
-            loadDBData()
-            _ready.value = true
-            while (isActive) {
-                delay(intervalMs)
-                storeRequired()
-            }
-        }
-    }
-
-    private suspend fun loadDBData() = withContext(dbDispatcher) {
-        addTopics(manager.topics())
-        addTags(manager.tags())
-        addTasks(manager.tasks())
-    }
-
-    private suspend fun storeRequired() = withContext(dbDispatcher) {
-        deleteRequired(dbObjects().filter { it.isDeleted() })
-        updateRequired(dbObjects().filter { it.isUpdated() })
-        insertRequired(dbObjects().filter { it.isNew() })
-    }
-
-    private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence()
 
     private fun insertRequired(objects: Sequence<DBObject>) {
         manager.insert(objects)
@@ -79,14 +43,6 @@ class Store (private val managerFactory: () -> DBManager, private val dbDispatch
         tasks.removeAll { it.isDeleted() }
     }
 
-    fun dispose() {
-        storeScope.launch {
-            storeRequired()
-        }.invokeOnCompletion {
-            storeScope.cancel()
-        }
-    }
-
     override fun topics(): Sequence<Topic> = this.topics.asSequence().filter { ! it.isDeleted() }
 
     override fun tags(): Sequence<Tag> = this.tags.asSequence().filter { ! it.isDeleted() }
@@ -103,5 +59,30 @@ class Store (private val managerFactory: () -> DBManager, private val dbDispatch
 
     override fun addTasks(tasks: List<Task>) {
         this.tasks.addAll(tasks)
+    }
+
+    override val delayMilis: Long = 60_000L
+
+    override suspend fun onInit() {
+        loadDBData()
+        _ready.value = true
+    }
+
+    private fun loadDBData() {
+        addTopics(manager.topics())
+        addTags(manager.tags())
+        addTasks(manager.tasks())
+    }
+
+    override suspend fun execute() {
+        deleteRequired(dbObjects().filter { it.isDeleted() })
+        updateRequired(dbObjects().filter { it.isUpdated() })
+        insertRequired(dbObjects().filter { it.isNew() })
+    }
+
+    private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence()
+
+    override suspend fun onDispose() {
+        execute()
     }
 }

@@ -1,12 +1,7 @@
 package software.ulpgc.code.architecture.model.tasks
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import software.ulpgc.code.architecture.control.coroutines.Coroutine
+import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.io.isDeleted
@@ -14,29 +9,10 @@ import kotlin.time.Clock
 
 class TaskMonitor(
     private val store: Store,
-) {
-    private val monitorScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+) : Coroutine {
 
     init {
-        startMonitoring()
-    }
-
-    private fun startMonitoring() {
-        monitorScope.launch {
-            while (isActive) {
-                checkExpiredTasks()
-                delay(60_000)
-            }
-        }
-    }
-
-    private fun checkExpiredTasks() {
-        store.tasks()
-            .filter { needsRenewal(it) }
-            .forEach { task ->
-                task.dbState = DBState.DELETED
-                renew(task)
-            }
+        CoroutineManager.add(this)
     }
 
     private fun renew(task: Task) {
@@ -49,7 +25,22 @@ class TaskMonitor(
             task.interval != TaskInterval.NONE &&
             task.time.end <= Clock.System.now()
 
-    fun dispose() {
-        monitorScope.cancel()
+    override val delayMilis: Long = 60_000L
+
+    override suspend fun onInit() {
+        execute()
+    }
+
+    override suspend fun execute() {
+        store.tasks()
+            .filter { needsRenewal(it) }
+            .forEach { task ->
+                task.dbState = DBState.DELETED
+                renew(task)
+            }
+    }
+
+    override suspend fun onDispose() {
+        execute()
     }
 }

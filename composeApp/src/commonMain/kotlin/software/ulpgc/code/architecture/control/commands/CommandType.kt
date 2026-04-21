@@ -1,4 +1,4 @@
-package software.ulpgc.code.architecture.control
+package software.ulpgc.code.architecture.control.commands
 
 enum class CommandType {
     CREATE_TOPIC, CREATE_TAG, CREATE_TASK,
