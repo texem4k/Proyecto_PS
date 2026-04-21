@@ -49,6 +49,7 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.control.CommandLauncher
 import androidx.compose.runtime.LaunchedEffect
+import software.ulpgc.code.application.ui.CalendarScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,6 +133,8 @@ fun HomeScreen(
                         UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit)
                     }
                 }
+
+                CalendarScreen()
             }
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Button(
