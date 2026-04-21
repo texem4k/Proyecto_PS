@@ -25,7 +25,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
     Box(
         modifier = Modifier
-            .widthIn(max=300.dp)
+            .widthIn(max=500.dp)
             .heightIn(max=maxHeight)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
