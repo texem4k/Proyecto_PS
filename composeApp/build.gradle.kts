@@ -86,6 +86,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation(compose.materialIconsExtended)
+            implementation("com.kizitonwose.calendar:compose-multiplatform:2.10.1")
             //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
         }
 
