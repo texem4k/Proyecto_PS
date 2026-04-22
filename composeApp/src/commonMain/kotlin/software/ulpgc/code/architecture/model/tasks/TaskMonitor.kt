@@ -1,15 +1,20 @@
 package software.ulpgc.code.architecture.model.tasks
 
-import software.ulpgc.code.architecture.control.coroutines.Coroutine
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.io.isDeleted
+import kotlin.io.println
 import kotlin.time.Clock
 
 class TaskMonitor(
     private val store: Store,
-) : Coroutine {
+) : Coroutinable {
 
     init {
         CoroutineManager.add(this)
@@ -21,11 +26,13 @@ class TaskMonitor(
         task.dbState = DBState.UPDATED
     }
 
-    private fun needsRenewal(task: Task): Boolean = !task.isDeleted() &&
-            task.interval != TaskInterval.NONE &&
-            task.time.end <= Clock.System.now()
+    private fun needsRenewal(task: Task): Boolean =
+        !task.isDeleted() &&
+        task.interval != TaskInterval.NONE &&
+        task.time.end <= Clock.System.now()
 
-    override val delayMilis: Long = 60_000L
+
+    override val delayMilis: Long = 15_000L
 
     override suspend fun onInit() {
         execute()
@@ -34,10 +41,7 @@ class TaskMonitor(
     override suspend fun execute() {
         store.tasks()
             .filter { needsRenewal(it) }
-            .forEach { task ->
-                task.dbState = DBState.DELETED
-                renew(task)
-            }
+            .forEach { renew(it) }
     }
 
     override suspend fun onDispose() {

@@ -3,13 +3,14 @@ package software.ulpgc.code.architecture.io
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import software.ulpgc.code.architecture.control.coroutines.Coroutine
+import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
 class Store (private val manager: DBManager): Storage,
-    Coroutine {
+    Coroutinable {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
     private val tags: MutableSet<Tag> = mutableSetOf()
@@ -66,6 +67,7 @@ class Store (private val manager: DBManager): Storage,
     override suspend fun onInit() {
         loadDBData()
         _ready.value = true
+        TaskMonitor(this)
     }
 
     private fun loadDBData() {
