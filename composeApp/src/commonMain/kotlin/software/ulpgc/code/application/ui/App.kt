@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import TasksSreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeContentPadding
@@ -91,6 +92,19 @@ fun App(
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters
+                        )
+
+                        Screen.TASKS -> TasksSreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
+                            filters,
+                            onEdit = { task ->
+                                taskToEdit = task
+                                screen = Screen.CREATE_TASK
+                            },
+                            onDeleted = { refreshKey++}
                         )
                     }
                 }

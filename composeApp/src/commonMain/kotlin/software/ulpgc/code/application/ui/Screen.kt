@@ -4,5 +4,6 @@ enum class Screen {
     HOME,
     CREATE_TASK,
     RESULTS,
+    TASKS,
     DELETE_TASK,
 }
