@@ -41,37 +41,37 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text(text= title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp, top = 4.dp),
+                    textAlign = TextAlign.Center)
+            }
+            LazyColumn(
+                modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(text= title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp, top = 4.dp),
-                        textAlign = TextAlign.Center)
-                }
-                LazyColumn(
-                    modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    items(tasks) { task ->
-                        Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
-                            Text(
-                                text = task.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                        }
-                        Spacer(Modifier.height(10.dp))
+                items(tasks) { task ->
+                    Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
+                        Text(
+                            text = task.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
                     }
+                    Spacer(Modifier.height(10.dp))
                 }
+            }
             if (selectedTask != null && !total) {
 
                 val tagNames = selectedTask!!.tags.mapNotNull { id ->
@@ -102,7 +102,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 AlertDialog(
                     onDismissRequest = { selectedTask = null },
                     title = { Text("Estas seguro que quieres eliminar la tarea")
-                            },
+                    },
                     confirmButton = {
                         Button(onClick = { selectedTask = null }) {
                             Text("No")

@@ -2,6 +2,7 @@ package software.ulpgc.code.application.ui.pages
 
 import UpcomingTasksPanel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
@@ -99,65 +101,78 @@ fun HomeScreen(
                 }
             }
     ) {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            SearchBar(text = searchText, onTextChange = onSearchTextChange, onSearch = { onNavigate(Screen.RESULTS) })
+        Row(modifier = Modifier.fillMaxSize()) {
 
-            Button(onClick = { showFilters = true }) {
-                Text("Filtrado de tareas")
+            Column(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .fillMaxHeight()
+                    .background(Color(0xFF1E1E2E))
+                    .padding(16.dp)
+            ) {
+                Text("📁 Archivos", color = Color.White)
+                Text("⚙️ Ajustes", color = Color.White)
+                Text("👤 Perfil", color = Color.White)
             }
-            Row {
-                if (showFilters) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showFilters = false }
-                    ) {
-                        FilterContent(
-                            onApply = { newFilters ->
-                                filters.topics = newFilters.topics
-                                filters.status = newFilters.status
-                                filters.priority = newFilters.priority
-                                filters.hasFilter = newFilters.hasFilter
-                                showFilters = false
-                                onNavigate(Screen.RESULTS)
-                            }, store,
-                            onNavigate = onNavigate,
-                            onDismiss = { showFilters = false }
 
+            Column(
+                modifier = Modifier
+                    .weight(2.7f)
+                    .fillMaxHeight()
+                    .padding(16.dp)
+
+            ) {
+                // Fila superior: dos widgets lado a lado
+                Row(modifier = Modifier.fillMaxWidth().weight(0.35f),
+                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Top) {
+                    SearchBar(
+                        text = searchText,
+                        onTextChange = onSearchTextChange,
+                        onSearch = { onNavigate(Screen.RESULTS) })
+                }
+
+                Column(modifier = Modifier.fillMaxWidth(0.3f).weight(0.1f).padding(start = 42.dp),) {
+                    Text("Tareas Prioritarias", fontSize = 24.sp)
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp, bottom = 24.dp),
+                        thickness = 1.dp
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth().weight(0.55f),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.Center ) {
+                    val group = store.tasks().groupBy { it.topicId }
+                    val items = group.entries.toList().take(2)
+                    items.forEach { (titulo, tareasGrupo) ->
+                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+                        UpcomingTasksPanel(store, tareasGrupo, topicName, false)
+                    }
+
+                }
+
+
+
+
+                Row(modifier = Modifier.fillMaxWidth().weight(0.1f).padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Center ){
+                    IconButton(
+                        onClick = { },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .border(1.dp, Color.Gray, CircleShape)
+                    ) {
+                        Text(
+                            text = "+",
+                            color = Color.Gray,
+                            fontSize = 24.sp
                         )
                     }
+
                 }
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                val group = store.tasks().groupBy { it.topicId }
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth(0.5f),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalArrangement = Arrangement.spacedBy(64.dp)
-                ) {
-                    items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit)
-                    }
-                }
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Blue,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.CREATE_TASK) }) {
-                    Text("Crear tarea")
-                }
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.DELETE_TASK) }) {
-                    Text("Eliminar tarea")
-                }
+
             }
             Column(
                 modifier = Modifier
@@ -190,7 +205,7 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     ) {
         OutlinedTextField(
             value = text,
-            modifier = Modifier.fillMaxWidth(0.3f),
+            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.3f),
             shape = RoundedCornerShape(32.dp),
             onValueChange = { onTextChange(it) },
             placeholder = { Text("Buscar...") },
