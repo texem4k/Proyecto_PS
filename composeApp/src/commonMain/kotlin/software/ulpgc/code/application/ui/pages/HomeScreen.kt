@@ -59,6 +59,7 @@ import software.ulpgc.code.architecture.control.CommandLauncher
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.application.ui.SideBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,8 +68,6 @@ fun HomeScreen(
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
-    filters: TaskFilters,
-    onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {}
 
 ) {
@@ -102,17 +101,9 @@ fun HomeScreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .weight(0.5f)
-                    .fillMaxHeight()
-                    .background(Color(0xFF1E1E2E))
-                    .padding(16.dp)
-            ) {
-                Text("📁 Archivos", color = Color.White)
-                Text("⚙️ Ajustes", color = Color.White)
-                Text("👤 Perfil", color = Color.White)
-            }
+            SideBar(selectedScreen = Screen.HOME,
+                onNavigate = onNavigate,
+            )
 
             Column(
                 modifier = Modifier
@@ -155,7 +146,8 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center ){
                     IconButton(
-                        onClick = { onNavigate(Screen.TASKS) },
+                        onClick = { onNavigate(Screen.TASKS)
+                        },
                         modifier = Modifier
                             .size(40.dp)
                             .border(1.dp, Color.Gray, CircleShape)

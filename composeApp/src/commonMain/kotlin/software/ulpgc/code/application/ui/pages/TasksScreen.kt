@@ -16,10 +16,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -42,9 +43,13 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.Screen
+import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.application.ui.pages.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
@@ -54,14 +59,14 @@ import kotlin.collections.component2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TasksSreen(
+fun TasksScreen(
     onNavigate: (Screen) -> Unit,
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters,
     onEdit: (Task) -> Unit = {},
-    onDeleted: () -> Unit = {}
+    onDeleted: () -> Unit = {},
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -69,6 +74,8 @@ fun TasksSreen(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+
+    var showCreateTaskcopy by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +83,6 @@ fun TasksSreen(
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
                 when {
                     event.isCtrlPressed && event.key == Key.Z -> {
                         CommandLauncher.undo()
@@ -94,62 +100,66 @@ fun TasksSreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .weight(0.5f)
-                    .fillMaxHeight()
-                    .background(Color(0xFF1E1E2E))
-                    .padding(16.dp)
-            ) {
-                Text("📁 Archivos", color = Color.White)
-                Text("⚙️ Ajustes", color = Color.White)
-                Text("👤 Perfil", color = Color.White)
-            }
+            SideBar(selectedScreen = Screen.TASKS,  // valor fijo según la pantalla
+                onNavigate = onNavigate)
 
             Column(
                 modifier = Modifier
                     .weight(4f)
                     .fillMaxHeight()
                     .padding(16.dp)
+            ) {
 
-            ){
-            Button(onClick = { showFilters = true }) {
-                Text("Filtrado de tareas")
-            }
-
-                // Fila superior: dos widgets lado a lado
-                Row(modifier = Modifier.fillMaxWidth().weight(0.35f),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Top) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.30f),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     SearchBar(
                         text = searchText,
                         onTextChange = onSearchTextChange,
-                        onSearch = { onNavigate(Screen.RESULTS) })
-                    Row {
-                        if (showFilters) {
-                            ModalBottomSheet(
-                                onDismissRequest = { showFilters = false }
-                            ) {
-                                FilterContent(
-                                    onApply = { newFilters ->
-                                        filters.topics = newFilters.topics
-                                        filters.status = newFilters.status
-                                        filters.priority = newFilters.priority
-                                        filters.hasFilter = newFilters.hasFilter
-                                        showFilters = false
-                                        onNavigate(Screen.RESULTS)
-                                    }, store,
-                                    onNavigate = onNavigate,
-                                    onDismiss = { showFilters = false }
+                        onSearch = { onNavigate(Screen.RESULTS) }
+                    )
 
-                                )
-                            }
-                        }
+                    IconButton(onClick = { showFilters = true }) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Filtrar tareas",
+                            tint = Color.Gray
+                        )
                     }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth().weight(0.55f),
+                if (showFilters) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showFilters = false }
+                    ) {
+                        FilterContent(
+                            onApply = { newFilters ->
+                                filters.topics = newFilters.topics
+                                filters.status = newFilters.status
+                                filters.priority = newFilters.priority
+                                filters.hasFilter = newFilters.hasFilter
+                                showFilters = false
+                                onNavigate(Screen.RESULTS)
+                            },
+                            store,
+                            onNavigate = onNavigate,
+                            onDismiss = { showFilters = false }
+                        )
+                    }
+                }
+
+                // Grid de tareas
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.60f),
                     verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.Center ) {
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     val group = store.tasks().groupBy { it.topicId }
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -164,9 +174,16 @@ fun TasksSreen(
                         }
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth().weight(0.1f).padding(bottom = 16.dp),
+
+                // Botón añadir tarea
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.1f)
+                        .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Center ){
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     IconButton(
                         onClick = { },
                         modifier = Modifier
@@ -178,9 +195,25 @@ fun TasksSreen(
                             color = Color.Gray,
                             fontSize = 24.sp
                         )
-                    }
+                        showCreateTaskcopy = true
 
+                    }
                 }
+            }
+        }
+    }
+    if (showCreateTaskcopy == true) {
+        Dialog(
+            onDismissRequest = { showCreateTaskcopy = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                CreateTask(store = store, onClose = { showCreateTaskcopy = false })
             }
         }
     }

@@ -51,7 +51,7 @@ data class FormState(
 
 
 @Composable
-fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? = null) {
+fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
 
     var form by remember { mutableStateOf(FormState()) }
     var createTask by remember { mutableStateOf(false) }
@@ -84,7 +84,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
     }
 
     Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        Headers(onNavigate, cabecera)
+        Headers( cabecera, onClose = onClose)
     }
     Column(
         modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f).padding(16.dp).verticalScroll(scrollState),
@@ -213,7 +213,7 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 val updatedTags = form.taskTags.toMutableList()
                 if (id in updatedTags) updatedTags.remove(id)
                 else updatedTags.add(id)
-                form = form.copy(taskTags = updatedTags) // ✅ Actualiza taskTags
+                form = form.copy(taskTags = updatedTags)
             },
             itemId = { it.id },
             itemName = { it.name }
@@ -358,11 +358,11 @@ fun CreateTaskScreen(onNavigate: (Screen) -> Unit, store: Storage, task: Task? =
                 } else {
                     CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
                 }
-                onNavigate(Screen.HOME)
                 } catch (e: Throwable) {
                     messageError = e.message ?: "Error inesperado"
                     formError = true
                 }
+                onClose()
             }) {
             if (task != null) {
                 Text("Editar tarea")

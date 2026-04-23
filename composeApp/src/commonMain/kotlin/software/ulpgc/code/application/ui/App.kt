@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui
 
-import TasksSreen
+import TasksScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeContentPadding
@@ -14,7 +14,6 @@ import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.application.ui.pages.CreateTaskScreen
 import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchTaskScreen
@@ -62,25 +61,9 @@ fun App(
                                 store!!,
                                 searchText,
                                 onSearchTextChange = { searchText = it },
-                                filters,
-                                onEdit = { task ->
-                                    taskToEdit = task
-                                    screen = Screen.CREATE_TASK
-                                },
                                 onDeleted = { refreshKey++}
                             )
                         }
-
-                        Screen.CREATE_TASK -> CreateTaskScreen(
-                            onNavigate = { newScreen ->
-                                screen = newScreen
-                                if (newScreen == Screen.HOME) {
-                                    taskToEdit = null
-                                }
-                            },
-                            store!!,
-                            task = taskToEdit
-                        )
 
                         Screen.DELETE_TASK -> DeleteTaskScreen(
                             onNavigate = { screen = it }, store!!, onDeleted = { refreshKey++}
@@ -94,7 +77,7 @@ fun App(
                             filters
                         )
 
-                        Screen.TASKS -> TasksSreen(
+                        Screen.TASKS -> TasksScreen(
                             onNavigate = { screen = it },
                             store!!,
                             searchText,
@@ -102,10 +85,12 @@ fun App(
                             filters,
                             onEdit = { task ->
                                 taskToEdit = task
-                                screen = Screen.CREATE_TASK
+                                //FALTA ARREGLAR PARA Q SE PUEDA EDITAR
                             },
                             onDeleted = { refreshKey++}
                         )
+
+                        else -> {}
                     }
                 }
             }

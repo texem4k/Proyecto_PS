@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Headers(onNavigate: (Screen) -> Unit, value: String) {
+fun Headers(value: String, onClose: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxWidth().padding(16.dp)
     ) {
@@ -23,10 +23,11 @@ fun Headers(onNavigate: (Screen) -> Unit, value: String) {
         )
         Button(
             modifier = Modifier.align(Alignment.CenterEnd),
-            onClick = { onNavigate(Screen.HOME) },
+            onClick = { onClose() },
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         ) {
             Text("✖\uFE0E")
+
         }
     }
 }
