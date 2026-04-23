@@ -21,9 +21,9 @@ import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.application.ui.Headers
 import software.ulpgc.code.application.ui.Screen
-import software.ulpgc.code.architecture.control.CommandBuilder
-import software.ulpgc.code.architecture.control.CommandLauncher
-import software.ulpgc.code.architecture.control.CommandType
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
@@ -420,7 +420,7 @@ fun createInstant(fecha: String, hora: String): Instant {
         minute = minute,
         second = 0,
         nanosecond = 0
-    ).toInstant(TimeZone.UTC)
+    ).toInstant(TimeZone.currentSystemDefault())
 }
 
 fun validateDateErrorMessage(e: Exception, m:String): String{

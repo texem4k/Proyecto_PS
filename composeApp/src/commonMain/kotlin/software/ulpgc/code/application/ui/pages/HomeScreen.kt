@@ -47,7 +47,7 @@ import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
