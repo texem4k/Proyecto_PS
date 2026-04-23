@@ -420,7 +420,7 @@ fun createInstant(fecha: String, hora: String): Instant {
         minute = minute,
         second = 0,
         nanosecond = 0
-    ).toInstant(TimeZone.UTC)
+    ).toInstant(TimeZone.currentSystemDefault())
 }
 
 fun validateDateErrorMessage(e: Exception, m:String): String{

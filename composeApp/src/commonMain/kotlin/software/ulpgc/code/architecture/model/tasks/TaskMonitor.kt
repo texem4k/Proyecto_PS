@@ -1,15 +1,10 @@
 package software.ulpgc.code.architecture.model.tasks
 
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.io.isDeleted
-import kotlin.io.println
 import kotlin.time.Clock
 
 class TaskMonitor(
@@ -30,7 +25,6 @@ class TaskMonitor(
         !task.isDeleted() &&
         task.interval != TaskInterval.NONE &&
         task.time.end <= Clock.System.now()
-
 
     override val delayMilis: Long = 15_000L
 
