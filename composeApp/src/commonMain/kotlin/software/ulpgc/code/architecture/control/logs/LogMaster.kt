@@ -14,7 +14,7 @@ object LogMaster : Coroutinable {
     }
 
     fun log(msg: String) {
-        logs.add(Log(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), msg))
+        logs.add(MessageLog(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), msg))
     }
 
     fun addLog(log: Log) {
