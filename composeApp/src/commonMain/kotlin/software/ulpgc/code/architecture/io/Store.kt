@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
@@ -86,5 +87,6 @@ class Store (private val manager: DBManager): Storage,
 
     override suspend fun onDispose() {
         execute()
+        LogMaster.log("closing store")
     }
 }

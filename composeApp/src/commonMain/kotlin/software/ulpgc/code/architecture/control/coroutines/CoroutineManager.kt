@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -22,12 +23,14 @@ object CoroutineManager {
             }
         }
 
-        fun dispose() {
-            scope.launch {
+        suspend fun dispose() {
+            val job = scope.launch {
                 coroutinable.onDispose()
-            }.invokeOnCompletion {
+            }
+            job.invokeOnCompletion {
                 scope.cancel()
             }
+            job.join()
         }
 
     }
@@ -39,9 +42,16 @@ object CoroutineManager {
         coroutines.last().run()
     }
 
-    fun dispose() {
-        coroutines.reversed().forEach { coroutine -> coroutine.dispose() }
-        coroutines.clear()
+    fun dispose(onFinish: () -> Unit) {
+        val disposeScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        disposeScope.launch {
+            coroutines.reversed().forEach { coroutine ->
+                coroutine.dispose()
+            }
+        }.invokeOnCompletion {
+            coroutines.clear()
+            onFinish()
+        }
     }
 
 }
