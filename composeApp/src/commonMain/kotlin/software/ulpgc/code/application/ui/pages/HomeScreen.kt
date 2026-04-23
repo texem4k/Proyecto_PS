@@ -93,11 +93,11 @@ fun HomeScreen(
             }
     ) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            SearchBar(text = searchText, onTextChange = onSearchTextChange, onSearch = { onNavigate(Screen.RESULTS) })
+            //SearchBar(text = searchText, onTextChange = onSearchTextChange, onSearch = { onNavigate(Screen.RESULTS) })
 
-            Button(onClick = { showFilters = true }) {
+            /*Button(onClick = { showFilters = true }) {
                 Text("Filtrado de tareas")
-            }
+            }*/
             Row {
                 if (showFilters) {
                     ModalBottomSheet(
@@ -136,24 +136,24 @@ fun HomeScreen(
 
                 CalendarScreen()
             }
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Blue,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.CREATE_TASK) }) {
-                    Text("Crear tarea")
-                }
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.DELETE_TASK) }) {
-                    Text("Eliminar tarea")
-                }
-            }
+//            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+//                Button(
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color.Blue,
+//                        contentColor = Color.White
+//                    ),
+//                    onClick = { onNavigate(Screen.CREATE_TASK) }) {
+//                    Text("Crear tarea")
+//                }
+//                Button(
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color.Red,
+//                        contentColor = Color.White
+//                    ),
+//                    onClick = { onNavigate(Screen.DELETE_TASK) }) {
+//                    Text("Eliminar tarea")
+//                }
+//            }
         }
     }
 }

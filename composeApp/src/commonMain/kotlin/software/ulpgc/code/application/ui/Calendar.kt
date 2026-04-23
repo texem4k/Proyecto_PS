@@ -8,12 +8,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,13 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kizitonwose.calendar.compose.HorizontalCalendar
-import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.minusMonths
+import com.kizitonwose.calendar.core.plusMonths
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -44,6 +53,7 @@ import kotlin.time.Clock
 @Composable
 fun CalendarScreen() {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = today.yearMonth  // ← faltaba esta línea
 
     val sampleEntries = remember(today) {
         mapOf(
@@ -63,36 +73,75 @@ fun CalendarScreen() {
 
     var selectedDate by remember { mutableStateOf(today) }
 
-    val currentMonth = today.yearMonth
+    val startMonth = remember { currentMonth.minusMonths(12) }
+    val endMonth = remember { currentMonth.plusMonths(12) }
 
     val calendarState = rememberCalendarState(
-        startMonth = currentMonth,
-        endMonth = currentMonth,
+        startMonth = startMonth,   // ← antes ponías currentMonth aquí
+        endMonth = endMonth,       // ← y aquí también, sin rango
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = DayOfWeek.MONDAY,
-        outDateStyle = OutDateStyle.EndOfGrid
+        outDateStyle = OutDateStyle.EndOfRow
     )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
 
-    Column {
-        HorizontalCalendar(
-            state = calendarState,
-            dayContent = { day ->
-                Text(
-                    text = day.date.dayOfMonth.toString(),
-                    color = if (day.position == DayPosition.MonthDate) {
-                        Color.Black
-                    } else {
-                        Color.LightGray
-                    }
-                )
+        BoxWithConstraints(modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth(0.80f)
+            .background(color = Color.Transparent)
+            .align(Alignment.CenterEnd),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            val cellSize = maxWidth.div(9)
+            val headerHeight = 60.dp
+            val calendarHeight = (cellSize * 6) + headerHeight  // ← 6 filas + header
+
+            Column(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .padding(end = 20.dp, top = 20.dp)
+            ) {
+                Box(modifier = Modifier.height(calendarHeight).fillMaxWidth(),
+                    ) {  // ← y se usa aquí
+                    HorizontalCalendar(
+                        modifier = Modifier.fillMaxSize(),
+                        state = calendarState,
+                        monthHeader = { month -> MonthHeader(month) },
+                        monthBody = { _, content ->
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFF5F7FB))
+                                    .padding(horizontal = 2.dp)
+                            ) {
+                                content()
+                            }
+                        },
+                        dayContent = { day ->
+                            val entries = sampleEntries[day.date] ?: emptyList()
+                            DayCell(
+                                day = day,
+                                entries = entries,
+                                isSelected = day.date == selectedDate,
+                                onClick = { selectedDate = day.date },
+                                cellHeight = cellSize,
+                            )
+                        }
+                    )
+                }
+
+                //val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+                //DayEntriesPanel(
+                //    modifier = Modifier
+                //        .fillMaxWidth()
+                //        .weight(1f),
+                //    date = selectedDate, entries = entriesForDay)
             }
-        )
-
-        val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
-        DayEntriesPanel(date = selectedDate, entries = entriesForDay)
+        }
     }
 }
-
 data class SampleEntry(val title: String, val time: String, val color: Color)
 
 @Composable
@@ -100,13 +149,16 @@ fun DayCell(
     day: CalendarDay,
     entries: List<SampleEntry>,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    cellHeight: Dp
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     Box(
         modifier = Modifier
-            .aspectRatio(1f)
+            .fillMaxWidth()
+            .height(cellHeight)
+            .padding(2.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
@@ -122,7 +174,7 @@ fun DayCell(
                     else -> Color.Unspecified
                 },
                 fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 13.sp,
+                fontSize = 10.sp
             )
             if (entries.isNotEmpty() && !isSelected) {
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -141,19 +193,38 @@ fun DayCell(
 
 @Composable
 fun MonthHeader(month: CalendarMonth) {
-    Text(text = month.yearMonth.toString())
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            // month.yearMonth.month es el enum DayOfWeek, .ordinal da 0-11
+            text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp
+        )
+    }
 }
 
 
 @Composable
 fun DayEntriesPanel(
     date: LocalDate,
-    entries: List<SampleEntry>
+    entries: List<SampleEntry>,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(text = "Entradas para $date")
