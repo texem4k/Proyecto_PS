@@ -22,14 +22,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,6 +97,14 @@ fun CalendarScreen() {
         firstDayOfWeek = DayOfWeek.MONDAY,
         outDateStyle = OutDateStyle.EndOfRow
     )
+    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
+    LaunchedEffect(calendarState) {
+        snapshotFlow { calendarState.firstVisibleMonth }
+            .collect { month ->
+                weeks = month.weekDays.size
+            }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -97,22 +112,22 @@ fun CalendarScreen() {
 
         BoxWithConstraints(modifier = Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.80f)
+            .fillMaxWidth()
             .background(color = Color.Transparent)
             .align(Alignment.CenterEnd),
             contentAlignment = Alignment.CenterEnd
         ) {
-            val cellSize = maxWidth.div(9)
-            val headerHeight = 60.dp
-            val calendarHeight = (cellSize * 6) + headerHeight  // ← 6 filas + header
+            val headerHeight = 100.dp
+            val cellSize = (maxHeight - headerHeight) / weeks
+            val calendarHeight = (cellSize * weeks) + headerHeight
 
             Column(
                 modifier = Modifier
-                    .wrapContentSize()
-                    .padding(end = 20.dp, top = 20.dp)
+                    .fillMaxWidth()
+                    .padding(15.dp)
             ) {
-                Box(modifier = Modifier.height(calendarHeight).fillMaxWidth(),
-                    ) {
+                Box(modifier = Modifier.fillMaxWidth().height(calendarHeight),
+                ) {
                     HorizontalCalendar(
                         modifier = Modifier.fillMaxSize(),
                         state = calendarState,
@@ -183,20 +198,26 @@ fun DayCell(
             .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopStart
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = day.date.dayOfMonth.toString(),
-                color = when {
-                    isSelected -> Color.White
-                    day.date == today -> Color(0xFF4F6EF7)
-                    day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
-                    else -> Color.Unspecified
-                },
-                fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 20.sp
-            )
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(40.dp)) {
+                Box (modifier = Modifier.size(25.dp).fillMaxHeight().padding(bottom = 9.dp, start = 4.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = day.date.dayOfMonth.toString(),
+                        color = when {
+                            isSelected -> Color.White
+                            day.date == today -> Color(0xFF4F6EF7)
+                            day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                            else -> Color.Unspecified
+                        },
+                        fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 15.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+                Box(Modifier.padding(start=4.dp).weight(1f).height(20.dp).background(Color.Black).fillMaxHeight())
+            }
             if (entries.isNotEmpty() && !isSelected) {
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     entries.take(3).forEach { entry ->
@@ -237,12 +258,18 @@ fun MonthHeader(month: CalendarMonth,
             fontSize = 20.sp
         )
 
-        Row {
+        Row (modifier = Modifier.padding(start = 10.dp)) {
             IconButton(onClick = onPreviousClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                Text(text = "‹", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = Icons.Default.ChevronLeft,
+                    contentDescription = "Next"
+                )
             }
             IconButton(onClick = onNextClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                Text(text = "›", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Next"
+                )
             }
         }
     }

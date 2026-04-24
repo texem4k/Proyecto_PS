@@ -2,15 +2,19 @@ package software.ulpgc.code.application.ui.pages
 
 import UpcomingTasksPanel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -29,8 +33,15 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -49,6 +60,8 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.control.CommandLauncher
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.CalendarScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,43 +111,32 @@ fun HomeScreen(
             /*Button(onClick = { showFilters = true }) {
                 Text("Filtrado de tareas")
             }*/
-            Row {
-                if (showFilters) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showFilters = false }
-                    ) {
-                        FilterContent(
-                            onApply = { newFilters ->
-                                filters.topics = newFilters.topics
-                                filters.status = newFilters.status
-                                filters.priority = newFilters.priority
-                                filters.hasFilter = newFilters.hasFilter
-                                showFilters = false
-                                onNavigate(Screen.RESULTS)
-                            }, store,
-                            onNavigate = onNavigate,
-                            onDismiss = { showFilters = false }
+//            Row {
+//                if (showFilters) {
+//                    ModalBottomSheet(
+//                        onDismissRequest = { showFilters = false }
+//                    ) {
+//                        FilterContent(
+//                            onApply = { newFilters ->
+//                                filters.topics = newFilters.topics
+//                                filters.status = newFilters.status
+//                                filters.priority = newFilters.priority
+//                                filters.hasFilter = newFilters.hasFilter
+//                                showFilters = false
+//                                onNavigate(Screen.RESULTS)
+//                            }, store,
+//                            onNavigate = onNavigate,
+//                            onDismiss = { showFilters = false }
+//
+//                        )
+//                    }
+//                }
+//            }
+            Row(modifier = Modifier.weight(1f)) {
 
-                        )
-                    }
-                }
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                val group = store.tasks().groupBy { it.topicId }
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth(0.5f),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalArrangement = Arrangement.spacedBy(64.dp)
-                ) {
-                    items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit)
-                    }
-                }
-
+                SideBar()
                 CalendarScreen()
+
             }
 //            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
 //                Button(
@@ -180,3 +182,26 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
         )
     }
 }
+@Composable
+fun SideBar(){
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .fillMaxHeight()
+            .background(Color(0xFF1E1E2E))
+            .padding(16.dp)
+    ) {
+        Text("📁 Archivos", color = Color.White)
+        Text("⚙️ Ajustes", color = Color.White)
+        Text("👤 Perfil", color = Color.White)
+    }
+}
+
+
+data class SideBarItem(
+    val label: String,
+    val icon: ImageVector,
+    val screen: Screen,
+)
+
+// --- Composable principal ---
