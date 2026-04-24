@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -21,17 +22,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,11 +54,13 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.yearMonth
 import kotlin.time.Clock
+import kotlinx.coroutines.launch
 
 @Composable
 fun CalendarScreen() {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val currentMonth = today.yearMonth  // ← faltaba esta línea
+    val currentMonth = today.yearMonth
+    val coroutineScope = rememberCoroutineScope()
 
     val sampleEntries = remember(today) {
         mapOf(
@@ -105,11 +112,25 @@ fun CalendarScreen() {
                     .padding(end = 20.dp, top = 20.dp)
             ) {
                 Box(modifier = Modifier.height(calendarHeight).fillMaxWidth(),
-                    ) {  // ← y se usa aquí
+                    ) {
                     HorizontalCalendar(
                         modifier = Modifier.fillMaxSize(),
                         state = calendarState,
-                        monthHeader = { month -> MonthHeader(month) },
+                        monthHeader = { month -> MonthHeader(month = month,
+                            onPreviousClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(
+                                        month.yearMonth.minusMonths(1)
+                                    )
+                                }
+                            },
+                            onNextClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(
+                                        month.yearMonth.plusMonths(1)
+                                    )
+                                }
+                            }) },
                         monthBody = { _, content ->
                             Box(
                                 modifier = Modifier
@@ -174,7 +195,7 @@ fun DayCell(
                     else -> Color.Unspecified
                 },
                 fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 10.sp
+                fontSize = 20.sp
             )
             if (entries.isNotEmpty() && !isSelected) {
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -192,7 +213,10 @@ fun DayCell(
 }
 
 @Composable
-fun MonthHeader(month: CalendarMonth) {
+fun MonthHeader(month: CalendarMonth,
+                onPreviousClick: () -> Unit,
+                onNextClick: () -> Unit
+) {
     val monthNames = listOf(
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -205,12 +229,22 @@ fun MonthHeader(month: CalendarMonth) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Text(
             // month.yearMonth.month es el enum DayOfWeek, .ordinal da 0-11
             text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
             fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
+            fontSize = 20.sp
         )
+
+        Row {
+            IconButton(onClick = onPreviousClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
+                Text(text = "‹", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            }
+            IconButton(onClick = onNextClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
+                Text(text = "›", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
