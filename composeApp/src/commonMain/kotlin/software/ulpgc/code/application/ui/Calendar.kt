@@ -5,6 +5,7 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,9 +26,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -86,6 +89,7 @@ fun CalendarScreen() {
     }
 
     var selectedDate by remember { mutableStateOf(today) }
+    var showDialog by remember { mutableStateOf(false) }
 
     val startMonth = remember { currentMonth.minusMonths(12) }
     val endMonth = remember { currentMonth.plusMonths(12) }
@@ -161,19 +165,22 @@ fun CalendarScreen() {
                                 day = day,
                                 entries = entries,
                                 isSelected = day.date == selectedDate,
-                                onClick = { selectedDate = day.date },
+                                onClick = { selectedDate = day.date
+                                            showDialog = true
+                                          },
                                 cellHeight = cellSize,
                             )
                         }
                     )
                 }
-
-                //val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
-                //DayEntriesPanel(
-                //    modifier = Modifier
-                //        .fillMaxWidth()
-                //        .weight(1f),
-                //    date = selectedDate, entries = entriesForDay)
+                if (showDialog) {
+                    val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+                    DayDetailDialog(
+                        date = selectedDate,
+                        entries = entriesForDay,
+                        onDismiss = { showDialog = false }
+                    )
+                }
             }
         }
     }
@@ -201,8 +208,8 @@ fun DayCell(
         contentAlignment = Alignment.TopStart
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(40.dp)) {
-                Box (modifier = Modifier.size(25.dp).fillMaxHeight().padding(bottom = 9.dp, start = 4.dp), contentAlignment = Alignment.Center) {
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(24.dp)) {
+                Box (modifier = Modifier.size(25.dp).fillMaxHeight().padding(bottom = 2.dp, start = 4.dp), contentAlignment = Alignment.Center) {
                     Text(
                         text = day.date.dayOfMonth.toString(),
                         color = when {
@@ -218,14 +225,36 @@ fun DayCell(
                 }
                 Box(Modifier.padding(start=4.dp).weight(1f).height(20.dp).background(Color.Black).fillMaxHeight())
             }
-            if (entries.isNotEmpty() && !isSelected) {
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    entries.take(3).forEach { entry ->
-                        Box(
+            if (entries.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    entries.take(2).forEach { entry ->
+                        Row(
                             modifier = Modifier
-                                .size(4.dp)
-                                .background(entry.color, CircleShape)
-                        )
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(entry.color.copy(alpha = if (isSelected) 0.3f else 0.15f))
+                                .padding(horizontal = 4.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(entry.color, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = entry.title,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                                color = if (isSelected) Color.White else Color.Black.copy(alpha = 0.7f),
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -246,7 +275,7 @@ fun MonthHeader(month: CalendarMonth,
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -271,6 +300,18 @@ fun MonthHeader(month: CalendarMonth,
                     contentDescription = "Next"
                 )
             }
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+            Text(
+                text = day,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = Color.Black
+            )
         }
     }
 }
@@ -311,4 +352,30 @@ fun DayEntriesPanel(
             }
         }
     }
+}
+@Composable
+fun DayDetailDialog(
+    date: LocalDate,
+    entries: List<SampleEntry>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            DayEntriesPanel(date = date, entries = entries)
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar", color = Color(0xFF4F6EF7))
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
 }
