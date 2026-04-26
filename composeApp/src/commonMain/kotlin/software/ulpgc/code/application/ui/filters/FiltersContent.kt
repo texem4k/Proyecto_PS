@@ -1,6 +1,7 @@
 package software.ulpgc.code.application.ui.filters
 
 
+import Screen
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,10 +20,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Priority
 
+/*
 @Composable
 fun FilterContent(
     onApply: (TaskFilters) -> Unit,
@@ -109,6 +110,103 @@ fun FilterContent(
                 onApply(filtersToApply)
             },
             modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Aplicar filtros")
+        }
+    }
+}*/
+
+@Composable
+fun FilterContent(
+    onApply: (TaskFilters) -> Unit,
+    store: Storage,
+    onNavigate: (Screen) -> Unit,
+    onDismiss: () -> Unit = {}
+) {
+    val scrollState = rememberScrollState()
+    var tempFilters by remember { mutableStateOf(TaskFilters()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // ── Contenido scrolleable ──────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)   // ocupa lo que necesite, pero cede espacio al botón
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(16.dp))
+
+            Text("Filtros", style = MaterialTheme.typography.titleLarge)
+
+            Spacer(Modifier.height(16.dp))
+
+            val prior = Priority.entries.map { it.text }
+            FilterChipGroup(
+                title = "Prioridad",
+                options = prior,
+                selectedOptions = tempFilters.priority,
+                onSelectionChange = { tempFilters = tempFilters.copy(priority = it) },
+                store = store,
+                onNavigate = onNavigate,
+                onDismiss = onDismiss
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            val topics = mutableListOf<String>()
+            store.topics().forEach {
+                topics.add(it.name)
+            }
+            FilterChipGroup(
+                title = "Tópicos",
+                options = topics,
+                selectedOptions = tempFilters.topics,
+                onSelectionChange = { tempFilters = tempFilters.copy(topics = it) },
+                store = store,
+                onNavigate = onNavigate,
+                onDismiss = onDismiss
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            val tags = mutableListOf<String>()
+            store.tags().forEach {
+                tags.add(it.name)
+            }
+            FilterChipGroup(
+                title = "Tags",
+                options = tags,
+                selectedOptions = tempFilters.tags,
+                onSelectionChange = { tempFilters = tempFilters.copy(tags = it) },
+                store = store,
+                onNavigate = onNavigate,
+                onDismiss = onDismiss
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // ── Botón siempre visible, fuera del scroll ────────────────────
+        Button(
+            onClick = {
+                val filtersToApply = tempFilters.copy(
+                    hasFilter = tempFilters.priority.isNotEmpty() ||
+                            tempFilters.topics.isNotEmpty() ||
+                            tempFilters.status.isNotEmpty() ||
+                            tempFilters.tags.isNotEmpty()
+                )
+                onApply(filtersToApply)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
         ) {
             Text("Aplicar filtros")
         }

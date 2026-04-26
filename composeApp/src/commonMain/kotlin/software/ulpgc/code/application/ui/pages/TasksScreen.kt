@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
@@ -67,15 +67,21 @@ fun TasksScreen(
     filters: TaskFilters,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
+    autoOpenCreate: Boolean = false
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+    var showCreateTaskcopy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(autoOpenCreate) {
+        if (autoOpenCreate) showCreateTaskcopy = true
+    }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
 
-    var showCreateTaskcopy by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -134,7 +140,8 @@ fun TasksScreen(
 
                 if (showFilters) {
                     ModalBottomSheet(
-                        onDismissRequest = { showFilters = false }
+                        onDismissRequest = { showFilters = false },
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                     ) {
                         FilterContent(
                             onApply = { newFilters ->
@@ -170,7 +177,7 @@ fun TasksScreen(
                     ) {
                         items(group.entries.toList()) { (titulo, tareasGrupo) ->
                             val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                            UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit)
+                            UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit, screen = Screen.TASKS)
                         }
                     }
                 }
@@ -185,7 +192,7 @@ fun TasksScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     IconButton(
-                        onClick = { },
+                        onClick = { showCreateTaskcopy = true },
                         modifier = Modifier
                             .size(40.dp)
                             .border(1.dp, Color.Gray, CircleShape)
@@ -195,8 +202,6 @@ fun TasksScreen(
                             color = Color.Gray,
                             fontSize = 24.sp
                         )
-                        showCreateTaskcopy = true
-
                     }
                 }
             }

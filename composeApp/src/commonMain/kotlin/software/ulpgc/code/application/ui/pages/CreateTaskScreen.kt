@@ -20,7 +20,6 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.application.ui.Headers
-import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.architecture.control.CommandBuilder
 import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.control.CommandType
@@ -83,33 +82,25 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
         }
     }
 
-    Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        Headers( cabecera, onClose = onClose)
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Headers(cabecera, onClose = onClose)
     }
     Column(
         modifier = Modifier.fillMaxSize().fillMaxWidth(0.5f).padding(16.dp).verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-
         TextFieldCustom(
             value = form.taskName,
             label = "* Nombre tarea",
-            onValueChange = {
-                form = form.copy(taskName = it)
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text) // Explícito pero innecesario
-
+            onValueChange = { form = form.copy(taskName = it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
         )
 
         TextFieldCustom(
             value = form.taskDescription,
             label = "Descripción",
-            onValueChange = {
-                form = form.copy(taskDescription = it)
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text) // Explícito pero innecesario
-
+            onValueChange = { form = form.copy(taskDescription = it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
         )
 
         TextFieldCustom(
@@ -129,38 +120,38 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             placeholder = "Seleccione del 1 al 10"
         )
 
-
-        val read = task == null && form.taskStartDateString.isNotEmpty() &&form.taskFinalDateString.isNotEmpty()
+        val read = task == null && form.taskStartDateString.isNotEmpty() && form.taskFinalDateString.isNotEmpty()
 
         DateTextField(
             value = form.taskStartDateString,
-            onValueChange = { form = form.copy(taskStartDateString = it) }, label = "Fecha de inicio",
+            onValueChange = { form = form.copy(taskStartDateString = it) },
+            label = "Fecha de inicio",
             modifier = Modifier.padding(bottom = 16.dp),
-            read = (task == null && form.taskFinalDateString.isNotEmpty() &&form.taskDuration.isNotEmpty()),
+            read = (task == null && form.taskFinalDateString.isNotEmpty() && form.taskDuration.isNotEmpty()),
         )
 
         TimeTextField(
             value = form.taskStartHour,
-            onValueChange = {form = form.copy(taskStartHour = it) },
+            onValueChange = { form = form.copy(taskStartHour = it) },
             modifier = Modifier.padding(bottom = 16.dp),
-            type="inicio",
-            read=(task == null && form.taskFinalDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
+            type = "inicio",
+            read = (task == null && form.taskFinalDateString.isNotEmpty() && form.taskDuration.isNotEmpty())
         )
-
 
         DateTextField(
             value = form.taskFinalDateString,
-            onValueChange = { form = form.copy(taskFinalDateString = it) }, label = "Fecha de fin",
+            onValueChange = { form = form.copy(taskFinalDateString = it) },
+            label = "Fecha de fin",
             modifier = Modifier.padding(bottom = 16.dp),
-            read = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
+            read = (task == null && form.taskStartDateString.isNotEmpty() && form.taskDuration.isNotEmpty())
         )
 
         TimeTextField(
             value = form.taskFinalHour,
-            onValueChange = {form = form.copy(taskFinalHour = it) },
+            onValueChange = { form = form.copy(taskFinalHour = it) },
             modifier = Modifier.padding(bottom = 16.dp),
-            type="finalización",
-            read = (task == null && form.taskStartDateString.isNotEmpty() &&form.taskDuration.isNotEmpty())
+            type = "finalización",
+            read = (task == null && form.taskStartDateString.isNotEmpty() && form.taskDuration.isNotEmpty())
         )
 
         TextField(
@@ -180,29 +171,23 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             label = { Text("Duración de la tarea (en horas)") },
             readOnly = read,
             colors = TextFieldDefaults.colors(
-                // Si es readOnly, usamos Gris; si no, el color normal
                 focusedContainerColor = if (read) Color.Gray else Color.Unspecified,
                 unfocusedContainerColor = if (read) Color.Gray else Color.Unspecified,
-                // También puedes cambiar el color del texto para que se vea "desactivado"
                 focusedTextColor = if (read) Color.DarkGray else Color.Black,
                 unfocusedTextColor = if (read) Color.DarkGray else Color.Black,
-
-                // Ocultar la línea indicadora si es de solo lectura
                 focusedIndicatorColor = if (read) Color.Transparent else Color.Blue
             ),
         )
 
         DropdownCustom(
-            section="* Selecciona el tópico:",
-            items= store.topics().toList(),
+            section = "* Selecciona el tópico:",
+            items = store.topics().toList(),
             selection = DropdownSelection.Single(form.taskTopic),
             onItemSelected = {
-                form = form.copy(
-                    taskTopic=it,
-                    taskTags = mutableListOf())
-                },
-            itemId = {it.id},
-            itemName = {it.name}
+                form = form.copy(taskTopic = it, taskTags = mutableListOf())
+            },
+            itemId = { it.id },
+            itemName = { it.name }
         )
 
         DropdownCustom(
@@ -219,38 +204,31 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             itemName = { it.name }
         )
 
-
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 8.dp)) {
-
             Checkbox(
                 checked = checkedState.value,
-                onCheckedChange = { isChecked ->
-                    checkedState.value = isChecked
-                }
+                onCheckedChange = { isChecked -> checkedState.value = isChecked }
             )
             Text("Tarea periódica")
         }
-        if(checkedState.value) {
+
+        if (checkedState.value) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box {
-                    Button(onClick = { expand = true }) {
-                        Text(selectedPeriod)
-                    }
-
+                    Button(onClick = { expand = true }) { Text(selectedPeriod) }
                     DropdownMenu(
                         expanded = expand,
                         onDismissRequest = { expand = false },
                         modifier = Modifier.fillMaxWidth(0.15f)
                     ) {
-
-                        val periods = listOf("Ninguno","Diario", "Semanal","Mensual", "Anual")
+                        val periods = listOf("Ninguno", "Diario", "Semanal", "Mensual", "Anual")
                         for (i in 0..4) {
                             DropdownMenuItem(
                                 text = { Text(periods[i]) },
                                 onClick = {
                                     selectedPeriod = "Periodo seleccionado: ${periods[i]}"
                                     expand = false
-                                    form.taskInterval= TaskInterval.entries[i]
+                                    form.taskInterval = TaskInterval.entries[i]
                                 }
                             )
                         }
@@ -258,130 +236,120 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 }
             }
         }
-        Button(colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Blue,
-            contentColor = Color.White,
-        ),
-            modifier= Modifier.padding(top = 32.dp),
+
+        Button(
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue,
+                contentColor = Color.White,
+            ),
+            modifier = Modifier.padding(top = 32.dp),
             onClick = {
-                try {
+                // Resetear estado antes de validar
                 createTask = true
-                var m=""
-                var time: Time? = null
+                formError = false
+                messageError = ""
 
-                if(form.taskName.isEmpty() && createTask){
-                    messageError="La tarea debe tener algún nombre"
-                    formError=true
-                }
+                try {
+                    var m = ""
+                    var time: Time? = null
 
-                else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty() && createTask) {
-                    messageError = "Debes rellenar al menos un campo de fecha"
-                    formError=true
-                }
-
-                else if(form.taskStartDateString.length == 8 && form.taskDuration.isNotEmpty() && createTask){
-                    try {
-                        if(form.taskStartHour.isEmpty()){
-                            messageError = "La hora de inicio no puede estar vacío"
-                            formError=true
+                    if (form.taskName.isEmpty()) {
+                        messageError = "La tarea debe tener algún nombre"
+                        formError = true
+                    } else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty()) {
+                        messageError = "Debes rellenar al menos un campo de fecha"
+                        formError = true
+                    } else if (form.taskStartDateString.length == 8 && form.taskDuration.isNotEmpty()) {
+                        try {
+                            if (form.taskStartHour.isEmpty()) {
+                                messageError = "La hora de inicio no puede estar vacío"
+                                formError = true
+                            } else {
+                                form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+                                m = isValidDate(form.taskStartDate, "inicial")
+                                if (m.isNotEmpty()) throw IllegalArgumentException(m)
+                                time = TimeFactory().createTime(form.taskStartDate!!, form.taskDuration.toLong())
+                            }
+                        } catch (e: Exception) {
+                            messageError = validateDateErrorMessage(e, m)
+                            formError = true
                         }
-
-                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-                        m=isValidDate(form.taskStartDate,"inicial")
-                        if(!m.isEmpty()){
-                            throw IllegalArgumentException(m)
+                    } else if (form.taskFinalDateString.length == 8 && form.taskDuration.isNotEmpty()) {
+                        try {
+                            if (form.taskFinalHour.isEmpty()) {
+                                messageError = "La hora de finalización no puede estar vacío"
+                                formError = true
+                            } else {
+                                form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+                                m = isValidDate(form.taskFinalDate, "final")
+                                if (m.isNotEmpty()) throw IllegalArgumentException(m)
+                                time = TimeFactory().createTime(form.taskDuration.toLong(), form.taskFinalDate!!)
+                            }
+                        } catch (e: Exception) {
+                            messageError = validateDateErrorMessage(e, m)
+                            formError = true
                         }
-                        time = TimeFactory().createTime(form.taskStartDate!!,form.taskDuration.toLong())
+                    } else if (form.taskStartDateString.length == 8 && form.taskFinalDateString.length == 8 && form.taskDuration.isEmpty()) {
+                        try {
+                            if (form.taskStartHour.isEmpty() || form.taskFinalHour.isEmpty()) {
+                                messageError = "La hora final e inicial no puede estar vacío"
+                                formError = true
+                            } else {
+                                form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+                                form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+                                time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
+                                if (isValidDate(form.taskStartDate, "inicial").isNotEmpty() ||
+                                    isValidDate(form.taskFinalDate, "final").isNotEmpty()) {
+                                    throw IllegalArgumentException("Fecha final o inicial incorrecta")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            messageError = validateDateErrorMessage(e, m)
+                            formError = true
+                        }
                     }
-                    catch (e: Exception) {
-                        messageError = validateDateErrorMessage(e, m)
-                        formError=true
+
+                    // ✅ Solo lanzar el comando y cerrar si NO hay errores
+                    if (!formError) {
+                        var builder = CommandBuilder(store)
+                            .set("priority", form.taskPriority)
+                            .set("name", form.taskName)
+                            .set("userId", "00000000-0000-0000-0000-000026033100")
+                            .set("description", form.taskDescription)
+                            .set("topicId", form.taskTopic.toString())
+                            .set("interval", form.taskInterval.toString())
+                            .set("time", time.toString())
+
+                        if (form.taskTags.isNotEmpty()) {
+                            builder = builder.set("tags", form.taskTags.joinToString(", "))
+                        }
+
+                        if (task != null) {
+                            CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
+                        } else {
+                            CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
+                        }
+                        onClose() // ✅ Solo se cierra si todo fue bien
                     }
-                }
 
-                else if(form.taskFinalDateString.length == 8  && form.taskDuration.isNotEmpty() && createTask) {
-                    try{
-                        if(form.taskFinalHour.isEmpty()){
-                            messageError = "La hora de finalización no puede estar vacío"
-                            formError=true
-                        }
-
-                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-
-                        m=isValidDate(form.taskFinalDate,"final")
-                        if(!m.isEmpty()){
-                            throw IllegalArgumentException(m)
-                        }
-
-                        time = TimeFactory().createTime(form.taskDuration.toLong(), form.taskFinalDate!!)
-
-                    } catch (e: Exception) {
-                        messageError = validateDateErrorMessage(e, m)
-                        formError=true
-                    }
-                }
-
-                else if(form.taskStartDateString.length==8 && form.taskFinalDateString.length==8 && form.taskDuration.isEmpty() && createTask){
-                    try{
-                        if(form.taskStartHour.isEmpty() || form.taskFinalHour.isEmpty()){
-                            messageError = "La hora final e inicial no puede estar vacío"
-                            formError=true
-                        }
-
-                        form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-                        form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
-
-                        time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
-                        if (!isValidDate(form.taskStartDate, "inicial").isEmpty() || !isValidDate(form.taskFinalDate, "final").isEmpty()) {
-                            throw IllegalArgumentException("Fecha final o inicial incorrecta")
-                        }
-                    } catch (e: Exception) {
-                        messageError = validateDateErrorMessage(e, m)
-                        formError=true
-                    }
-                }
-                var builder = CommandBuilder(store)
-                    .set("priority", form.taskPriority)
-                    .set("name", form.taskName)
-                    .set("userId","00000000-0000-0000-0000-000026033100")
-                    .set("description", form.taskDescription)
-                    .set("topicId", form.taskTopic.toString())
-                    .set("interval", form.taskInterval.toString())
-                    .set("time", time.toString())
-
-                if(form.taskTags.isNotEmpty()){
-                    builder=builder.set("tags", form.taskTags.joinToString(", "))
-
-                }
-                if (task != null){
-                    CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
-                } else {
-                    CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
-                }
                 } catch (e: Throwable) {
                     messageError = e.message ?: "Error inesperado"
                     formError = true
                 }
-                onClose()
-            }) {
-            if (task != null) {
-                Text("Editar tarea")
-            } else {
-                Text("Crear tarea")
             }
+        ) {
+            if (task != null) Text("Editar tarea") else Text("Crear tarea")
         }
 
         if (formError) {
             AlertDialog(
                 onDismissRequest = { formError = false },
                 title = { Text("Error") },
-                text = {
-                    messageError?.let { Text(it) }
-                },
+                text = { messageError?.let { Text(it) } },
                 confirmButton = {
                     Button(onClick = {
                         formError = false
-                        createTask=false
+                        createTask = false
                     }) {
                         Text("Aceptar")
                     }
@@ -390,6 +358,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
         }
     }
 }
+
 
 fun formatDate(digits: String): String {
     return digits.filter { it.isDigit() }.take(8)

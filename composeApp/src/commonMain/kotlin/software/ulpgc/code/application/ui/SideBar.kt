@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,19 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Ballot
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -41,7 +37,7 @@ fun SideBar(
     val topItems = listOf(
         SideBarItem("", Icons.Default.CalendarToday, Screen.CALENDAR),
         SideBarItem("", Icons.Default.Ballot, Screen.TASKS),
-        SideBarItem("", Icons.Default.BarChart, Screen.STATS),
+        SideBarItem("", Icons.Default.BarChart, Screen.DASHBOARD),
     )
 
     val bottomItems = listOf(

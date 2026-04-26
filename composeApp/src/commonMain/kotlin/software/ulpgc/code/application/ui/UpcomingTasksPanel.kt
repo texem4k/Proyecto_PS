@@ -1,8 +1,11 @@
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +21,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 
 
 @Composable
-fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, total: Boolean, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}) {
+fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, total: Boolean, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen) {
     val maxHeight = if (total) 600.dp else 310.dp
     val tasks = tareas ?: store.tasks().toList()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
@@ -35,19 +38,48 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             .fillMaxWidth(0.8f),
         contentAlignment = Alignment.Center
     ) {
-        Card(modifier = Modifier.fillMaxWidth(),
+        Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text(text= title,
+            /*
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+            */
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp, top = 4.dp)
+            ) {
+
+                Text(
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp, top = 4.dp),
-                    textAlign = TextAlign.Center)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth() // importante para centrar el texto correctamente
+                )
+
+                if (screen == Screen.TASKS) {
+                    IconButton(
+                        onClick = { /* acción */ },
+                        modifier = Modifier.align(Alignment.CenterEnd).size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones",
+                        )
+                    }
+                }
             }
             LazyColumn(
                 modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally

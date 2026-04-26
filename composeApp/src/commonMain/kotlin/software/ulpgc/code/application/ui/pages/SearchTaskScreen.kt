@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
+import Screen
 import UpcomingTasksPanel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Priority
@@ -76,19 +76,19 @@ fun SearchTaskScreen(
                 }
                 Button(
                     modifier = Modifier.align(Alignment.CenterEnd),
-                    onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.HOME) },
+                    onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.TASKS) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
                 ) { Text("✖\uFE0E") }
             }
 
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                UpcomingTasksPanel(store, search, title = "Resultados", total = true)
+                UpcomingTasksPanel(store, search, title = "Resultados", total = true, screen = Screen.RESULTS)
             }
         } else {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No ha habido coincidencia con $value")
-                    Button(onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.HOME) }) {
+                    Button(onClick = { onSearchTextChange(""); filters.hasFilter=false;onNavigate(Screen.TASKS) }) {
                         Text("Cerrar")
                     }
                 }

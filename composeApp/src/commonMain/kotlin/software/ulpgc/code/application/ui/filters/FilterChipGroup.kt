@@ -20,7 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.Screen
+import Screen
 import software.ulpgc.code.architecture.control.CommandBuilder
 import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.control.CommandType

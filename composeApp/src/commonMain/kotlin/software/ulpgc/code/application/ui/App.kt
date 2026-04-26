@@ -14,15 +14,13 @@ import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
-//tags.joinToString(", ") {it.toString()}
-//CommandLauncher.launch(CommandBuilder(store).set(atributos del comando).build(tipo de comando))
-//actualizar tags -> tags.joinToString(", ") {it.toString()}
 @Composable
 fun App(
     databaseDriverFactory: DatabaseDriverFactory,
@@ -38,7 +36,7 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        val newStore = Store({SQLiteDBManager(databaseDriverFactory, seedData)}, dbDispatcher)
+        val newStore = Store({ SQLiteDBManager(databaseDriverFactory, seedData) }, dbDispatcher)
         store = newStore
         onStoreCreated(newStore)
     }
@@ -53,20 +51,20 @@ fun App(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (storeReady) {
-                key(refreshKey){
+                key(refreshKey) {
                     when (screen) {
-                        Screen.HOME -> {
-                            HomeScreen(
-                                onNavigate = { screen = it },
-                                store!!,
-                                searchText,
-                                onSearchTextChange = { searchText = it },
-                                onDeleted = { refreshKey++}
-                            )
-                        }
+                        Screen.HOME -> HomeScreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
+                            onDeleted = { refreshKey++ }
+                        )
 
                         Screen.DELETE_TASK -> DeleteTaskScreen(
-                            onNavigate = { screen = it }, store!!, onDeleted = { refreshKey++}
+                            onNavigate ={ screen = it },
+                            store!!,
+                            onDeleted = { refreshKey++ }
                         )
 
                         Screen.RESULTS -> SearchTaskScreen(
@@ -85,9 +83,28 @@ fun App(
                             filters,
                             onEdit = { task ->
                                 taskToEdit = task
-                                //FALTA ARREGLAR PARA Q SE PUEDA EDITAR
                             },
-                            onDeleted = { refreshKey++}
+                            onDeleted = { refreshKey++ }
+                        )
+
+                        Screen.TASKS_CREATE -> TasksScreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
+                            filters,
+                            onEdit = { task ->
+                                taskToEdit = task
+                            },
+                            onDeleted = { refreshKey++ },
+                            autoOpenCreate = true
+                        )
+
+                        Screen.DASHBOARD -> DashboardScreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
                         )
 
                         else -> {}
