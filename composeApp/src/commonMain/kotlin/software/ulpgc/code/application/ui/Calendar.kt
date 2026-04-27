@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -48,8 +51,11 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
@@ -66,11 +72,10 @@ import kotlinx.datetime.yearMonth
 import kotlin.time.Clock
 import kotlinx.coroutines.launch
 
+enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 @Composable
 fun CalendarScreen() {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val currentMonth = today.yearMonth
-    val coroutineScope = rememberCoroutineScope()
 
     val sampleEntries = remember(today) {
         mapOf(
@@ -89,99 +94,20 @@ fun CalendarScreen() {
     }
 
     var selectedDate by remember { mutableStateOf(today) }
-    var showDialog by remember { mutableStateOf(false) }
-
-    val startMonth = remember { currentMonth.minusMonths(12) }
-    val endMonth = remember { currentMonth.plusMonths(12) }
-
-    val calendarState = rememberCalendarState(
-        startMonth = startMonth,   // ← antes ponías currentMonth aquí
-        endMonth = endMonth,       // ← y aquí también, sin rango
-        firstVisibleMonth = currentMonth,
-        firstDayOfWeek = DayOfWeek.MONDAY,
-        outDateStyle = OutDateStyle.EndOfRow
-    )
-    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
-    LaunchedEffect(calendarState) {
-        snapshotFlow { calendarState.firstVisibleMonth }
-            .collect { month ->
-                weeks = month.weekDays.size
-            }
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-
-        BoxWithConstraints(modifier = Modifier
-            .fillMaxHeight()
-            .fillMaxWidth()
-            .background(color = Color.Transparent)
-            .align(Alignment.CenterEnd),
-            contentAlignment = Alignment.CenterEnd
-        ) {
-            val headerHeight = 100.dp
-            val cellSize = (maxHeight - headerHeight) / weeks
-            val calendarHeight = (cellSize * weeks) + headerHeight
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(15.dp)
-            ) {
-                Box(modifier = Modifier.fillMaxWidth().height(calendarHeight),
-                ) {
-                    HorizontalCalendar(
-                        modifier = Modifier.fillMaxSize(),
-                        state = calendarState,
-                        monthHeader = { month -> MonthHeader(month = month,
-                            onPreviousClick = {
-                                coroutineScope.launch {
-                                    calendarState.animateScrollToMonth(
-                                        month.yearMonth.minusMonths(1)
-                                    )
-                                }
-                            },
-                            onNextClick = {
-                                coroutineScope.launch {
-                                    calendarState.animateScrollToMonth(
-                                        month.yearMonth.plusMonths(1)
-                                    )
-                                }
-                            }) },
-                        monthBody = { _, content ->
-                            Box(
-                                modifier = Modifier
-                                    .background(Color(0xFFF5F7FB))
-                                    .padding(horizontal = 2.dp)
-                            ) {
-                                content()
-                            }
-                        },
-                        dayContent = { day ->
-                            val entries = sampleEntries[day.date] ?: emptyList()
-                            DayCell(
-                                day = day,
-                                entries = entries,
-                                isSelected = day.date == selectedDate,
-                                onClick = { selectedDate = day.date
-                                            showDialog = true
-                                          },
-                                cellHeight = cellSize,
-                            )
-                        }
-                    )
-                }
-                if (showDialog) {
-                    val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
-                    DayDetailDialog(
-                        date = selectedDate,
-                        entries = entriesForDay,
-                        onDismiss = { showDialog = false }
-                    )
-                }
-            }
+    var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
+    // MonthView está al final
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (viewMode) {
+            CalendarViewMode.MES -> MonthView(
+                sampleEntries = sampleEntries,
+                selectedDate = selectedDate,
+                onDateSelected = { selectedDate = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it }
+            )
+            CalendarViewMode.DIA -> DayView(/* próximamente */)
+            CalendarViewMode.SEMANA -> WeekView(/* próximamente */)
+            CalendarViewMode.AÑO -> YearView(/* próximamente */)
         }
     }
 }
@@ -225,6 +151,7 @@ fun DayCell(
                 }
                 Box(Modifier.padding(start=4.dp).weight(1f).height(20.dp).background(Color.Black).fillMaxHeight())
             }
+            // Zona encargada de la previsualización de tareas
             if (entries.isNotEmpty()) {
                 Column(
                     modifier = Modifier
@@ -265,7 +192,9 @@ fun DayCell(
 @Composable
 fun MonthHeader(month: CalendarMonth,
                 onPreviousClick: () -> Unit,
-                onNextClick: () -> Unit
+                onNextClick: () -> Unit,
+                viewMode: CalendarViewMode,
+                onViewModeChange: (CalendarViewMode) -> Unit
 ) {
     val monthNames = listOf(
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -276,29 +205,110 @@ fun MonthHeader(month: CalendarMonth,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        Text(
-            // month.yearMonth.month es el enum DayOfWeek, .ordinal da 0-11
-            text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 20.sp
-        )
-
-        Row (modifier = Modifier.padding(start = 10.dp)) {
-            IconButton(onClick = onPreviousClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                Icon(
-                    imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = "Next"
-                )
+        //boton leyenda y popup
+        var expandLegend by remember { mutableStateOf(false) }
+        Box(modifier = Modifier.weight(1f)) {
+            Button(
+                onClick = { expandLegend = true }
+            ) {
+                Text(text = "Leyenda")
             }
-            IconButton(onClick = onNextClick,  modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Next"
-                )
+            if (expandLegend) {
+                Popup(
+                    alignment = Alignment.TopStart,
+                    offset = IntOffset(0, 60),
+                    onDismissRequest = { expandLegend = false }
+                ) {
+                    val legendItems = listOf(
+                        "Importante" to Color.Red,
+                        "Info" to Color.Blue,
+                        "OK" to Color.Green
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .wrapContentHeight()
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                            .padding(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        legendItems.forEach { (text, color) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .background(color)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+
+        var expanded by remember { mutableStateOf(false) }
+        //boton (dia, mes. semana. año) y popup
+        Box (modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            Button(
+                onClick = { expanded = true }
+            ) {
+                Text(text = viewMode.name)
+            }
+            if (expanded) {
+                Popup(
+                    alignment = Alignment.TopEnd,
+                    offset = IntOffset(10, 60),
+                    onDismissRequest = { expanded = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .wrapContentHeight()
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                            .padding(4.dp)
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            Text(
+                                text = mode.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onViewModeChange(mode)
+                                        expanded = false
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -353,6 +363,7 @@ fun DayEntriesPanel(
         }
     }
 }
+// Función encargada del popup de la celda de día
 @Composable
 fun DayDetailDialog(
     date: LocalDate,
@@ -379,3 +390,105 @@ fun DayDetailDialog(
         shape = RoundedCornerShape(16.dp)
     )
 }
+
+@Composable
+fun MonthView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = today.yearMonth
+    val coroutineScope = rememberCoroutineScope()
+
+    val startMonth = remember { currentMonth.minusMonths(12) }
+    val endMonth = remember { currentMonth.plusMonths(12) }
+
+    val calendarState = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfRow
+    )
+
+    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
+    LaunchedEffect(calendarState) {
+        snapshotFlow { calendarState.firstVisibleMonth }
+            .collect { month -> weeks = month.weekDays.size }
+    }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxHeight().fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        val headerHeight = 100.dp
+        val cellSize = (maxHeight - headerHeight) / weeks
+        val calendarHeight = (cellSize * weeks) + headerHeight
+
+        Column(modifier = Modifier.fillMaxWidth().padding(15.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(calendarHeight)) {
+                HorizontalCalendar(
+                    modifier = Modifier.fillMaxSize(),
+                    state = calendarState,
+                    monthHeader = { month ->
+                        MonthHeader(
+                            month = month,
+                            onPreviousClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
+                                }
+                            },
+                            onNextClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
+                                }
+                            },
+                            viewMode = viewMode,
+                            onViewModeChange = onViewModeChange
+                        )
+                    },
+                    monthBody = { _, content ->
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFF5F7FB))
+                                .padding(horizontal = 2.dp)
+                        ) { content() }
+                    },
+                    dayContent = { day ->
+                        val entries = sampleEntries[day.date] ?: emptyList()
+                        DayCell(
+                            day = day,
+                            entries = entries,
+                            isSelected = day.date == selectedDate,
+                            onClick = {
+                                onDateSelected(day.date)
+                                showDialog = true
+                            },
+                            cellHeight = cellSize,
+                        )
+                    }
+                )
+            }
+            if (showDialog) {
+                val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+                DayDetailDialog(
+                    date = selectedDate,
+                    entries = entriesForDay,
+                    onDismiss = { showDialog = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DayView(){}
+@Composable
+fun WeekView(){}
+@Composable
+fun YearView(){}
