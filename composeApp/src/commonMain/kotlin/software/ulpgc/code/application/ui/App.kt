@@ -15,7 +15,6 @@ import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.DashboardScreen
-import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.io.Store
@@ -58,12 +57,6 @@ fun App(
                             store!!,
                             searchText,
                             onSearchTextChange = { searchText = it },
-                            onDeleted = { refreshKey++ }
-                        )
-
-                        Screen.DELETE_TASK -> DeleteTaskScreen(
-                            onNavigate ={ screen = it },
-                            store!!,
                             onDeleted = { refreshKey++ }
                         )
 

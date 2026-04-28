@@ -23,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,20 +42,18 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
+//import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import kotlin.collections.component1
-import kotlin.collections.component2
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
@@ -156,6 +153,10 @@ fun TasksScreen(
                             onNavigate = onNavigate,
                             onDismiss = { showFilters = false }
                         )
+
+
+
+
                     }
                 }
 
@@ -167,7 +168,8 @@ fun TasksScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    val group = store.tasks().groupBy { it.topicId }
+                    var taskList by remember { mutableStateOf(store.tasks().toList()) }
+                    val group = taskList.groupBy { it.topicId }
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         modifier = Modifier.fillMaxWidth(0.5f),
@@ -177,12 +179,20 @@ fun TasksScreen(
                     ) {
                         items(group.entries.toList()) { (titulo, tareasGrupo) ->
                             val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                            UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit, screen = Screen.TASKS)
-                        }
+                            UpcomingTasksPanel(
+                                store,
+                                tareasGrupo,
+                                topicName,
+                                onEdit = onEdit,
+                                onDeleted = {
+                                    taskList = store.tasks().toList()
+                                    onDeleted()
+                                },
+                                screen = Screen.TASKS
+                            )                        }
                     }
                 }
 
-                // Botón añadir tarea
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -190,18 +200,13 @@ fun TasksScreen(
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
-                ) {
-                    IconButton(
-                        onClick = { showCreateTaskcopy = true },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .border(1.dp, Color.Gray, CircleShape)
+                )
+                {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(300.dp)
                     ) {
-                        Text(
-                            text = "+",
-                            color = Color.Gray,
-                            fontSize = 24.sp
-                        )
+                        DialMenu(onNavigate = onNavigate)
                     }
                 }
             }

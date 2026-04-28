@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import Screen
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,15 +10,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,18 +42,29 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class DialMenuMode {
-    FULL_CIRCLE,
-    SEMI_CIRCLE_TOP,
-    QUARTER_TOP_RIGHT
-}
-
 @Composable
-fun DialMenu(
-    items: List<DialMenuItem>,
-    radiusDp: Float = 90f,
-    mode: DialMenuMode = DialMenuMode.SEMI_CIRCLE_TOP,
-) {
+fun DialMenu(onNavigate: (Screen) -> Unit) {
+    val items = listOf(
+        DialMenuItem(
+            icon = Icons.Default.Task,
+            label = "Nueva tarea",
+            color = Color(0xFF534AB7),
+            onClick = { onNavigate(Screen.TASKS_CREATE) }
+        ),
+        DialMenuItem(
+            icon = Icons.Default.Folder,
+            label = "Nuevo tópico",
+            color = Color(0xFF1D9E75),
+            onClick = { onNavigate(Screen.TOPIC_CREATE) }
+        ),
+        DialMenuItem(
+            icon = Icons.Default.Label,
+            label = "Nuevo tag",
+            color = Color(0xFFD85A30),
+            onClick = { onNavigate(Screen.TAG_CREATE) }
+        ),
+    )
+
     var expanded by remember { mutableStateOf(false) }
 
     Box(contentAlignment = Alignment.Center) {
@@ -73,8 +85,7 @@ fun DialMenu(
                 item = item,
                 index = index,
                 total = items.size,
-                radiusDp = radiusDp,
-                mode = mode,
+                radiusDp = 70f,
                 visible = expanded,
                 onDismiss = { expanded = false }
             )
@@ -107,11 +118,14 @@ private fun DialChildButton(
     index: Int,
     total: Int,
     radiusDp: Float,
-    mode: DialMenuMode,
     visible: Boolean,
     onDismiss: () -> Unit
 ) {
-    val angleDeg = calculateAngle(index, total, mode)
+    val angleDeg = when (index) {
+        0 -> -180.0
+        1 -> -90.0
+        else -> 0.0
+    }
     val angleRad = angleDeg * PI / 180.0
 
     val offsetX = (radiusDp * cos(angleRad)).toFloat().dp
@@ -128,11 +142,9 @@ private fun DialChildButton(
 
     Box(
         modifier = Modifier
-            .offset(offsetX +20.dp, offsetY)
+            .offset(if (offsetX.value < -10) offsetX + 5.dp else offsetX + 19.dp, offsetY)
             .scale(scale)
     ) {
-
-        // Botón hijo
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -152,17 +164,16 @@ private fun DialChildButton(
             )
         }
 
-        // Posición dinámica del texto según el ángulo
         val textOffsetX = when {
-            offsetX.value > 10 -> 48.dp // derecha
-            offsetX.value < -10 -> (-70).dp // izquierda
-            else -> (-15).dp                // arriba/abajo centrado
+            offsetX.value > 10 -> 48.dp
+            offsetX.value < -10 -> (-75).dp
+            else -> (-15).dp
         }
 
         val textOffsetY = when {
-            offsetY.value < -10 -> (-25).dp // arriba
-            offsetY.value > 10 -> 45.dp     // abajo
-            else -> 10.dp                   // lateral
+            offsetY.value < -10 -> (-25).dp
+            offsetY.value > 10 -> 45.dp
+            else -> 10.dp
         }
 
         Text(
@@ -173,17 +184,5 @@ private fun DialChildButton(
                 .offset(textOffsetX, textOffsetY)
                 .alpha(scale)
         )
-    }
-}
-
-private fun calculateAngle(index: Int, total: Int, mode: DialMenuMode): Double {
-    if (total == 1) return -90.0
-    return when (mode) {
-        DialMenuMode.FULL_CIRCLE ->
-            -90.0 + index.toDouble() / total.toDouble() * 360.0
-        DialMenuMode.SEMI_CIRCLE_TOP ->
-            -180.0 + index.toDouble() / (total - 1).toDouble() * 180.0
-        DialMenuMode.QUARTER_TOP_RIGHT ->
-            -90.0 + index.toDouble() / (total - 1).toDouble() * 90.0
     }
 }

@@ -104,7 +104,7 @@ fun DashboardScreen(
                     val items = group.entries.toList().take(2)
                     items.forEach { (titulo, tareasGrupo) ->
                         val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, false, screen = Screen.DASHBOARD)
+                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.DASHBOARD)
                     }
 
                 }

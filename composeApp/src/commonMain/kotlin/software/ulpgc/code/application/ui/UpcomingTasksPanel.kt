@@ -1,5 +1,4 @@
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.*
@@ -18,18 +17,28 @@ import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.control.CommandType
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+import kotlin.uuid.Uuid
 
 
 @Composable
-fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, total: Boolean, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen) {
-    val maxHeight = if (total) 600.dp else 310.dp
+fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen) {
     val tasks = tareas ?: store.tasks().toList()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
+    var expandDropdown by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf(-1) }
+
+
+    var showDialog by remember { mutableStateOf(true) }
+
+
+
+
+    val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico")
 
     Box(
         modifier = Modifier
             .widthIn(max=500.dp)
-            .heightIn(max=maxHeight)
+            .heightIn(max=310.dp)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp)
@@ -46,12 +55,6 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
-            /*
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-            */
 
             Box(
                 modifier = Modifier
@@ -70,14 +73,42 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 )
 
                 if (screen == Screen.TASKS) {
-                    IconButton(
-                        onClick = { /* acción */ },
-                        modifier = Modifier.align(Alignment.CenterEnd).size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Opciones",
-                        )
+                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                        IconButton(
+                            onClick = { expandDropdown = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Opciones",
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expandDropdown,
+                            onDismissRequest = { expandDropdown = false }
+                        ) {
+                            options.forEach { e ->
+                                DropdownMenuItem(
+                                    text = { Text(e) },
+                                    onClick = {
+                                        selectedOption=options.indexOf(e)
+                                        expandDropdown = false
+                                        showDialog = true
+                                    }
+                                )
+                            }
+                        }
+
+
+                        if(showDialog) {
+                            when(selectedOption){
+                                0 -> EditTopic(store,title, onDismiss={showDialog=false})
+                                1 -> DeleteTopic(store,title, onDismiss={showDialog=false})
+                                //2 -> AddTag()
+                                //3 -> RemoveTag()
+                            }
+                        }
                     }
                 }
             }
@@ -104,7 +135,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     Spacer(Modifier.height(10.dp))
                 }
             }
-            if (selectedTask != null && !total) {
+            if (selectedTask != null) {
 
                 val tagNames = selectedTask!!.tags.mapNotNull { id ->
                     store.tags().associateBy { it.id }[id]?.name
@@ -125,28 +156,16 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                         }) {
                             Text("Editar tarea")
                         }
-                        Button(onClick = { selectedTask = null }) {
-                            Text("Cerrar")
-                        }
-                    }
-                )
-            } else if (selectedTask != null && total){
-                AlertDialog(
-                    onDismissRequest = { selectedTask = null },
-                    title = { Text("Estas seguro que quieres eliminar la tarea")
-                    },
-                    confirmButton = {
-                        Button(onClick = { selectedTask = null }) {
-                            Text("No")
-                        }
                         Button(onClick = {
-                            onDelete(selectedTask!!)
                             CommandLauncher.launch(CommandBuilder(store).set("id", selectedTask!!
                                 .id.toString()).build(CommandType.DELETE_TASK))
-                            selectedTask = null
                             onDeleted()
+                            selectedTask = null
                         }) {
-                            Text("Eliminar")
+                            Text("Eliminar tarea")
+                        }
+                        Button(onClick = { selectedTask = null }) {
+                            Text("Cerrar")
                         }
                     }
                 )
@@ -154,3 +173,99 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
         }
     }
 }
+
+@Composable
+fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
+
+
+    val currentTopic = store.topics().find { it.name == topicName }
+    var topicData by remember(topicName) {
+        mutableStateOf(modifingForm().copy(name = topicName))
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar tópico") },
+        text = {
+            Column {
+                TextField(
+                    value = topicData.name,
+                    onValueChange = { topicData = topicData.copy(name = it) },
+                    isError = topicData.name.isBlank()
+                )
+                if (topicData.error?.isNotBlank() == true) {
+                    topicData.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val exists = store.topics().any {
+                    it.name == topicData.name && it.id != currentTopic?.id
+                }
+                when {
+                    exists -> topicData = topicData.copy(error = "Ya existe un tópico con ese nombre")
+                    topicData.name.isBlank() -> topicData =
+                        topicData.copy(error = "El nombre no puede estar vacío")
+
+                    else -> {
+
+                        CommandLauncher.launch(
+                            CommandBuilder(store)
+                                .set("id", currentTopic?.id.toString())
+                                .set("name", topicData.name)
+                                .set("color", "16")
+                                .build(CommandType.UPDATE_TOPIC)
+                        )
+                        topicData = modifingForm()
+                        onDismiss()
+                    }
+                }
+            }) {
+                Text("Actualizar tópico")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+
+@Composable
+fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
+    val currentTopic = store.topics().find { it.name == topicName }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar tópcio") },
+        text = {
+            Text("¿Seguro que quieres eliminar el tópico "+currentTopic?.name + " para eliminar?")
+        },
+        confirmButton = {
+            Button(onClick = {
+                CommandLauncher.launch(
+                    CommandBuilder(store)
+                        .set("id", currentTopic?.id.toString())
+                        .build(CommandType.DELETE_TOPIC))
+            }){
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+
+data class modifingForm(
+    var name: String = "",
+    var id: Uuid? = null,
+    var isEditing: Boolean = false,
+    var error: String?=null
+)

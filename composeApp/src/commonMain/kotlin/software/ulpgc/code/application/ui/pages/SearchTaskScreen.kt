@@ -82,7 +82,7 @@ fun SearchTaskScreen(
             }
 
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                UpcomingTasksPanel(store, search, title = "Resultados", total = true, screen = Screen.RESULTS)
+                UpcomingTasksPanel(store, search, title = "Resultados", screen = Screen.RESULTS)
             }
         } else {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

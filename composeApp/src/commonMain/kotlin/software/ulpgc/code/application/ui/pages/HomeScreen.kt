@@ -64,7 +64,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.DialMenu
-import software.ulpgc.code.application.ui.DialMenuMode
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.architecture.control.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
@@ -170,10 +169,9 @@ fun HomeScreen(
                     val items = group.entries.toList().take(2)
                     items.forEach { (titulo, tareasGrupo) ->
                         val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, false, screen = Screen.HOME)
+                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.HOME)
                     }
                 }
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,34 +179,16 @@ fun HomeScreen(
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
-                ) {
-                    val dialItems = listOf(
-                        DialMenuItem(
-                            icon = Icons.Default.Task,
-                            label = "Nueva tarea",
-                            color = Color(0xFF534AB7),
-                            onClick = { onNavigate(Screen.TASKS_CREATE) }
-                        ),
-                        DialMenuItem(
-                            icon = Icons.Default.Folder,
-                            label = "Nuevo tópico",
-                            color = Color(0xFF1D9E75),
-                            onClick = { onNavigate(Screen.TOPIC_CREATE) }
-                        ),
-                        DialMenuItem(
-                            icon = Icons.Default.Label,
-                            label = "Nuevo tag",
-                            color = Color(0xFFD85A30),
-                            onClick = { onNavigate(Screen.TAG_CREATE) }
-                        ),
-                    )
-
-                    DialMenu(
-                        items = dialItems,
-                        radiusDp = 70f,
-                        mode = DialMenuMode.SEMI_CIRCLE_TOP,
-                    )
+                )
+                {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(300.dp)
+                    ) {
+                        DialMenu(onNavigate = onNavigate)
+                    }
                 }
+
             }
 
             Column(
