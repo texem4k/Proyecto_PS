@@ -1,4 +1,4 @@
-package software.ulpgc.code.architecture.control
+package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Tag
@@ -22,10 +22,29 @@ class CommandBuilder internal constructor (private val store: Storage) {
         return when(type) {
             CommandType.CREATE_TOPIC -> CreateTopicCommand(store, name(), color())
             CommandType.CREATE_TAG -> CreateTagCommand(store, name(), topicId())
-            CommandType.CREATE_TASK -> CreateTaskCommand(store, priority(), name(), userId(), description(), topicId(), time(), interval(), tags())
+            CommandType.CREATE_TASK -> CreateTaskCommand(
+                store,
+                priority(),
+                name(),
+                userId(),
+                description(),
+                topicId(),
+                time(),
+                interval(),
+                tags()
+            )
             CommandType.UPDATE_TOPIC -> UpdateTopicCommand(topic(), name(), color())
             CommandType.UPDATE_TAG -> UpdateTagCommand(tag(), name(), topicId())
-            CommandType.UPDATE_TASK -> UpdateTaskCommand(task(), priority(), name(), description(),topicId(),time(), interval(), tags())
+            CommandType.UPDATE_TASK -> UpdateTaskCommand(
+                task(),
+                priority(),
+                name(),
+                description(),
+                topicId(),
+                time(),
+                interval(),
+                tags()
+            )
             CommandType.DELETE_TOPIC -> DeleteTopicCommand(store, id())
             CommandType.DELETE_TAG -> DeleteTagCommand(store, id())
             CommandType.DELETE_TASK -> DeleteTaskCommand(store, id())
@@ -80,8 +99,8 @@ class CommandBuilder internal constructor (private val store: Storage) {
         return getOrElse("description", {description -> description}, "")
     }
 
-    private fun tags(): MutableList<Uuid> {
-        return getOrElse("tags", {tags -> tags.split(", ").map { Uuid.parse(it) }.toMutableList()}, mutableListOf())
+    private fun tags(): MutableSet<Uuid> {
+        return getOrElse("tags", {tags -> tags.split(", ").map { Uuid.parse(it) }.toMutableSet()}, mutableSetOf())
     }
 
     private fun color(): Int {
