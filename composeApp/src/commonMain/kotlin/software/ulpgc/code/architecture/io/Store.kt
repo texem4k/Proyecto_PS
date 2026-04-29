@@ -5,12 +5,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
-class Store (private val manager: DBManager, private val onFailLoad: Unit): Storage,
+class Store (private val manager: DBManager, private val onFailLoad: (AppException) -> Unit): Storage,
     Coroutinable {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
@@ -78,8 +79,8 @@ class Store (private val manager: DBManager, private val onFailLoad: Unit): Stor
             addTopics(manager.topics().getOrThrow())
             addTags(manager.tags().getOrThrow())
             addTasks(manager.tasks().getOrThrow())
-        } catch (e: Exception) {
-            onFailLoad(e.message)
+        } catch (e: AppException) {
+            onFailLoad(e)
         }
     }
 
