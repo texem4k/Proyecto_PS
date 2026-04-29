@@ -66,7 +66,7 @@ fun TasksScreen(
     filters: TaskFilters,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
-    autoOpenCreate: Boolean = false
+    autoOpen: AutoOpen? = null
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -74,8 +74,13 @@ fun TasksScreen(
     var showCreateTopic by remember { mutableStateOf(false) }
     var showCreateTag by remember { mutableStateOf(false) }
 
-    LaunchedEffect(autoOpenCreate) {
-        if (autoOpenCreate) showCreateTaskcopy = true
+    LaunchedEffect(autoOpen) {
+        when (autoOpen) {
+            AutoOpen.TASK -> showCreateTaskcopy = true
+            AutoOpen.TOPIC -> showCreateTopic = true
+            AutoOpen.TAG -> showCreateTag = true
+            null -> {}
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -210,7 +215,7 @@ fun TasksScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(300.dp)
                     ) {
-                        DialMenu(onNavigate = onNavigate,
+                        DialMenu(
                             onCreateTask = { showCreateTaskcopy = true },
                             onCreateTopic = { showCreateTopic = true },
                             onCreateTag = { showCreateTag = true }

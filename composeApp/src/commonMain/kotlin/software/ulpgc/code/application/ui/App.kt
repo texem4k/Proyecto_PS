@@ -85,7 +85,33 @@ fun App(
                                 taskToEdit = task
                             },
                             onDeleted = { refreshKey++ },
-                            autoOpenCreate = true
+                            autoOpen = AutoOpen.TASK
+                        )
+
+                        Screen.TOPIC_CREATE -> TasksScreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
+                            filters,
+                            onEdit = { task ->
+                                taskToEdit = task
+                            },
+                            onDeleted = { refreshKey++ },
+                            autoOpen = AutoOpen.TOPIC
+                        )
+
+                        Screen.TAG_CREATE -> TasksScreen(
+                            onNavigate = { screen = it },
+                            store!!,
+                            searchText,
+                            onSearchTextChange = { searchText = it },
+                            filters,
+                            onEdit = { task ->
+                                taskToEdit = task
+                            },
+                            onDeleted = { refreshKey++ },
+                            autoOpen = AutoOpen.TAG
                         )
 
                         Screen.DASHBOARD -> DashboardScreen(

@@ -10,3 +10,9 @@ enum class Screen {
     SETTINGS,
     DASHBOARD,
 }
+
+enum class AutoOpen {
+    TASK,
+    TOPIC,
+    TAG
+}
