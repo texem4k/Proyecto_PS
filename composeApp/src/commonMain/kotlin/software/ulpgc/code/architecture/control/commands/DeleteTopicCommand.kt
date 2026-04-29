@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.control.commands
 
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Topic
@@ -9,6 +10,7 @@ class DeleteTopicCommand internal constructor (private val store: Storage, priva
     constructor(store: Storage, id: Uuid): this(store, store.topics().find{ it.id == id }!!)
 
     override fun execute(): List<Command> {
+        LogMaster.log("DeleteTopicCommand {$topic}")
         topic.dbState = DBState.DELETED
         val commands = store.tasks()
             .filter { task -> task.topicId == topic.id }

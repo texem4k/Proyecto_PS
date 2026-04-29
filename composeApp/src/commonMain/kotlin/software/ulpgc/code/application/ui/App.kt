@@ -16,12 +16,10 @@ import software.ulpgc.code.application.ui.pages.CreateTaskScreen
 import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchTaskScreen
+import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
-//tags.joinToString(", ") {it.toString()}
-//CommandLauncher.launch(CommandBuilder(store).set(atributos del comando).build(tipo de comando))
-//actualizar tags -> tags.joinToString(", ") {it.toString()}
 @Composable
 fun App(
     databaseDriverFactory: DatabaseDriverFactory
@@ -32,10 +30,11 @@ fun App(
     var refreshKey by remember { mutableStateOf(0) }
     var store by remember { mutableStateOf<Store?>(null) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var storeError by remember { mutableStateOf<AppException?>(null) }
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        store = Store(SQLiteDBManager(databaseDriverFactory, seedData))
+        store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error })
     }
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false
@@ -47,6 +46,7 @@ fun App(
                 .safeContentPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            storeError?.let { error -> StoreErrorDisplay(error) }
             if (storeReady) {
                 key(refreshKey){
                     when (screen) {
@@ -92,4 +92,9 @@ fun App(
             }
         }
     }
+}
+
+@Composable
+fun StoreErrorDisplay(exception: AppException) {
+
 }

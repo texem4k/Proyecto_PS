@@ -5,14 +5,17 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.asCoroutineDispatcher
 import software.ulpgc.code.application.ui.App
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.Store
 import java.util.concurrent.Executors
 
 fun main() = application {
+    LogMaster.startLogger(JavaLogStorer())
     Window(
         onCloseRequest = {
-            CoroutineManager.dispose()
-            exitApplication()
+            CoroutineManager.dispose({
+                exitApplication()
+            })
         },
         title = "Proyecto_PS",
     ) {

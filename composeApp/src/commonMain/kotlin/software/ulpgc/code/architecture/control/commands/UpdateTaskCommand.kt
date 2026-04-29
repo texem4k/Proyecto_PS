@@ -1,6 +1,7 @@
 package software.ulpgc.code.architecture.control.commands
 
 
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
@@ -14,6 +15,7 @@ class UpdateTaskCommand internal constructor (private val currentTask: Task, pri
             this(currentTask, Task(priority, name, currentTask.userId, description, topicId, time, interval, tags,currentTask.id))
 
     override fun execute(): List<Command> {
+        LogMaster.log("UpdateTaskCommand {from=$currentTask to=$newTask}")
         val currentClone = currentTask.copy()
         currentTask.priority = newTask.priority
         currentTask.name = newTask.name
