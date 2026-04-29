@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import androidx.compose.foundation.ScrollState
 import com.kizitonwose.calendar.core.OutDateStyle
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,14 +14,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -47,21 +49,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.kizitonwose.calendar.compose.HorizontalCalendar
+import com.kizitonwose.calendar.compose.VerticalYearCalendar
+import com.kizitonwose.calendar.compose.WeekCalendar
+import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
+import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
+import com.kizitonwose.calendar.compose.yearcalendar.rememberYearCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
+import com.kizitonwose.calendar.core.CalendarYear
 import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.Year
 import com.kizitonwose.calendar.core.minusMonths
+import com.kizitonwose.calendar.core.minusYears
 import com.kizitonwose.calendar.core.plusMonths
+import com.kizitonwose.calendar.core.plusYears
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -71,6 +81,9 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.yearMonth
 import kotlin.time.Clock
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 @Composable
@@ -106,8 +119,20 @@ fun CalendarScreen() {
                 onViewModeChange = { viewMode = it }
             )
             CalendarViewMode.DIA -> DayView(/* próximamente */)
-            CalendarViewMode.SEMANA -> WeekView(/* próximamente */)
-            CalendarViewMode.AÑO -> YearView(/* próximamente */)
+            CalendarViewMode.SEMANA -> WeekView(
+                sampleEntries = sampleEntries,
+                selectedDate = selectedDate,
+                onDateSelected = { selectedDate = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it }
+            )
+            CalendarViewMode.AÑO -> YearView(
+                sampleEntries = sampleEntries,
+                selectedDate = selectedDate,
+                onDateSelected = { selectedDate = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it }
+            )
         }
     }
 }
@@ -179,7 +204,7 @@ fun DayCell(
                                 fontSize = 9.sp,
                                 maxLines = 1,
                                 color = if (isSelected) Color.White else Color.Black.copy(alpha = 0.7f),
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -194,7 +219,8 @@ fun MonthHeader(month: CalendarMonth,
                 onPreviousClick: () -> Unit,
                 onNextClick: () -> Unit,
                 viewMode: CalendarViewMode,
-                onViewModeChange: (CalendarViewMode) -> Unit
+                onViewModeChange: (CalendarViewMode) -> Unit,
+                scrollState: ScrollState
 ) {
     val monthNames = listOf(
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -209,45 +235,41 @@ fun MonthHeader(month: CalendarMonth,
     ) {
         //boton leyenda y popup
         var expandLegend by remember { mutableStateOf(false) }
+
         Box(modifier = Modifier.weight(1f)) {
             Button(
                 onClick = { expandLegend = true }
             ) {
                 Text(text = "Leyenda")
             }
-            if (expandLegend) {
-                Popup(
-                    alignment = Alignment.TopStart,
-                    offset = IntOffset(0, 60),
-                    onDismissRequest = { expandLegend = false }
-                ) {
-                    val legendItems = listOf(
-                        "Importante" to Color.Red,
-                        "Info" to Color.Blue,
-                        "OK" to Color.Green
-                    )
 
-                    Column(
-                        modifier = Modifier
-                            .width(150.dp)
-                            .wrapContentHeight()
-                            .background(Color.White, RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                            .padding(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        legendItems.forEach { (text, color) ->
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Importante" to Color.Red,
+                    "Info" to Color.Blue,
+                    "OK" to Color.Green
+                )
+
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
                                         .size(16.dp)
                                         .background(color)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(text)
                             }
-                        }
-                    }
+                        },
+                        onClick = { } // opcional
+                    )
                 }
             }
         }
@@ -274,40 +296,32 @@ fun MonthHeader(month: CalendarMonth,
         }
 
         var expanded by remember { mutableStateOf(false) }
+
         //boton (dia, mes. semana. año) y popup
-        Box (modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+        Box (modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
             Button(
                 onClick = { expanded = true }
             ) {
                 Text(text = viewMode.name)
             }
-            if (expanded) {
-                Popup(
-                    alignment = Alignment.TopEnd,
-                    offset = IntOffset(10, 60),
-                    onDismissRequest = { expanded = false }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .width(150.dp)
-                            .wrapContentHeight()
-                            .background(Color.White, RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                            .padding(4.dp)
-                    ) {
-                        CalendarViewMode.entries.forEach { mode ->
-                            Text(
-                                text = mode.name,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onViewModeChange(mode)
-                                        expanded = false
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                            )
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                CalendarViewMode.entries.forEach { mode ->
+                    DropdownMenuItem(
+                        text = { Text(mode.name) },
+                        onClick = {
+                            onViewModeChange(mode)
+                            expanded = false
                         }
-                    }
+                    )
                 }
             }
         }
@@ -430,6 +444,8 @@ fun MonthView(
         val cellSize = (maxHeight - headerHeight) / weeks
         val calendarHeight = (cellSize * weeks) + headerHeight
 
+        val scrollState = rememberScrollState()
+
         Column(modifier = Modifier.fillMaxWidth().padding(15.dp)) {
             Box(modifier = Modifier.fillMaxWidth().height(calendarHeight)) {
                 HorizontalCalendar(
@@ -449,7 +465,8 @@ fun MonthView(
                                 }
                             },
                             viewMode = viewMode,
-                            onViewModeChange = onViewModeChange
+                            onViewModeChange = onViewModeChange,
+                            scrollState = scrollState
                         )
                     },
                     monthBody = { _, content ->
@@ -488,7 +505,485 @@ fun MonthView(
 
 @Composable
 fun DayView(){}
+
 @Composable
-fun WeekView(){}
+fun WeekHeader(
+    startDate: LocalDate,
+    endDate: LocalDate,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState
+) {
+
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    val title = if (startDate.month == endDate.month) {
+        "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${monthNames[startDate.month.ordinal]} ${startDate.year}"
+    } else {
+        "${startDate.dayOfMonth} ${monthNames[startDate.month.ordinal]} - " +
+                "${endDate.dayOfMonth} ${monthNames[endDate.month.ordinal]} ${endDate.year}"
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        // 🔹 Leyenda (igual que ya tienes)
+        var expandLegend by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            Button(onClick = { expandLegend = true }) {
+                Text("Leyenda")
+            }
+
+            LaunchedEffect(scrollState.value) {
+                if (expandLegend) expandLegend = false
+            }
+
+            if (expandLegend) {
+                Popup(
+                    alignment = Alignment.TopStart,
+                    offset = IntOffset(0, 60),
+                    onDismissRequest = { expandLegend = false },
+                ) {
+                    val legendItems = listOf(
+                        "Importante" to Color.Red,
+                        "Info" to Color.Blue,
+                        "OK" to Color.Green
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                            .padding(4.dp)
+                    ) {
+                        legendItems.forEach { (text, color) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .background(color)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 🔹 Título + navegación
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp
+            )
+
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+
+        // 🔹 Selector de modo (igual que ya tienes)
+        var expanded by remember { mutableStateOf(false) }
+
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Button(onClick = { expanded = true }) {
+                Text(viewMode.name)
+            }
+
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+
+            if (expanded) {
+                Popup(
+                    alignment = Alignment.TopEnd,
+                    offset = IntOffset(10, 60),
+                    onDismissRequest = { expanded = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            Text(
+                                text = mode.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onViewModeChange(mode)
+                                        expanded = false
+                                    }
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 🔹 Días de la semana (igual que mensual)
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+            Text(
+                text = day,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
 @Composable
-fun YearView(){}
+fun WeekView(
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    sampleEntries: Map<LocalDate, List<SampleEntry>>
+){
+    val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+    val weekCalendarState = rememberWeekCalendarState(
+        startDate = currentDate.minus(DatePeriod(months = 6)),
+        endDate = currentDate.plus(DatePeriod(months = 6)),
+        firstDayOfWeek = DayOfWeek.MONDAY,
+    )
+
+    val coroutineScope = rememberCoroutineScope()
+    val visibleWeek = remember {
+        derivedStateOf { weekCalendarState.firstVisibleWeek }
+    }
+    val scrollState = rememberScrollState()
+
+    WeekCalendar(
+        state = weekCalendarState,
+        dayContent = { day ->
+            Text(text = day.date.dayOfMonth.toString())
+        },
+        weekHeader = { week ->
+            WeekHeader(
+                startDate = visibleWeek.value.days.first().date,
+                endDate = visibleWeek.value.days.last().date,
+                onPreviousClick = {
+                    coroutineScope.launch {
+                        val currentWeek = weekCalendarState.firstVisibleWeek
+                        val previousWeekStart = currentWeek.days.first().date.minus(DatePeriod(days = 7))
+
+                        weekCalendarState.animateScrollToDate(previousWeekStart)
+                    }
+                },
+                onNextClick = {
+                    coroutineScope.launch {
+                        val currentWeek = weekCalendarState.firstVisibleWeek
+                        val nextWeekStart = currentWeek.days.first().date.plus(DatePeriod(days = 7))
+
+                        weekCalendarState.animateScrollToDate(nextWeekStart)
+                    }
+                },
+                viewMode = viewMode,
+                onViewModeChange = onViewModeChange,
+                scrollState = scrollState
+            )
+        },
+        weekContainer = { _, content ->
+            Box(
+                modifier = Modifier
+                    .background(Color(0xFFF5F7FB))
+                    .padding(horizontal = 2.dp)
+                    .fillMaxHeight()
+            ) { content() }
+        }
+    )
+}
+@Composable
+fun YearView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentYear = remember { Year.now() }
+
+    val startYear = remember { currentYear.minusYears(3) }
+    val endYear = remember { currentYear.plusYears(3) }
+
+    val yearState = rememberYearCalendarState(
+        startYear = startYear,
+        endYear = endYear,
+        firstVisibleYear = currentYear,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfRow
+    )
+
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogDate by remember { mutableStateOf(selectedDate) }
+
+    // Columnas adaptativas según ancho de pantalla
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val monthColumns = when {
+            maxWidth >= 900.dp -> 4
+            maxWidth >= 600.dp -> 3
+            else -> 2
+        }
+
+        VerticalYearCalendar(
+            modifier = Modifier.fillMaxSize(),
+            state = yearState,
+            monthColumns = monthColumns,
+            yearHeader = { year ->
+                YearHeader(
+                    year = year,
+                    yearState = yearState,
+                    viewMode = viewMode,
+                    onViewModeChange = onViewModeChange
+                )
+            },
+            monthHeader = { month ->
+                YearMonthHeader(month = month)
+            },
+            monthBody = { _, content ->
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFFF5F7FB))
+                        .padding(horizontal = 1.dp)
+                ) { content() }
+            },
+            dayContent = { day ->
+                val entries = sampleEntries[day.date] ?: emptyList()
+                YearDayCell(
+                    day = day,
+                    entries = entries,
+                    isSelected = day.date == selectedDate,
+                    today = today,
+                    onClick = {
+                        onDateSelected(day.date)
+                        dialogDate = day.date
+                        showDialog = true
+                    }
+                )
+            }
+        )
+
+        if (showDialog) {
+            val entriesForDay = sampleEntries[dialogDate] ?: emptyList()
+            DayDetailDialog(
+                date = dialogDate,
+                entries = entriesForDay,
+                onDismiss = { showDialog = false }
+            )
+        }
+    }
+}
+
+// ── Cabecera de año con botones de navegación y selector de vista ──────────
+
+@Composable
+fun YearHeader(
+    year: CalendarYear,
+    yearState: YearCalendarState,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var expanded by remember { mutableStateOf(false) }
+
+    // Cierra el popup si el usuario scrollea
+    LaunchedEffect(yearState.isScrollInProgress) {
+        if (yearState.isScrollInProgress) expanded = false
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Año + navegación
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = {
+                coroutineScope.launch {
+                    yearState.animateScrollToYear(year.year.minusYears(1))
+                }
+            }) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
+            }
+
+            Text(
+                text = year.year.value.toString(),
+                fontWeight = FontWeight.Bold,
+                fontSize = 26.sp,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            IconButton(onClick = {
+                coroutineScope.launch {
+                    yearState.animateScrollToYear(year.year.plusYears(1))
+                }
+            }) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
+            }
+        }
+
+        // Selector de vista (mismo estilo que MonthHeader)
+        Box(contentAlignment = Alignment.CenterEnd) {
+            Button(onClick = { expanded = true }) {
+                Text(text = viewMode.name)
+            }
+            if (expanded) {
+                Popup(
+                    alignment = Alignment.TopEnd,
+                    offset = IntOffset(10, 60),
+                    onDismissRequest = { expanded = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .wrapContentHeight()
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                            .padding(4.dp)
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            Text(
+                                text = mode.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onViewModeChange(mode)
+                                        expanded = false
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Cabecera de mes dentro de la vista anual ───────────────────────────────
+
+@Composable
+fun YearMonthHeader(month: CalendarMonth) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+        Text(
+            text = monthNames[month.yearMonth.month.ordinal],
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+        )
+        // Días de la semana
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+                Text(
+                    text = day,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 10.sp,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+// ── Celda de día reducida para la vista anual ──────────────────────────────
+
+@Composable
+fun YearDayCell(
+    day: CalendarDay,
+    entries: List<SampleEntry>,
+    isSelected: Boolean,
+    today: LocalDate,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)               // celda cuadrada, sin altura fija
+            .padding(1.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
+            .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Número del día
+            Text(
+                text = day.date.dayOfMonth.toString(),
+                color = when {
+                    isSelected -> Color.White
+                    day.date == today -> Color(0xFF4F6EF7)
+                    day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                    else -> Color.Unspecified
+                },
+                fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 9.sp,
+                lineHeight = 10.sp
+            )
+
+            // Puntos de color si hay entradas (máx 3)
+            if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(top = 1.dp)
+                ) {
+                    entries.take(3).forEach { entry ->
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .background(
+                                    color = if (isSelected) Color.White.copy(alpha = 0.8f)
+                                    else entry.color,
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
