@@ -90,7 +90,6 @@ kotlin {
             //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
         }
 
-
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
