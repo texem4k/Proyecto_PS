@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.CoroutineDispatcher
 import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
@@ -22,9 +21,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
 fun App(
-    databaseDriverFactory: DatabaseDriverFactory,
-    dbDispatcher: CoroutineDispatcher,
-    onStoreCreated: (Store) -> Unit = {}
+    databaseDriverFactory: DatabaseDriverFactory
 ) {
     var screen by remember { mutableStateOf(Screen.HOME) }
     var searchText by remember { mutableStateOf("") }
@@ -35,9 +32,7 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        val newStore = Store({ SQLiteDBManager(databaseDriverFactory, seedData) }, dbDispatcher)
-        store = newStore
-        onStoreCreated(newStore)
+        store = Store(SQLiteDBManager(databaseDriverFactory, seedData))
     }
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false
@@ -50,7 +45,7 @@ fun App(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (storeReady) {
-                key(refreshKey) {
+                key(refreshKey){
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },

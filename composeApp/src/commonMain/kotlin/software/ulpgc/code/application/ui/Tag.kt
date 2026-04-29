@@ -2,14 +2,17 @@ package software.ulpgc.code.application.ui.filters
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.control.CommandBuilder
-import software.ulpgc.code.architecture.control.CommandLauncher
-import software.ulpgc.code.architecture.control.CommandType
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Storage
 
 @Composable
@@ -25,7 +28,7 @@ fun CreateTagDialog(
         onDismissRequest = onClose,
         title = { Text("Crear Tag") },
         text = {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
                 TextField(
                     value = name,

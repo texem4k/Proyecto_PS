@@ -43,25 +43,31 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun DialMenu(onNavigate: (Screen) -> Unit) {
+fun DialMenu(
+    onNavigate: ((Screen) -> Unit)? = null,
+    onCreateTask: () -> Unit,
+    onCreateTopic: () -> Unit,
+    onCreateTag: () -> Unit
+) {
+
     val items = listOf(
         DialMenuItem(
             icon = Icons.Default.Task,
             label = "Nueva tarea",
             color = Color(0xFF534AB7),
-            onClick = { onNavigate(Screen.TASKS_CREATE) }
+            onClick = onCreateTask
         ),
         DialMenuItem(
             icon = Icons.Default.Folder,
             label = "Nuevo tópico",
             color = Color(0xFF1D9E75),
-            onClick = { onNavigate(Screen.TOPIC_CREATE) }
+            onClick = onCreateTopic
         ),
         DialMenuItem(
             icon = Icons.Default.Label,
             label = "Nuevo tag",
             color = Color(0xFFD85A30),
-            onClick = { onNavigate(Screen.TAG_CREATE) }
+            onClick = onCreateTag
         ),
     )
 
@@ -91,22 +97,21 @@ fun DialMenu(onNavigate: (Screen) -> Unit) {
             )
         }
 
-        val fabRotation by animateFloatAsState(
+        val rotation by animateFloatAsState(
             targetValue = if (expanded) 45f else 0f,
-            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
-            label = "fab_rotation"
+            animationSpec = tween(250, easing = FastOutSlowInEasing),
+            label = ""
         )
 
         FloatingActionButton(
             onClick = { expanded = !expanded },
-            containerColor = MaterialTheme.colorScheme.primary,
             shape = CircleShape,
             modifier = Modifier.size(44.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = if (expanded) "Cerrar menú" else "Abrir menú",
-                modifier = Modifier.rotate(fabRotation)
+                contentDescription = null,
+                modifier = Modifier.rotate(rotation)
             )
         }
     }

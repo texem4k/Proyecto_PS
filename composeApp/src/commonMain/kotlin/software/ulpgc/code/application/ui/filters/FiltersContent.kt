@@ -92,19 +92,4 @@ fun FilterContent(
             Text("Aplicar filtros")
         }
     }
-
-    // 🪟 POPUPS
-    if (showCreateTopic) {
-        CreateTopicDialog(
-            store = store,
-            onClose = { showCreateTopic = false }
-        )
-    }
-
-    if (showCreateTag) {
-        CreateTagDialog(
-            store = store,
-            onClose = { showCreateTag = false }
-        )
-    }
 }

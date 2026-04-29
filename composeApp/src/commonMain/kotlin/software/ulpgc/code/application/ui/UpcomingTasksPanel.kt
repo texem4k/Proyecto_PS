@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.filters.CreateTagDialog
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -105,7 +107,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             when(selectedOption){
                                 0 -> EditTopic(store,title, onDismiss={showDialog=false})
                                 1 -> DeleteTopic(store,title, onDismiss={showDialog=false})
-                                //2 -> AddTag()
+                                2 -> CreateTagDialog(store, onClose = {showDialog=false})
                                 //3 -> RemoveTag()
                             }
                         }
@@ -116,21 +118,46 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(tasks) { task ->
-                    Card(modifier = Modifier.fillMaxWidth(0.95f) .clickable { selectedTask = task }, RoundedCornerShape(8.dp)) {
-                        Text(
-                            text = task.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(0.95f)
+                            .clickable { selectedTask = task },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Botón de completar
+                            IconButton(
+                                onClick = { /* onTaskComplete(task) */ },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CheckCircle,
+                                    contentDescription = "Completar tarea",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            // Contenido de la tarea
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = task.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                     Spacer(Modifier.height(10.dp))
                 }
@@ -157,7 +184,8 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             Text("Editar tarea")
                         }
                         Button(onClick = {
-                            CommandLauncher.launch(CommandBuilder(store).set("id", selectedTask!!
+                            CommandLauncher.launch(
+                                CommandBuilder(store).set("id", selectedTask!!
                                 .id.toString()).build(CommandType.DELETE_TASK))
                             onDeleted()
                             selectedTask = null
@@ -240,7 +268,38 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Eliminar tópcio") },
+        title = { Text("Eliminar tópico") },
+        text = {
+            Text("¿Seguro que quieres eliminar el tópico '${currentTopic?.name}' para eliminar?")
+        },
+        confirmButton = {
+            Button(onClick = {
+                CommandLauncher.launch(
+                    CommandBuilder(store)
+                        .set("id", currentTopic?.id.toString())
+                        .build(CommandType.DELETE_TOPIC))
+                onDismiss()
+            }){
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+
+/*
+@Composable
+fun AddTagToTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
+    val currentTopic = store.topics().find { it.name == topicName }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Crear un tag para el tópico: '${currentTopic?.name}'") },
         text = {
             Text("¿Seguro que quieres eliminar el tópico "+currentTopic?.name + " para eliminar?")
         },
@@ -260,8 +319,7 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
             }
         }
     )
-}
-
+}*/
 
 data class modifingForm(
     var name: String = "",

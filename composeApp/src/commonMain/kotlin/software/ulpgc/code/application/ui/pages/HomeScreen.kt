@@ -65,7 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import kotlin.math.PI
 import kotlin.math.cos
@@ -185,7 +185,11 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(300.dp)
                     ) {
-                        DialMenu(onNavigate = onNavigate)
+                        DialMenu(
+                            onCreateTask = { onNavigate(Screen.TASKS_CREATE) },
+                            onCreateTopic = { onNavigate(Screen.TOPIC_CREATE) },
+                            onCreateTag = { onNavigate(Screen.TAG_CREATE) }
+                        )
                     }
                 }
 

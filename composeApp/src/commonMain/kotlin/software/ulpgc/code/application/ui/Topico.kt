@@ -3,9 +3,9 @@ package software.ulpgc.code.application.ui.filters
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import software.ulpgc.code.architecture.control.CommandBuilder
-import software.ulpgc.code.architecture.control.CommandLauncher
-import software.ulpgc.code.architecture.control.CommandType
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Storage
 
 @Composable
@@ -47,6 +47,9 @@ fun CreateTopicDialog(
             }) {
                 Text("Crear")
             }
+        },
+        dismissButton = {
+            Button(onClick = {onClose()}){Text("Cancelar")}
         }
     )
 }

@@ -46,12 +46,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.filters.CreateTagDialog
+import software.ulpgc.code.application.ui.filters.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 //import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
-import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +71,8 @@ fun TasksScreen(
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     var showCreateTaskcopy by remember { mutableStateOf(false) }
+    var showCreateTopic by remember { mutableStateOf(false) }
+    var showCreateTag by remember { mutableStateOf(false) }
 
     LaunchedEffect(autoOpenCreate) {
         if (autoOpenCreate) showCreateTaskcopy = true
@@ -206,13 +210,17 @@ fun TasksScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(300.dp)
                     ) {
-                        DialMenu(onNavigate = onNavigate)
+                        DialMenu(onNavigate = onNavigate,
+                            onCreateTask = { showCreateTaskcopy = true },
+                            onCreateTopic = { showCreateTopic = true },
+                            onCreateTag = { showCreateTag = true }
+                        )
                     }
                 }
             }
         }
     }
-    if (showCreateTaskcopy == true) {
+    if (showCreateTaskcopy) {
         Dialog(
             onDismissRequest = { showCreateTaskcopy = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -226,5 +234,19 @@ fun TasksScreen(
                 CreateTask(store = store, onClose = { showCreateTaskcopy = false })
             }
         }
+    }
+
+    if (showCreateTopic) {
+        CreateTopicDialog(
+            store = store,
+            onClose = { showCreateTopic = false }
+        )
+    }
+
+    if (showCreateTag) {
+        CreateTagDialog(
+            store = store,
+            onClose = { showCreateTag = false }
+        )
     }
 }
