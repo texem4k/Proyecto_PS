@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.control.commands
 
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Tag
@@ -10,6 +11,7 @@ class DeleteTagCommand internal constructor (private val store: Storage, private
     constructor(store: Storage, id: Uuid): this(store, store.tags().find { it.id == id }!!)
 
     override fun execute(): List<Command> {
+        LogMaster.log("DeleteTagCommand {$tag}")
         tag.dbState = DBState.DELETED
         val commands = store.tasks()
             .filter { task -> task.tags.contains(tag.id) }

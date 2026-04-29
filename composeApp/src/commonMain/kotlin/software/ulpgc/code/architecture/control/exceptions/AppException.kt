@@ -17,7 +17,7 @@ open class AppException internal constructor (override val time: LocalDateTime, 
     }
 
     override fun toString(): String {
-        return "**AppException**" + super.toString()
+        return "**AppException** [$time]: '$message'"
     }
 
     override val message: String = msg

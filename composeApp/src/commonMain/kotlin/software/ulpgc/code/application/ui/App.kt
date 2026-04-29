@@ -19,9 +19,6 @@ import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
-//tags.joinToString(", ") {it.toString()}
-//CommandLauncher.launch(CommandBuilder(store).set(atributos del comando).build(tipo de comando))
-//actualizar tags -> tags.joinToString(", ") {it.toString()}
 @Composable
 fun App(
     databaseDriverFactory: DatabaseDriverFactory

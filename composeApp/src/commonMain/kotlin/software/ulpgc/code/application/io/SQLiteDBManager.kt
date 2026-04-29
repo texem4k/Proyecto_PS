@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.io
 
+import software.ulpgc.code.architecture.control.exceptions.DBException
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
@@ -21,35 +22,61 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
     }
 
     fun fillTablesIfEmpty() {
-        if (dbQuery.countUsers().executeAsOne() != 0L) {
-            return
-        }
+        if (dbQuery.countUsers().executeAsOne() != 0L) return
         seedData.users.forEach { dbQuery.insertUser(it.id.toString(), it.name) }
-        insert(seedData.dbObjects())
+        insert(seedData.dbObjects()).getOrThrow()
     }
 
-    override fun topics(): List<Topic> {
-        return dbQuery.getTopics{ id, name, color -> Topic(name, color.toInt(), Uuid.parse(id), DBState.DEFAULT) }.executeAsList()
-    }
+    override fun topics(): Result<List<Topic>> = runCatching {
+        dbQuery.getTopics { id, name, color ->
+            Topic(name, color.toInt(), Uuid.parse(id), DBState.DEFAULT)
+        }.executeAsList()
+    }.mapDBException("Failed to fetch topics")
 
-    override fun tags(): List<Tag> {
-        return dbQuery.getTags{ id, name, topicId -> Tag(name,Uuid.parse(topicId), Uuid.parse(id), DBState.DEFAULT) }.executeAsList()
-    }
+    override fun tags(): Result<List<Tag>> = runCatching {
+        dbQuery.getTags { id, name, topicId ->
+            Tag(name, Uuid.parse(topicId), Uuid.parse(id), DBState.DEFAULT)
+        }.executeAsList()
+    }.mapDBException("Failed to fetch tags")
 
-    override fun tasks(): List<Task> {
+    override fun tasks(): Result<List<Task>> = runCatching {
         val raws = dbQuery.getTasks().executeAsList()
-        return raws.map { raw ->
-            val time = dbQuery.getTimeFor(raw.id, { id, _, type, start, end -> TimeFactory().createTime(Instant.parse(start), Instant.parse(end), type.toInt(), Uuid.parse(id)) }).executeAsOne()
-            val tagList = dbQuery.getTagsFor(raw.id) { _, tagId -> Uuid.parse(tagId) }.executeAsList().toMutableList()
-            Task(raw.priority.toInt(), raw.name, Uuid.parse(raw.userId), raw.description, Uuid.parse(raw.topicId), time, TaskInterval.entries[raw.interval.toInt()], tagList.toMutableSet(), Uuid.parse(raw.id), DBState.DEFAULT)
-        }
-    }
+        raws.map { raw ->
+            val time = dbQuery.getTimeFor(
+                raw.id
+            ) { id, _, type, start, end ->
+                TimeFactory().createTime(
+                    Instant.parse(start),
+                    Instant.parse(end),
+                    type.toInt(),
+                    Uuid.parse(id)
+                )
+            }.executeAsOne()
 
-    override fun insert(objects: Sequence<DBObject>) {
+            val tagList = dbQuery.getTagsFor(raw.id) { _, tagId ->
+                Uuid.parse(tagId)
+            }.executeAsList().toMutableList()
+
+            Task(
+                raw.priority.toInt(),
+                raw.name,
+                Uuid.parse(raw.userId),
+                raw.description,
+                Uuid.parse(raw.topicId),
+                time,
+                TaskInterval.entries[raw.interval.toInt()],
+                tagList.toMutableSet(),
+                Uuid.parse(raw.id),
+                DBState.DEFAULT
+            )
+        }
+    }.mapDBException("Failed to fetch tasks")
+
+    override fun insert(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::insertDBObject)
         }
-    }
+    }.mapDBException("Failed to insert objects")
 
     private fun insertDBObject(obj: DBObject) {
         when (obj) {
@@ -72,11 +99,11 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
         }
     }
 
-    override fun update(objects: Sequence<DBObject>) {
+    override fun update(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::updateDBObject)
         }
-    }
+    }.mapDBException("Failed to update objects")
 
     private fun updateDBObject(obj: DBObject) {
         when (obj) {
@@ -104,11 +131,11 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
         }
     }
 
-    override fun delete(objects: Sequence<DBObject>) {
+    override fun delete(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::deleteDBObject)
         }
-    }
+    }.mapDBException("Failed to delete objects")
 
     private fun deleteDBObject(obj: DBObject) {
         when (obj) {
@@ -117,4 +144,10 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
             is Task -> dbQuery.deleteTask(obj.id.toString())
         }
     }
+
+    private fun <T> Result<T>.mapDBException(msg: String): Result<T> =
+        mapFailure { cause -> DBException("$msg: ${cause.message}") }
+
+    private fun <T> Result<T>.mapFailure(transform: (Throwable) -> Throwable): Result<T> =
+        onFailure { return Result.failure(transform(it)) }.let { this }
 }

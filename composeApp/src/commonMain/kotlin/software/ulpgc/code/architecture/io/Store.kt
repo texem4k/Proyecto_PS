@@ -10,7 +10,7 @@ import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
-class Store (private val manager: DBManager): Storage,
+class Store (private val manager: DBManager, private val onFailLoad: Unit): Storage,
     Coroutinable {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
@@ -66,15 +66,21 @@ class Store (private val manager: DBManager): Storage,
     override val delayMilis: Long = 60_000L
 
     override suspend fun onInit() {
+        LogMaster.log("Cargando datos BD")
         loadDBData()
+        LogMaster.log("Finalizado carga de datos BD")
         _ready.value = true
         TaskMonitor(this)
     }
 
     private fun loadDBData() {
-        addTopics(manager.topics())
-        addTags(manager.tags())
-        addTasks(manager.tasks())
+        try {
+            addTopics(manager.topics().getOrThrow())
+            addTags(manager.tags().getOrThrow())
+            addTasks(manager.tasks().getOrThrow())
+        } catch (e: Exception) {
+            onFailLoad(e.message)
+        }
     }
 
     override suspend fun execute() {
@@ -87,6 +93,6 @@ class Store (private val manager: DBManager): Storage,
 
     override suspend fun onDispose() {
         execute()
-        LogMaster.log("closing store")
+        LogMaster.log("Parando guardado automático")
     }
 }

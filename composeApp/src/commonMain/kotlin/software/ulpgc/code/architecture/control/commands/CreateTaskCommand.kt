@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.control.commands
 
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -14,6 +15,7 @@ class CreateTaskCommand internal constructor (private val store: Storage, privat
             this(store, Task(priority, name, userId, description, topicId, time, interval, tags))
 
     override fun execute(): List<Command> {
+        LogMaster.log("CreateTaskCommand {$task}")
         task.dbState = DBState.NEW
         store.addTasks(listOf(task))
         return listOf(DeleteTaskCommand(store, task))
