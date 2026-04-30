@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -39,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -597,7 +599,7 @@ fun WeekHeader(
             text = title,
             modifier = Modifier.weight(1.5f),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
+            fontSize = 20.sp,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -611,18 +613,10 @@ fun WeekHeader(
         // 🔹 Selector de modo
         var expanded by remember { mutableStateOf(false) }
 
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.CenterEnd
-        ) {
+        Box(contentAlignment = Alignment.CenterEnd) {
             Button(onClick = { expanded = true }) {
-                Text(viewMode.name, maxLines = 1)
+                Text(text = viewMode.name)
             }
-
-            LaunchedEffect(scrollState.value) {
-                if (expanded) expanded = false
-            }
-
             if (expanded) {
                 Popup(
                     alignment = Alignment.TopEnd,
@@ -632,8 +626,10 @@ fun WeekHeader(
                     Column(
                         modifier = Modifier
                             .width(150.dp)
+                            .wrapContentHeight()
                             .background(Color.White, RoundedCornerShape(8.dp))
                             .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                            .padding(4.dp)
                     ) {
                         CalendarViewMode.entries.forEach { mode ->
                             Text(
@@ -644,7 +640,7 @@ fun WeekHeader(
                                         onViewModeChange(mode)
                                         expanded = false
                                     }
-                                    .padding(16.dp)
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
                             )
                         }
                     }
@@ -654,7 +650,6 @@ fun WeekHeader(
     }
 
     // ── Cabecera de días ────────────────────────────────────────────────────
-    // padding horizontal = 2.dp igual que weekContainer para que se alineen
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -673,91 +668,6 @@ fun WeekHeader(
     }
 }
 
-@Composable
-fun WeekView(
-    viewMode: CalendarViewMode,
-    onViewModeChange: (CalendarViewMode) -> Unit,
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    sampleEntries: Map<LocalDate, List<SampleEntry>>
-){
-    val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
-
-    val weekCalendarState = rememberWeekCalendarState(
-        startDate = currentDate.minus(DatePeriod(months = 6)),
-        endDate = currentDate.plus(DatePeriod(months = 6)),
-        firstDayOfWeek = DayOfWeek.MONDAY,
-    )
-
-    val coroutineScope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
-
-    WeekCalendar(
-        state = weekCalendarState,
-        dayContent = { day ->
-            val isSelected = day.date == selectedDate
-            val isToday = day.date == currentDate
-
-            Box(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .aspectRatio(1f)
-                    .clip(CircleShape)
-                    .background(
-                        when {
-                            isSelected -> MaterialTheme.colorScheme.primary
-                            isToday -> MaterialTheme.colorScheme.primaryContainer
-                            else -> Color.Transparent
-                        }
-                    )
-                    .clickable { onDateSelected(day.date) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = day.date.dayOfMonth.toString(),
-                    color = when {
-                        isSelected -> MaterialTheme.colorScheme.onPrimary
-                        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
-                        else -> MaterialTheme.colorScheme.onSurface
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        },
-        weekHeader = { week ->
-            WeekHeader(
-                startDate = week.days.first().date,
-                endDate = week.days.last().date,
-                onPreviousClick = {
-                    coroutineScope.launch {
-                        val previousWeekStart = week.days.first().date.minus(DatePeriod(days = 7))
-
-                        weekCalendarState.animateScrollToDate(previousWeekStart)
-                    }
-                },
-                onNextClick = {
-                    coroutineScope.launch {
-                        val currentWeek = weekCalendarState.firstVisibleWeek
-                        val nextWeekStart = currentWeek.days.first().date.plus(DatePeriod(days = 7))
-
-                        weekCalendarState.animateScrollToDate(nextWeekStart)
-                    }
-                },
-                viewMode = viewMode,
-                onViewModeChange = onViewModeChange,
-                scrollState = scrollState
-            )
-        },
-        weekContainer = { _, content ->
-            Box(
-                modifier = Modifier
-                    .background(Color(0xFFF5F7FB))
-                    .padding(horizontal = 2.dp)
-                    .fillMaxHeight()
-            ) { content() }
-        }
-    )
-}
 @Composable
 fun YearView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
@@ -1010,6 +920,241 @@ fun YearDayCell(
                                     else entry.color,
                                     shape = CircleShape
                                 )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+// ── Constantes de layout ────────────────────────────────────────────────────
+private val HOUR_HEIGHT = 64.dp   // altura de cada hora en dp
+private val TIME_COL_W = 52.dp    // ancho de la columna de horas
+private val START_HOUR = 0        // primera hora visible
+private val END_HOUR   = 24       // última hora visible
+
+// ── Celda de evento en la columna de día ────────────────────────────────────
+@Composable
+fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeight: Dp) {
+    val topDp    = ((startHour - START_HOUR) * hourHeight.value).dp
+    val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+            .offset(y = topDp)
+            .height(heightDp)
+            .clip(RoundedCornerShape(5.dp))
+            .background(entry.color.copy(alpha = 0.13f))
+            .border(
+                width = 2.5.dp,
+                color = entry.color,
+                shape = RoundedCornerShape(topStart = 5.dp, bottomStart = 5.dp)
+            )
+            .padding(horizontal = 5.dp, vertical = 3.dp)
+    ) {
+        Column {
+            Text(
+                text = entry.title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = entry.color,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = entry.time,
+                fontSize = 9.sp,
+                color = entry.color.copy(alpha = 0.8f),
+                maxLines = 1
+            )
+        }
+    }
+}
+
+// ── Columna de un día (7 columnas en la cuadrícula) ─────────────────────────
+@Composable
+fun WeekDayColumn(
+    date: LocalDate,
+    entries: List<SampleEntry>,
+    isToday: Boolean,
+    isSelected: Boolean,
+    hourHeight: Dp,
+    onDayClick: () -> Unit
+) {
+    val totalHours = END_HOUR - START_HOUR
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+    ) {
+        // Líneas de hora y media hora
+        for (h in 0 until totalHours) {
+            // Línea de hora
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .offset(y = (h * hourHeight.value).dp)
+                    .background(Color.Gray.copy(alpha = 0.2f))
+            )
+            // Línea de media hora (discontinua simulada con alpha)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .offset(y = (h * hourHeight.value + hourHeight.value / 2).dp)
+                    .background(Color.Gray.copy(alpha = 0.1f))
+            )
+        }
+
+        // Eventos posicionados absolutamente
+        entries.forEach { entry ->
+            // Parsea "HH:mm · HH:mm" o "HH:mm" del campo time
+            val (startH, endH) = parseEntryTime(entry.time)
+            WeekEventChip(
+                entry = entry,
+                startHour = startH,
+                endHour = endH,
+                hourHeight = hourHeight
+            )
+        }
+
+        // Línea de "ahora" si es hoy
+        if (isToday) {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val nowFraction = now.hour + now.minute / 60f
+            if (nowFraction in START_HOUR.toFloat()..END_HOUR.toFloat()) {
+                val topDp = ((nowFraction - START_HOUR) * hourHeight.value).dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = topDp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .offset(x = (-4).dp, y = (-4).dp)
+                            .background(Color(0xFF4F6EF7), CircleShape)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(Color(0xFF4F6EF7))
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── Helper: parsea el campo `time` de SampleEntry ──────────────────────────
+// Acepta "10:00 · 11:00", "Vence hoy", "Sin hora", etc.
+private fun parseEntryTime(time: String): Pair<Float, Float> {
+    return try {
+        val parts = time.split("·").map { it.trim() }
+        val start = parts[0].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
+        val end   = if (parts.size > 1) parts[1].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
+        else start + 0.5f
+        start to end
+    } catch (_: Exception) {
+        9f to 9.5f   // fallback: 09:00-09:30
+    }
+}
+
+// ── WeekView principal ──────────────────────────────────────────────────────
+@Composable
+fun WeekView(
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    sampleEntries: Map<LocalDate, List<SampleEntry>>
+) {
+    val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val scrollState = rememberScrollState()
+    val totalHours  = END_HOUR - START_HOUR
+    val totalHeightDp = HOUR_HEIGHT * totalHours
+
+    // ── Navegación: solo un entero que representa el offset de semanas ──
+    var weekOffset by remember { mutableStateOf(0) }
+
+    // Lunes de la semana visible
+    val weekStart = remember(weekOffset) {
+        val daysSinceMonday = currentDate.dayOfWeek.ordinal // 0=Lun, 6=Dom
+        currentDate
+            .minus(DatePeriod(days = daysSinceMonday))
+            .plus(DatePeriod(days = weekOffset * 7))
+    }
+    val weekDates = remember(weekStart) {
+        (0..6).map { weekStart.plus(DatePeriod(days = it)) }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        WeekHeader(
+            startDate        = weekDates.first(),
+            endDate          = weekDates.last(),
+            onPreviousClick  = { weekOffset-- },
+            onNextClick      = { weekOffset++ },
+            viewMode         = viewMode,
+            onViewModeChange = onViewModeChange,
+            scrollState      = scrollState
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            // Columna de horas
+            Box(
+                modifier = Modifier
+                    .width(TIME_COL_W)
+                    .height(totalHeightDp)
+            ) {
+                for (h in START_HOUR..END_HOUR) {
+                    val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
+                    Text(
+                        text = if (h < 10) "0$h:00" else "$h:00",
+                        fontSize = 9.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .offset(y = topDp - 7.dp)
+                            .fillMaxWidth()
+                            .padding(end = 6.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+
+            // 7 columnas de días
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(totalHeightDp)
+            ) {
+                weekDates.forEach { date ->
+                    val entries = sampleEntries[date] ?: emptyList()
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .border(0.5.dp, Color.Gray.copy(alpha = 0.15f))
+                    ) {
+                        WeekDayColumn(
+                            date       = date,
+                            entries    = entries,
+                            isToday    = date == currentDate,
+                            isSelected = date == selectedDate,
+                            hourHeight = HOUR_HEIGHT,
+                            onDayClick = { onDateSelected(date) }
                         )
                     }
                 }
