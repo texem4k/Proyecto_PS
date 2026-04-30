@@ -48,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -120,7 +121,13 @@ fun CalendarScreen() {
                 viewMode = viewMode,
                 onViewModeChange = { viewMode = it }
             )
-            CalendarViewMode.DIA -> DayView(/* próximamente */)
+            CalendarViewMode.DIA -> DayView(
+                sampleEntries = sampleEntries,
+                selectedDate = selectedDate,
+                onDateSelected = { selectedDate = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it }
+            )
             CalendarViewMode.SEMANA -> WeekView(
                 sampleEntries = sampleEntries,
                 selectedDate = selectedDate,
@@ -509,10 +516,6 @@ fun MonthView(
         }
     }
 }
-
-@Composable
-fun DayView(){}
-
 @Composable
 fun WeekHeader(
     startDate: LocalDate,
@@ -535,135 +538,105 @@ fun WeekHeader(
                 "${endDate.dayOfMonth} ${monthNames[endDate.month.ordinal]} ${endDate.year}"
     }
 
-    // ── Fila principal ──────────────────────────────────────────────────────
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        // 🔹 Leyenda
+        // ── Izquierda: Leyenda ───────────────────────────────────────────
         var expandLegend by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f)) {
             Button(onClick = { expandLegend = true }) {
-                Text("Leyenda", maxLines = 1)
+                Text(text = "Leyenda")
             }
 
             LaunchedEffect(scrollState.value) {
                 if (expandLegend) expandLegend = false
             }
 
-            if (expandLegend) {
-                Popup(
-                    alignment = Alignment.TopStart,
-                    offset = IntOffset(0, 60),
-                    onDismissRequest = { expandLegend = false }
-                ) {
-                    val legendItems = listOf(
-                        "Importante" to Color.Red,
-                        "Info" to Color.Blue,
-                        "OK" to Color.Green
-                    )
-                    Column(
-                        modifier = Modifier
-                            .width(150.dp)
-                            .background(Color.White, RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                            .padding(4.dp)
-                    ) {
-                        legendItems.forEach { (text, color) ->
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Importante" to Color.Red,
+                    "Info" to Color.Blue,
+                    "OK" to Color.Green
+                )
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .background(color)
-                                )
+                                Box(modifier = Modifier.size(16.dp).background(color))
                                 Spacer(Modifier.width(8.dp))
                                 Text(text)
                             }
-                        }
-                    }
+                        },
+                        onClick = {}
+                    )
                 }
             }
         }
 
-        // 🔹 Flecha izquierda — fuera del bloque central
-        IconButton(onClick = onPreviousClick) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = "Semana anterior")
+        // ── Centro: título + flechas ─────────────────────────────────────
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Semana anterior")
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Semana siguiente")
+            }
         }
 
-        // 🔹 Título solo, sin iconos compitiendo por espacio
-        Text(
-            text = title,
-            modifier = Modifier.weight(1.5f),
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 20.sp,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        // 🔹 Flecha derecha — fuera del bloque central
-        IconButton(onClick = onNextClick) {
-            Icon(Icons.Default.ChevronRight, contentDescription = "Semana siguiente")
-        }
-
-        // 🔹 Selector de modo
+        // ── Derecha: selector de vista ───────────────────────────────────
         var expanded by remember { mutableStateOf(false) }
 
-        Box(contentAlignment = Alignment.CenterEnd) {
-            Button(onClick = { expanded = true }) {
-                Text(text = viewMode.name)
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
+
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
             }
-            if (expanded) {
-                Popup(
-                    alignment = Alignment.TopEnd,
-                    offset = IntOffset(10, 60),
-                    onDismissRequest = { expanded = false }
+
+            Box {
+                Button(onClick = { expanded = true }) {
+                    Text(text = viewMode.name)
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .width(150.dp)
-                            .wrapContentHeight()
-                            .background(Color.White, RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                            .padding(4.dp)
-                    ) {
-                        CalendarViewMode.entries.forEach { mode ->
-                            Text(
-                                text = mode.name,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onViewModeChange(mode)
-                                        expanded = false
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                            )
-                        }
+                    CalendarViewMode.entries.forEach { mode ->
+                        DropdownMenuItem(
+                            text = { Text(mode.name) },
+                            onClick = {
+                                onViewModeChange(mode)
+                                expanded = false
+                            }
+                        )
                     }
                 }
             }
-        }
-    }
-
-    // ── Cabecera de días ────────────────────────────────────────────────────
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp)
-    ) {
-        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
-            Text(
-                text = day,
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
         }
     }
 }
@@ -992,6 +965,7 @@ fun WeekDayColumn(
         modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth()
+            .background(Color.White)
     ) {
         // Líneas de hora y media hora
         for (h in 0 until totalHours) {
@@ -999,9 +973,9 @@ fun WeekDayColumn(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(0.5.dp)
+                    .height(0.65.dp)
                     .offset(y = (h * hourHeight.value).dp)
-                    .background(Color.Gray.copy(alpha = 0.2f))
+                    .background(Color.Black.copy(alpha = 0.2f))
             )
             // Línea de media hora (discontinua simulada con alpha)
             Box(
@@ -1009,7 +983,7 @@ fun WeekDayColumn(
                     .fillMaxWidth()
                     .height(0.5.dp)
                     .offset(y = (h * hourHeight.value + hourHeight.value / 2).dp)
-                    .background(Color.Gray.copy(alpha = 0.1f))
+                    .background(Color.Black.copy(alpha = 0.1f))
             )
         }
 
@@ -1110,6 +1084,52 @@ fun WeekView(
 
         Row(
             modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(start = TIME_COL_W)
+        ) {
+            val dayLetters = listOf("L", "M", "X", "J", "V", "S", "D")
+            weekDates.forEachIndexed { index, date ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Letra del día encima
+                    Text(
+                        text = dayLetters[index],
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray
+                    )
+                    // Número debajo
+                    if (date == currentDate) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(Color(0xFF4F6EF7), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = date.dayOfMonth.toString(),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = date.dayOfMonth.toString(),
+                            fontSize = 13.sp,
+                            fontWeight = if (date == selectedDate) FontWeight.Bold else FontWeight.Normal,
+                            color = if (date == selectedDate) Color(0xFF4F6EF7) else Color.Black
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
@@ -1118,13 +1138,14 @@ fun WeekView(
                 modifier = Modifier
                     .width(TIME_COL_W)
                     .height(totalHeightDp)
+                    .background(Color.White)
             ) {
                 for (h in START_HOUR..END_HOUR) {
                     val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
                     Text(
                         text = if (h < 10) "0$h:00" else "$h:00",
                         fontSize = 9.sp,
-                        color = Color.Gray,
+                        color = Color.Black,
                         modifier = Modifier
                             .offset(y = topDp - 7.dp)
                             .fillMaxWidth()
@@ -1146,7 +1167,7 @@ fun WeekView(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .border(0.5.dp, Color.Gray.copy(alpha = 0.15f))
+                            .border(0.5.dp, Color.Black.copy(alpha = 0.15f))
                     ) {
                         WeekDayColumn(
                             date       = date,
@@ -1155,6 +1176,262 @@ fun WeekView(
                             isSelected = date == selectedDate,
                             hourHeight = HOUR_HEIGHT,
                             onDayClick = { onDateSelected(date) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Constantes (ya las tienes definidas arriba, se reutilizan) ───────────
+// HOUR_HEIGHT, TIME_COL_W, START_HOUR, END_HOUR — mismas que WeekView
+
+@Composable
+fun DayView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit
+) {
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val scrollState = rememberScrollState()
+    val totalHours = END_HOUR - START_HOUR
+    val totalHeightDp = HOUR_HEIGHT * totalHours
+
+    // Navegar día a día con un offset
+    var dayOffset by remember { mutableStateOf(0) }
+    val currentDay = remember(dayOffset) {
+        today.plus(DatePeriod(days = dayOffset))
+    }
+
+    // Scroll automático a la hora actual al abrir la vista
+    LaunchedEffect(Unit) {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val nowFraction = (now.hour - START_HOUR).coerceAtLeast(0)
+        scrollState.animateScrollTo((nowFraction * HOUR_HEIGHT.value - 100).toInt().coerceAtLeast(0))
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        DayHeader(
+            date = currentDay,
+            onPreviousClick = { dayOffset-- },
+            onNextClick = { dayOffset++ },
+            viewMode = viewMode,
+            onViewModeChange = onViewModeChange,
+            scrollState = scrollState
+        )
+
+        // Franja de eventos "todo el día" (sin hora)
+        val allDayEntries = (sampleEntries[currentDay] ?: emptyList())
+            .filter { it.time == "Vence hoy" || it.time == "Sin hora" }
+
+        if (allDayEntries.isNotEmpty()) {
+            AllDayStrip(entries = allDayEntries)
+        }
+
+        // Cuadrícula de horas + eventos
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            // Columna de horas (idéntica a WeekView)
+            Box(
+                modifier = Modifier
+                    .width(TIME_COL_W)
+                    .height(totalHeightDp)
+            ) {
+                for (h in START_HOUR..END_HOUR) {
+                    val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
+                    Text(
+                        text = if (h < 10) "0$h:00" else "$h:00",
+                        fontSize = 9.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .offset(y = topDp - 7.dp)
+                            .fillMaxWidth()
+                            .padding(end = 6.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+
+            // Columna única del día (ocupa todo el ancho restante)
+            val timedEntries = (sampleEntries[currentDay] ?: emptyList())
+                .filter { it.time != "Vence hoy" && it.time != "Sin hora" }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(totalHeightDp)
+                    .border(0.5.dp, Color.Gray.copy(alpha = 0.15f))
+            ) {
+                WeekDayColumn(
+                    date = currentDay,
+                    entries = timedEntries,
+                    isToday = currentDay == today,
+                    isSelected = true,
+                    hourHeight = HOUR_HEIGHT,
+                    onDayClick = { onDateSelected(currentDay) }
+                )
+            }
+        }
+    }
+}
+
+// ── Franja de eventos sin hora ───────────────────────────────────────────
+@Composable
+fun AllDayStrip(entries: List<SampleEntry>) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF5F7FB))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Todo el día",
+            fontSize = 10.sp,
+            color = Color.Gray,
+            modifier = Modifier.width(TIME_COL_W - 8.dp),
+            textAlign = TextAlign.End
+        )
+        entries.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(entry.color.copy(alpha = 0.15f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(entry.color, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = entry.title, fontSize = 11.sp, color = entry.color)
+            }
+        }
+    }
+}
+
+// ── Cabecera de la vista de día ──────────────────────────────────────────
+@Composable
+fun DayHeader(
+    date: LocalDate,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+    val dayNames = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+    val title = "${dayNames[date.dayOfWeek.ordinal]} ${date.dayOfMonth} de ${monthNames[date.month.ordinal]} ${date.year}"
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // ── Izquierda: Leyenda ───────────────────────────────────────────
+        var expandLegend by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            Button(onClick = { expandLegend = true }) {
+                Text(text = "Leyenda")
+            }
+
+            LaunchedEffect(scrollState.value) {
+                if (expandLegend) expandLegend = false
+            }
+
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Importante" to Color.Red,
+                    "Info" to Color.Blue,
+                    "OK" to Color.Green
+                )
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(16.dp).background(color))
+                                Spacer(Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        },
+                        onClick = {}
+                    )
+                }
+            }
+        }
+
+        // ── Centro: título + flechas ─────────────────────────────────────
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Día anterior")
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Día siguiente")
+            }
+        }
+
+        // ── Derecha: selector de vista ───────────────────────────────────
+        var expanded by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
+
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+
+            Box {
+                Button(onClick = { expanded = true }) {
+                    Text(text = viewMode.name)
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    CalendarViewMode.entries.forEach { mode ->
+                        DropdownMenuItem(
+                            text = { Text(mode.name) },
+                            onClick = {
+                                onViewModeChange(mode)
+                                expanded = false
+                            }
                         )
                     }
                 }
