@@ -1,5 +1,3 @@
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
@@ -49,7 +46,6 @@ import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
 import software.ulpgc.code.application.ui.filters.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
-//import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
@@ -65,6 +61,7 @@ fun TasksScreen(
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters,
     onEdit: (Task) -> Unit = {},
+    onCreated: () -> Unit = {},
     onDeleted: () -> Unit = {},
     autoOpen: AutoOpen? = null
 ) {
@@ -73,6 +70,8 @@ fun TasksScreen(
     var showCreateTaskcopy by remember { mutableStateOf(false) }
     var showCreateTopic by remember { mutableStateOf(false) }
     var showCreateTag by remember { mutableStateOf(false) }
+    var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var showEditTask by remember { mutableStateOf(false) }
 
     LaunchedEffect(autoOpen) {
         when (autoOpen) {
@@ -155,6 +154,7 @@ fun TasksScreen(
                                 filters.status = newFilters.status
                                 filters.priority = newFilters.priority
                                 filters.hasFilter = newFilters.hasFilter
+                                filters.tags = newFilters.tags
                                 showFilters = false
                                 onNavigate(Screen.RESULTS)
                             },
@@ -162,10 +162,6 @@ fun TasksScreen(
                             onNavigate = onNavigate,
                             onDismiss = { showFilters = false }
                         )
-
-
-
-
                     }
                 }
 
@@ -192,13 +188,16 @@ fun TasksScreen(
                                 store,
                                 tareasGrupo,
                                 topicName,
-                                onEdit = onEdit,
+                                onEdit = { task ->
+                                    taskToEdit = task
+                                    showEditTask = true
+                                },
                                 onDeleted = {
                                     taskList = store.tasks().toList()
                                     onDeleted()
                                 },
                                 screen = Screen.TASKS
-                            )                        }
+                            )}
                     }
                 }
 
@@ -227,8 +226,12 @@ fun TasksScreen(
     }
     if (showCreateTaskcopy) {
         Dialog(
-            onDismissRequest = { showCreateTaskcopy = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            onDismissRequest = { },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            )
         ) {
             Card(
                 modifier = Modifier
@@ -236,22 +239,66 @@ fun TasksScreen(
                     .fillMaxHeight(0.9f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                CreateTask(store = store, onClose = { showCreateTaskcopy = false })
+                CreateTask(store = store, onClose = {
+                    showCreateTaskcopy = false
+                    onCreated()
+                    onNavigate(Screen.TASKS)
+                })
             }
         }
     }
 
+    if (showEditTask && taskToEdit != null) {
+        Dialog(
+            onDismissRequest = {
+                showEditTask = false
+                taskToEdit = null
+            },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            )
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                CreateTask(
+                    store = store,
+                    task = taskToEdit,   // 👈 ESTO ACTIVA EL MODO EDICIÓN
+                    onClose = {
+                        showEditTask = false
+                        taskToEdit = null
+                        onCreated()
+                    }
+                )
+            }
+        }
+    }
+
+
+
     if (showCreateTopic) {
         CreateTopicDialog(
             store = store,
-            onClose = { showCreateTopic = false }
+            onClose = {
+                showCreateTopic = false
+                onCreated()
+            }
         )
     }
 
     if (showCreateTag) {
         CreateTagDialog(
             store = store,
-            onClose = { showCreateTag = false }
+            onClose = {
+                showCreateTag = false
+                onCreated()
+            },
+            null
         )
     }
 }

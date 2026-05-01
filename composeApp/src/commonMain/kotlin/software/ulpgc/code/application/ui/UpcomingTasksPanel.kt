@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
+import software.ulpgc.code.application.ui.filters.RemoveTag
+import software.ulpgc.code.application.ui.pages.CreateTask
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -35,7 +37,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
 
 
-    val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico")
+    val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico", "Eliminar un tag del tópico")
 
     Box(
         modifier = Modifier
@@ -107,8 +109,8 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             when(selectedOption){
                                 0 -> EditTopic(store,title, onDismiss={showDialog=false})
                                 1 -> DeleteTopic(store,title, onDismiss={showDialog=false})
-                                2 -> CreateTagDialog(store, onClose = {showDialog=false})
-                                //3 -> RemoveTag()
+                                2 -> CreateTagDialog(store, onClose = {showDialog=false}, title)
+                                3 -> RemoveTag(store, onClose = {showDialog=false}, title)
                             }
                         }
                     }
@@ -290,36 +292,6 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
         }
     )
 }
-
-
-/*
-@Composable
-fun AddTagToTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
-    val currentTopic = store.topics().find { it.name == topicName }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Crear un tag para el tópico: '${currentTopic?.name}'") },
-        text = {
-            Text("¿Seguro que quieres eliminar el tópico "+currentTopic?.name + " para eliminar?")
-        },
-        confirmButton = {
-            Button(onClick = {
-                CommandLauncher.launch(
-                    CommandBuilder(store)
-                        .set("id", currentTopic?.id.toString())
-                        .build(CommandType.DELETE_TOPIC))
-            }){
-                Text("Confirmar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}*/
 
 data class modifingForm(
     var name: String = "",

@@ -22,9 +22,6 @@ fun FilterContent(
     val scrollState = rememberScrollState()
     var tempFilters by remember { mutableStateOf(TaskFilters()) }
 
-    var showCreateTopic by remember { mutableStateOf(false) }
-    var showCreateTag by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()

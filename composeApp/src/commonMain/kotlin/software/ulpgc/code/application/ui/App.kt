@@ -15,7 +15,7 @@ import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
-import software.ulpgc.code.application.ui.pages.SearchTaskScreen
+import software.ulpgc.code.application.ui.pages.SearchResultsDialog
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
@@ -55,12 +55,12 @@ fun App(
                             onDeleted = { refreshKey++ }
                         )
 
-                        Screen.RESULTS -> SearchTaskScreen(
+                        Screen.RESULTS -> SearchResultsDialog(
                             onNavigate = { screen = it },
-                            store!!,
-                            searchText,
+                            store=store!!,
+                            value=searchText,
                             onSearchTextChange = { searchText = it },
-                            filters
+                            filters=filters,
                         )
 
                         Screen.TASKS -> TasksScreen(
@@ -72,6 +72,7 @@ fun App(
                             onEdit = { task ->
                                 taskToEdit = task
                             },
+                            onCreated = { refreshKey++ },
                             onDeleted = { refreshKey++ }
                         )
 

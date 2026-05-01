@@ -26,9 +26,11 @@ fun CreateTopicDialog(
                     onValueChange = { name = it },
                     label = { Text("Nombre") }
                 )
+                //ColorWheelPicker(wheelSize = 260.dp)
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
+
             }
         },
         confirmButton = {

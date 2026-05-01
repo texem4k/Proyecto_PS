@@ -2,16 +2,8 @@ package software.ulpgc.code.application.ui.pages
 
 import Screen
 import UpcomingTasksPanel
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,37 +11,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -67,9 +45,7 @@ import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
+import software.ulpgc.code.architecture.model.tasks.Task
 
 // ---------------------------------------------------------------------------
 // Modelos
@@ -93,7 +69,7 @@ fun HomeScreen(
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
-    onDeleted: () -> Unit = {}
+    onDeleted: () -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -229,7 +205,7 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     ) {
         OutlinedTextField(
             value = text,
-            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.3f),
+            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.25f),
             shape = RoundedCornerShape(32.dp),
             onValueChange = { onTextChange(it) },
             placeholder = { Text("Buscar...") },
