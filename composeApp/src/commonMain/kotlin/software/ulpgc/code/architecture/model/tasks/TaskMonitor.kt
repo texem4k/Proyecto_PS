@@ -1,15 +1,20 @@
 package software.ulpgc.code.architecture.model.tasks
 
+import com.mmk.kmpnotifier.notification.NotifierManager
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.io.DBState
-import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.io.isDeleted
 import kotlin.time.Clock
 
 class TaskMonitor(
-    private val store: Store,
+    private val store: Storage,
 ) : Coroutinable {
+
+    private val notifier = NotifierManager.getLocalNotifier()
 
     init {
         CoroutineManager.add(this)
@@ -20,6 +25,11 @@ class TaskMonitor(
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.dbState = DBState.UPDATED
+        notifier.notify(
+            "Tarea renovada",
+            "La tarea ${task.name} se ha renovado para la fecha " +
+                    "${task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())}."
+        )
     }
 
     private fun needsRenewal(task: Task): Boolean =

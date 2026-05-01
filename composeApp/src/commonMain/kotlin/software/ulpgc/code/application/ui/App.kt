@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import software.ulpgc.code.application.control.TaskNotifier
 import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
@@ -19,6 +20,7 @@ import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
 @Composable
 fun App(
@@ -34,7 +36,10 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error })
+        store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
+            TaskNotifier.setUpWith(store)
+            TaskMonitor(store)
+        })
     }
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false

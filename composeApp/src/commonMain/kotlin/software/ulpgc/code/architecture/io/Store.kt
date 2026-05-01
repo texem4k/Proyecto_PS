@@ -11,7 +11,7 @@ import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
-class Store (private val manager: DBManager, private val onFailLoad: (AppException) -> Unit): Storage,
+class Store (private val manager: DBManager, private val onFailLoad: (AppException) -> Unit, private val afterLoad: (Storage) -> Unit): Storage,
     Coroutinable {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
@@ -71,7 +71,7 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
         loadDBData()
         LogMaster.log("Finalizado carga de datos BD")
         _ready.value = true
-        TaskMonitor(this)
+        afterLoad(this)
     }
 
     private fun loadDBData() {
