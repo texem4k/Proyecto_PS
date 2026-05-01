@@ -133,6 +133,7 @@ fun SearchTaskScreen(
 
 @Composable
 fun SearchResultsDialog(
+    onDismiss: () -> Unit,
     onNavigate: (Screen) -> Unit,
     store: Storage,
     value: String,
@@ -151,7 +152,7 @@ fun SearchResultsDialog(
     val tagsList = remember { mutableListOf<String>() }
 
     val search: List<Task> = remember(filters, value) {
-        (if (filters.hasFilter) {
+        if (filters.hasFilter) {
             val accumulated = LinkedHashSet<Task>()
 
             filters.topics.forEach { topicFilter ->
@@ -177,12 +178,14 @@ fun SearchResultsDialog(
 
             accumulated.toList()
         } else {
-            store.tasks().filter { it.name.contains(value, ignoreCase = true) }
-        }) as List<Task>
+            store.tasks()
+                .filter { it.name.contains(value, ignoreCase = true) }
+                .toList() // 👈 esto era lo que faltaba, sin el cast
+        }
     }
 
     Dialog(
-        onDismissRequest = { onNavigate(Screen.TASKS) },
+        onDismissRequest = { onDismiss() },
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -218,7 +221,7 @@ fun SearchResultsDialog(
                         onClick = {
                             onSearchTextChange("")
                             filters.hasFilter = false
-                            onNavigate(Screen.TASKS)
+                            onDismiss()
                         }
                     ) {
                         Icon(
@@ -245,7 +248,7 @@ fun SearchResultsDialog(
 
                 // ── Contenido ────────────────────────────────────────────
                 if (search.isNotEmpty()) {
-                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    Box(modifier = Modifier.weight(2f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                         UpcomingTasksPanel(
                             store = store,
                             tareas = search,

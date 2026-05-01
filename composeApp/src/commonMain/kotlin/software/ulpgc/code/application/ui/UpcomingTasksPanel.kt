@@ -25,13 +25,11 @@ import kotlin.uuid.Uuid
 
 
 @Composable
-fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen) {
+fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen, onRequestEditNavigation: (() -> Unit)? = null) {
     val tasks = tareas ?: store.tasks().toList()
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf(-1) }
-
-
     var showDialog by remember { mutableStateOf(true) }
 
 
@@ -182,6 +180,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     confirmButton = {
                         Button(onClick = {
                             onEdit(selectedTask!!)
+                            onRequestEditNavigation?.invoke()
                         }) {
                             Text("Editar tarea")
                         }

@@ -25,7 +25,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -43,9 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+
 
 // ---------------------------------------------------------------------------
 // Modelos
@@ -69,7 +74,9 @@ fun HomeScreen(
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
+    onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
+    onSearch:() -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -120,7 +127,7 @@ fun HomeScreen(
                     SearchBar(
                         text = searchText,
                         onTextChange = onSearchTextChange,
-                        onSearch = { onNavigate(Screen.RESULTS) }
+                        onSearch = onSearch
                     )
                 }
 
@@ -145,7 +152,10 @@ fun HomeScreen(
                     val items = group.entries.toList().take(2)
                     items.forEach { (titulo, tareasGrupo) ->
                         val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.HOME)
+                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.HOME, onEdit = { task ->
+                            onEdit(task)
+                            onNavigate(Screen.TASKS)
+                        } )
                     }
                 }
                 Row(

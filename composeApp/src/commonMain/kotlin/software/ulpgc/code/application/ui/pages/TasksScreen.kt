@@ -1,43 +1,17 @@
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -52,6 +26,7 @@ import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
@@ -63,15 +38,24 @@ fun TasksScreen(
     onEdit: (Task) -> Unit = {},
     onCreated: () -> Unit = {},
     onDeleted: () -> Unit = {},
-    autoOpen: AutoOpen? = null
+    autoOpen: AutoOpen? = null,
+    taskToEdit: Task? = null,
+    onEditDone: () -> Unit = {},
+    showResults: Boolean=false,
+    onShowResults: (Boolean) -> Unit={}
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     var showCreateTaskcopy by remember { mutableStateOf(false) }
     var showCreateTopic by remember { mutableStateOf(false) }
     var showCreateTag by remember { mutableStateOf(false) }
-    var taskToEdit by remember { mutableStateOf<Task?>(null) }
     var showEditTask by remember { mutableStateOf(false) }
+
+    LaunchedEffect(taskToEdit) {
+        if (taskToEdit != null) {
+            showEditTask = true
+        }
+    }
 
     LaunchedEffect(autoOpen) {
         when (autoOpen) {
@@ -85,7 +69,6 @@ fun TasksScreen(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
-
 
     Box(
         modifier = Modifier
@@ -111,8 +94,10 @@ fun TasksScreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            SideBar(selectedScreen = Screen.TASKS,  // valor fijo según la pantalla
-                onNavigate = onNavigate)
+            SideBar(
+                selectedScreen = Screen.TASKS,
+                onNavigate = onNavigate
+            )
 
             Column(
                 modifier = Modifier
@@ -131,7 +116,10 @@ fun TasksScreen(
                     SearchBar(
                         text = searchText,
                         onTextChange = onSearchTextChange,
-                        onSearch = { onNavigate(Screen.RESULTS) }
+                        onSearch = {
+                            filters.hasFilter = false
+                            onShowResults(true)
+                        }
                     )
 
                     IconButton(onClick = { showFilters = true }) {
@@ -153,19 +141,17 @@ fun TasksScreen(
                                 filters.topics = newFilters.topics
                                 filters.status = newFilters.status
                                 filters.priority = newFilters.priority
-                                filters.hasFilter = newFilters.hasFilter
                                 filters.tags = newFilters.tags
+                                filters.hasFilter = newFilters.hasFilter
                                 showFilters = false
-                                onNavigate(Screen.RESULTS)
+                                onShowResults(true)
                             },
-                            store,
-                            onNavigate = onNavigate,
+                            store = store,
                             onDismiss = { showFilters = false }
                         )
                     }
                 }
 
-                // Grid de tareas
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -175,6 +161,7 @@ fun TasksScreen(
                 ) {
                     var taskList by remember { mutableStateOf(store.tasks().toList()) }
                     val group = taskList.groupBy { it.topicId }
+
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         modifier = Modifier.fillMaxWidth(0.5f),
@@ -183,13 +170,15 @@ fun TasksScreen(
                         verticalArrangement = Arrangement.spacedBy(64.dp)
                     ) {
                         items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                            val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+                            val topicName =
+                                store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+
                             UpcomingTasksPanel(
                                 store,
                                 tareasGrupo,
                                 topicName,
                                 onEdit = { task ->
-                                    taskToEdit = task
+                                    onEdit(task)
                                     showEditTask = true
                                 },
                                 onDeleted = {
@@ -197,7 +186,8 @@ fun TasksScreen(
                                     onDeleted()
                                 },
                                 screen = Screen.TASKS
-                            )}
+                            )
+                        }
                     }
                 }
 
@@ -208,8 +198,7 @@ fun TasksScreen(
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
-                )
-                {
+                ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(300.dp)
@@ -224,6 +213,7 @@ fun TasksScreen(
             }
         }
     }
+
     if (showCreateTaskcopy) {
         Dialog(
             onDismissRequest = { },
@@ -239,11 +229,14 @@ fun TasksScreen(
                     .fillMaxHeight(0.9f),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                CreateTask(store = store, onClose = {
-                    showCreateTaskcopy = false
-                    onCreated()
-                    onNavigate(Screen.TASKS)
-                })
+                CreateTask(
+                    store = store,
+                    onClose = {
+                        showCreateTaskcopy = false
+                        onCreated()
+                        onNavigate(Screen.TASKS)
+                    }
+                )
             }
         }
     }
@@ -252,7 +245,6 @@ fun TasksScreen(
         Dialog(
             onDismissRequest = {
                 showEditTask = false
-                taskToEdit = null
             },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
@@ -268,18 +260,16 @@ fun TasksScreen(
             ) {
                 CreateTask(
                     store = store,
-                    task = taskToEdit,   // 👈 ESTO ACTIVA EL MODO EDICIÓN
+                    task = taskToEdit,
                     onClose = {
                         showEditTask = false
-                        taskToEdit = null
+                        onEditDone()
                         onCreated()
                     }
                 )
             }
         }
     }
-
-
 
     if (showCreateTopic) {
         CreateTopicDialog(

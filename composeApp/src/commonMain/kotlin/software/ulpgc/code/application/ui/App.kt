@@ -29,6 +29,8 @@ fun App(
     var refreshKey by remember { mutableStateOf(0) }
     var store by remember { mutableStateOf<Store?>(null) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var startEditMode by remember { mutableStateOf(false) }
+    var showResults by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
@@ -52,15 +54,16 @@ fun App(
                             store!!,
                             searchText,
                             onSearchTextChange = { searchText = it },
-                            onDeleted = { refreshKey++ }
-                        )
-
-                        Screen.RESULTS -> SearchResultsDialog(
-                            onNavigate = { screen = it },
-                            store=store!!,
-                            value=searchText,
-                            onSearchTextChange = { searchText = it },
-                            filters=filters,
+                            onEdit = { task ->
+                                taskToEdit = task
+                                startEditMode = true
+                                screen = Screen.TASKS
+                            },
+                            onDeleted = { refreshKey++ },
+                            onSearch = {
+                                filters.hasFilter = false
+                                showResults = true
+                            }
                         )
 
                         Screen.TASKS -> TasksScreen(
@@ -71,9 +74,18 @@ fun App(
                             filters,
                             onEdit = { task ->
                                 taskToEdit = task
-                            },
+                                startEditMode = true
+                                screen = Screen.TASKS
+                            } ,
+                            onDeleted = { refreshKey++ },
                             onCreated = { refreshKey++ },
-                            onDeleted = { refreshKey++ }
+                            taskToEdit = if (startEditMode) taskToEdit else null,
+                            onEditDone = {
+                                startEditMode = false
+                                taskToEdit = null
+                            },
+                            showResults = showResults,
+                            onShowResults = { showResults = it }
                         )
 
                         Screen.TASKS_CREATE -> TasksScreen(
@@ -86,7 +98,9 @@ fun App(
                                 taskToEdit = task
                             },
                             onDeleted = { refreshKey++ },
-                            autoOpen = AutoOpen.TASK
+                            autoOpen = AutoOpen.TASK,
+                            showResults = showResults,
+                            onShowResults = { showResults = it }
                         )
 
                         Screen.TOPIC_CREATE -> TasksScreen(
@@ -99,7 +113,9 @@ fun App(
                                 taskToEdit = task
                             },
                             onDeleted = { refreshKey++ },
-                            autoOpen = AutoOpen.TOPIC
+                            autoOpen = AutoOpen.TOPIC,
+                            showResults = showResults,
+                            onShowResults = { showResults = it }
                         )
 
                         Screen.TAG_CREATE -> TasksScreen(
@@ -112,7 +128,9 @@ fun App(
                                 taskToEdit = task
                             },
                             onDeleted = { refreshKey++ },
-                            autoOpen = AutoOpen.TAG
+                            autoOpen = AutoOpen.TAG,
+                            showResults = showResults,
+                            onShowResults = { showResults = it }
                         )
 
                         Screen.DASHBOARD -> DashboardScreen(
@@ -126,6 +144,20 @@ fun App(
                     }
                 }
             }
+        }
+
+        if (storeReady && showResults) {
+            SearchResultsDialog(
+                onDismiss = {
+                    showResults = false
+                    filters.hasFilter = false
+                },
+                onNavigate = { screen = it },
+                store = store!!,
+                value = searchText,
+                onSearchTextChange = { searchText = it },
+                filters = filters
+            )
         }
     }
 }

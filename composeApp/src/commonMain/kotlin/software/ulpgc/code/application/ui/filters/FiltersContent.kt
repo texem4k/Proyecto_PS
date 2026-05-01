@@ -16,7 +16,6 @@ import software.ulpgc.code.architecture.model.Priority
 fun FilterContent(
     onApply: (TaskFilters) -> Unit,
     store: Storage,
-    onNavigate: (Screen) -> Unit,
     onDismiss: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
