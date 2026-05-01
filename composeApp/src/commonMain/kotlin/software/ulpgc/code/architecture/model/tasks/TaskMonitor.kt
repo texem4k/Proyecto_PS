@@ -18,6 +18,7 @@ class TaskMonitor(
     private fun renew(task: Task) {
         task.time.start = task.interval + task.time.start
         task.time.end = task.interval + task.time.end
+        task.isCompleted = false
         task.dbState = DBState.UPDATED
     }
 

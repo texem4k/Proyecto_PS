@@ -66,6 +66,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 time,
                 TaskInterval.entries[raw.interval.toInt()],
                 tagList.toMutableSet(),
+                raw.isCompleted,
                 Uuid.parse(raw.id),
                 DBState.DEFAULT
             )
@@ -85,7 +86,8 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
             is Task -> {
                 dbQuery.insertTask(
                     obj.id.toString(), obj.name, obj.priority.toLong(), obj.userId.toString(),
-                    obj.description, obj.interval.ordinal.toLong(), obj.topicId.toString()
+                    obj.description, obj.interval.ordinal.toLong(), obj.topicId.toString(),
+                    obj.isCompleted
                 )
                 dbQuery.insertTime(
                     obj.time.id.toString(),

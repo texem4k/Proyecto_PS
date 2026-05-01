@@ -70,7 +70,14 @@ class CommandBuilder internal constructor (private val store: Storage) {
                 id().getOrThrow()
             )
             CommandType.DELETE_TASK -> DeleteTaskCommand(
-                store,id().getOrThrow()
+                store,
+                id().getOrThrow()
+            )
+            CommandType.MARK_COMPLETE -> MarkCompleteTaskCommand(
+                task().getOrThrow()
+            )
+            CommandType.UNMARK_COMPLETE -> UnmarkCompleteTaskCommand(
+                task().getOrThrow()
             )
         })
     }

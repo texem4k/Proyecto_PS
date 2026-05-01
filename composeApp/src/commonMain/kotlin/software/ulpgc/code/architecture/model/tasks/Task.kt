@@ -14,16 +14,17 @@ class Task (
     var time: Time,
     var interval: TaskInterval,
     var tags: MutableSet<Uuid> = mutableSetOf(),
+    var isCompleted: Boolean = false,
     val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW,
 ) : DBObject {
-    fun copy() = Task(priority, name, userId, description, topicId, time, interval, tags.map { it }.toMutableSet(), id)
+    fun copy() = Task(priority, name, userId, description, topicId, time, interval, tags.map { it }.toMutableSet(), isCompleted, id)
     override fun toString(): String {
         return "Task(id=$id, name='$name', " +
                 "userId=$userId, description='$description', " +
                 "priority=$priority, topicId=$topicId, " +
                 "time=Time($time), interval=$interval, " +
-                "tags=$tags)"
+                "tags=$tags, isCompleted=$isCompleted)"
     }
 
 }

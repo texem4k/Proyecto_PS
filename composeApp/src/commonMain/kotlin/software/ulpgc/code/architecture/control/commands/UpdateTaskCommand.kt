@@ -12,7 +12,11 @@ class UpdateTaskCommand internal constructor (private val currentTask: Task, pri
 
     constructor(currentTask: Task, priority: Int, name: String, description: String, topicId: Uuid,
                 time: Time, interval: TaskInterval, tags: MutableSet<Uuid>) :
-            this(currentTask, Task(priority, name, currentTask.userId, description, topicId, time, interval, tags,currentTask.id))
+            this(
+                currentTask,
+                Task(priority, name, currentTask.userId, description, topicId,
+                    time, interval, tags, currentTask.isCompleted , currentTask.id)
+            )
 
     override fun execute(): List<Command> {
         LogMaster.log("UpdateTaskCommand {from=$currentTask to=$newTask}")
@@ -24,6 +28,7 @@ class UpdateTaskCommand internal constructor (private val currentTask: Task, pri
         currentTask.time = newTask.time
         currentTask.interval = newTask.interval
         currentTask.tags = newTask.tags
+        currentTask.isCompleted = newTask.isCompleted
         currentTask.dbState = DBState.UPDATED
         return listOf(UpdateTaskCommand(currentTask, currentClone))
     }

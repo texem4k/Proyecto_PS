@@ -1,3 +1,5 @@
+import kotlin.Boolean;
+
 --  ./gradlew generateCommonMainAppDatabaseInterface
 PRAGMA foreign_keys = 1;
 
@@ -27,6 +29,7 @@ CREATE TABLE Task (
     description TEXT NOT NULL,
     interval INTEGER NOT NULL,
     topicId TEXT NOT NULL,
+    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
     FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
 );
@@ -65,7 +68,7 @@ insertTag:
 INSERT OR IGNORE INTO Tag(id, name, topicId) VALUES(?, ?, ?);
 
 insertTask:
-INSERT OR IGNORE INTO Task(id, name, priority, userId, description, interval, topicId) VALUES (?, ?, ?, ?, ?, ?,  ?);
+INSERT OR IGNORE INTO Task(id, name, priority, userId, description, interval, topicId, isCompleted) VALUES (?, ?, ?, ?, ?, ?,  ?, ?);
 
 insertTime:
 INSERT OR IGNORE INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
