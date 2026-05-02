@@ -91,29 +91,13 @@ enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    /*val sampleEntries = remember(today) {
-        mapOf(
-            today to listOf(
-                SampleEntry("Reunión de equipo", "10:00 · 11:00", Color(0xFF4F6EF7)),
-                SampleEntry("Enviar informe Q2", "Vence hoy", Color(0xFFF59E0B))
-            ),
-            today.plus(2, DateTimeUnit.DAY) to listOf(
-                SampleEntry("Revisión de diseño", "15:00 · 16:30", Color(0xFF4F6EF7)),
-                SampleEntry("Actualizar dependencias", "Sin hora", Color(0xFFF59E0B))
-            ),
-            today.plus(5, DateTimeUnit.DAY) to listOf(
-                SampleEntry("Sprint planning", "11:00 · 12:00", Color(0xFF4F6EF7))
-            )
-        )
-    }*/
-
     val sampleEntries = remember(store.tasks()) {
         store.tasks().groupBy { task ->
-            task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            task.time.start.toLocalDateTime(TimeZone.UTC).date
         }.mapValues { (_, tasks) ->
             tasks.map { task ->
-                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
-                val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
+                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
                 SampleEntry(
                     title = task.name,
                     time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
@@ -944,27 +928,26 @@ fun YearDayCell(
                     else -> Color.Unspecified
                 },
                 fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 9.sp,
+                fontSize = 12.sp,
                 lineHeight = 10.sp
             )
 
-            // Puntos de color si hay entradas (máx 3)
             if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.padding(top = 1.dp)
+                Box(
+                    modifier = Modifier
+                        .size(25.dp)
+                        .background(
+                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF4F6EF7),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    entries.take(3).forEach { entry ->
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .background(
-                                    color = if (isSelected) Color.White.copy(alpha = 0.8f)
-                                    else entry.color,
-                                    shape = CircleShape
-                                )
-                        )
-                    }
+                    Text(
+                        text = entries.size.toString(),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color(0xFF4F6EF7) else Color.White
+                    )
                 }
             }
         }
