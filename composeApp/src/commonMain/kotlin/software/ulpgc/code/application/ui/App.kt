@@ -13,6 +13,7 @@ import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchResultsDialog
@@ -138,6 +139,11 @@ fun App(
                             store!!,
                             searchText,
                             onSearchTextChange = { searchText = it },
+                        )
+
+                        Screen.CALENDAR -> CalendarScreen(
+                            onNavigate = { screen = it },
+                            store!!
                         )
 
                         else -> {}

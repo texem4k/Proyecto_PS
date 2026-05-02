@@ -1,5 +1,6 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.pages
 
+import Screen
 import androidx.compose.foundation.ScrollState
 import com.kizitonwose.calendar.core.OutDateStyle
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -35,12 +35,10 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +46,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -62,8 +59,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.VerticalYearCalendar
-import com.kizitonwose.calendar.compose.WeekCalendar
-import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
 import com.kizitonwose.calendar.compose.yearcalendar.rememberYearCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
@@ -87,13 +82,16 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.model.tasks.Task
 
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    val sampleEntries = remember(today) {
+    /*val sampleEntries = remember(today) {
         mapOf(
             today to listOf(
                 SampleEntry("Reunión de equipo", "10:00 · 11:00", Color(0xFF4F6EF7)),
@@ -107,45 +105,73 @@ fun CalendarScreen() {
                 SampleEntry("Sprint planning", "11:00 · 12:00", Color(0xFF4F6EF7))
             )
         )
+    }*/
+
+    val sampleEntries = remember(store.tasks()) {
+        store.tasks().groupBy { task ->
+            task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        }.mapValues { (_, tasks) ->
+            tasks.map { task ->
+                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+                val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+                SampleEntry(
+                    title = task.name,
+                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
+                    color = Color(0xFF4F6EF7),
+                    task = task
+                )
+            }
+        }
     }
 
     var selectedDate by remember { mutableStateOf(today) }
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
     // MonthView está al final
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (viewMode) {
-            CalendarViewMode.MES -> MonthView(
-                sampleEntries = sampleEntries,
-                selectedDate = selectedDate,
-                onDateSelected = { selectedDate = it },
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it }
-            )
-            CalendarViewMode.DIA -> DayView(
-                sampleEntries = sampleEntries,
-                selectedDate = selectedDate,
-                onDateSelected = { selectedDate = it },
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it }
-            )
-            CalendarViewMode.SEMANA -> WeekView(
-                sampleEntries = sampleEntries,
-                selectedDate = selectedDate,
-                onDateSelected = { selectedDate = it },
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it }
-            )
-            CalendarViewMode.AÑO -> YearView(
-                sampleEntries = sampleEntries,
-                selectedDate = selectedDate,
-                onDateSelected = { selectedDate = it },
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it }
-            )
+    Row(modifier = Modifier.fillMaxSize()) {
+        SideBar(
+            selectedScreen = Screen.CALENDAR,
+            onNavigate = onNavigate
+        )
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (viewMode) {
+                CalendarViewMode.MES -> MonthView(
+                    sampleEntries = sampleEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store
+                )
+                CalendarViewMode.DIA -> DayView(
+                    sampleEntries = sampleEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store
+                )
+                CalendarViewMode.SEMANA -> WeekView(
+                    sampleEntries = sampleEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store
+                )
+                CalendarViewMode.AÑO -> YearView(
+                    sampleEntries = sampleEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store
+                )
+            }
         }
     }
 }
-data class SampleEntry(val title: String, val time: String, val color: Color)
+data class SampleEntry(val title: String, val time: String, val color: Color, val task: Task?=null)
 
 @Composable
 fun DayCell(
@@ -359,8 +385,11 @@ fun MonthHeader(month: CalendarMonth,
 fun DayEntriesPanel(
     date: LocalDate,
     entries: List<SampleEntry>,
+    store: Storage,
     modifier: Modifier = Modifier
 ) {
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -376,6 +405,7 @@ fun DayEntriesPanel(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable { selectedEntry = entry }
                         .background(
                             color = Color(0xFFF5F5F5),
                             shape = RoundedCornerShape(12.dp)
@@ -390,12 +420,43 @@ fun DayEntriesPanel(
             }
         }
     }
+
+    selectedEntry?.let { entry ->
+        val task = entry.task
+        if (task != null) {
+            val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+            val tagNames = task.tags.mapNotNull { id ->
+                store.tags().associateBy { it.id }[id]?.name
+            }
+            AlertDialog(
+                onDismissRequest = { selectedEntry = null },
+                title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Descripción: ${task.description}\n" +
+                                "Tema: $topicName\n" +
+                                "Tags: ${tagNames.joinToString(", ")}\n" +
+                                "Fecha de comienzo: ${task.time.start}\n" +
+                                "Fecha de final: ${task.time.end}\n" +
+                                "Prioridad: ${task.priority}"
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                    Button(onClick = { }) { Text("Eliminar tarea") }
+                    Button(onClick = { }) { Text("Editar tarea") }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+    }
 }
 // Función encargada del popup de la celda de día
 @Composable
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
+    store: Storage,        // ← añadir
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -408,9 +469,10 @@ fun DayDetailDialog(
             )
         },
         text = {
-            DayEntriesPanel(date = date, entries = entries)
+            DayEntriesPanel(date = date, entries = entries, store = store)
         },
         confirmButton = {
+            Button(onClick = {}) { Text("Crear Tarea")}
             TextButton(onClick = onDismiss) {
                 Text("Cerrar", color = Color(0xFF4F6EF7))
             }
@@ -425,7 +487,8 @@ fun MonthView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
-    onViewModeChange: (CalendarViewMode) -> Unit
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentMonth = today.yearMonth
@@ -510,6 +573,7 @@ fun MonthView(
                 DayDetailDialog(
                     date = selectedDate,
                     entries = entriesForDay,
+                    store = store,
                     onDismiss = { showDialog = false }
                 )
             }
@@ -647,7 +711,8 @@ fun YearView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
-    onViewModeChange: (CalendarViewMode) -> Unit
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentYear = remember { Year.now() }
@@ -694,6 +759,7 @@ fun YearView(
             monthBody = { _, content ->
                 Box(
                     modifier = Modifier
+                        .border(1.dp, Color.Black)
                         .background(Color(0xFFF5F7FB))
                         .padding(horizontal = 1.dp)
                 ) { content() }
@@ -719,6 +785,7 @@ fun YearView(
             DayDetailDialog(
                 date = dialogDate,
                 entries = entriesForDay,
+                store = store,
                 onDismiss = { showDialog = false }
             )
         }
@@ -817,12 +884,15 @@ fun YearMonthHeader(month: CalendarMonth) {
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     )
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Text(
             text = monthNames[month.yearMonth.month.ordinal],
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
-            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
+            textAlign = TextAlign.Center,           // ← centrar texto
+            modifier = Modifier
+                .fillMaxWidth()                     // ← necesario para que el center funcione
+                .padding(vertical = 6.dp)
         )
         // Días de la semana
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -911,7 +981,7 @@ private val END_HOUR   = 24       // última hora visible
 
 // ── Celda de evento en la columna de día ────────────────────────────────────
 @Composable
-fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeight: Dp) {
+fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeight: Dp, onClick: () -> Unit = {}) {
     val topDp    = ((startHour - START_HOUR) * hourHeight.value).dp
     val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
 
@@ -928,6 +998,7 @@ fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeig
                 color = entry.color,
                 shape = RoundedCornerShape(topStart = 5.dp, bottomStart = 5.dp)
             )
+            .clickable {onClick()}
             .padding(horizontal = 5.dp, vertical = 3.dp)
     ) {
         Column {
@@ -957,7 +1028,7 @@ fun WeekDayColumn(
     isToday: Boolean,
     isSelected: Boolean,
     hourHeight: Dp,
-    onDayClick: () -> Unit
+    onEntryClick: (SampleEntry) -> Unit
 ) {
     val totalHours = END_HOUR - START_HOUR
 
@@ -967,9 +1038,7 @@ fun WeekDayColumn(
             .fillMaxWidth()
             .background(Color.White)
     ) {
-        // Líneas de hora y media hora
         for (h in 0 until totalHours) {
-            // Línea de hora
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -977,7 +1046,6 @@ fun WeekDayColumn(
                     .offset(y = (h * hourHeight.value).dp)
                     .background(Color.Black.copy(alpha = 0.2f))
             )
-            // Línea de media hora (discontinua simulada con alpha)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -987,19 +1055,17 @@ fun WeekDayColumn(
             )
         }
 
-        // Eventos posicionados absolutamente
         entries.forEach { entry ->
-            // Parsea "HH:mm · HH:mm" o "HH:mm" del campo time
             val (startH, endH) = parseEntryTime(entry.time)
             WeekEventChip(
                 entry = entry,
                 startHour = startH,
                 endHour = endH,
-                hourHeight = hourHeight
+                hourHeight = hourHeight,
+                onClick = { onEntryClick(entry) }
             )
         }
 
-        // Línea de "ahora" si es hoy
         if (isToday) {
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             val nowFraction = now.hour + now.minute / 60f
@@ -1028,8 +1094,6 @@ fun WeekDayColumn(
     }
 }
 
-// ── Helper: parsea el campo `time` de SampleEntry ──────────────────────────
-// Acepta "10:00 · 11:00", "Vence hoy", "Sin hora", etc.
 private fun parseEntryTime(time: String): Pair<Float, Float> {
     return try {
         val parts = time.split("·").map { it.trim() }
@@ -1049,19 +1113,18 @@ fun WeekView(
     onViewModeChange: (CalendarViewMode) -> Unit,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    sampleEntries: Map<LocalDate, List<SampleEntry>>
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    store: Storage
 ) {
     val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
     val totalHours  = END_HOUR - START_HOUR
     val totalHeightDp = HOUR_HEIGHT * totalHours
-
-    // ── Navegación: solo un entero que representa el offset de semanas ──
     var weekOffset by remember { mutableStateOf(0) }
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
 
-    // Lunes de la semana visible
     val weekStart = remember(weekOffset) {
-        val daysSinceMonday = currentDate.dayOfWeek.ordinal // 0=Lun, 6=Dom
+        val daysSinceMonday = currentDate.dayOfWeek.ordinal
         currentDate
             .minus(DatePeriod(days = daysSinceMonday))
             .plus(DatePeriod(days = weekOffset * 7))
@@ -1071,7 +1134,6 @@ fun WeekView(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-
         WeekHeader(
             startDate        = weekDates.first(),
             endDate          = weekDates.last(),
@@ -1094,14 +1156,12 @@ fun WeekView(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Letra del día encima
                     Text(
                         text = dayLetters[index],
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray
                     )
-                    // Número debajo
                     if (date == currentDate) {
                         Box(
                             modifier = Modifier
@@ -1133,7 +1193,6 @@ fun WeekView(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Columna de horas
             Box(
                 modifier = Modifier
                     .width(TIME_COL_W)
@@ -1155,7 +1214,6 @@ fun WeekView(
                 }
             }
 
-            // 7 columnas de días
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -1175,38 +1233,67 @@ fun WeekView(
                             isToday    = date == currentDate,
                             isSelected = date == selectedDate,
                             hourHeight = HOUR_HEIGHT,
-                            onDayClick = { onDateSelected(date) }
+                            onEntryClick = { entry ->
+                                onDateSelected(date)
+                                selectedEntry = entry
+                            }
                         )
                     }
                 }
             }
         }
+
+        selectedEntry?.let { entry ->
+            val task = entry.task
+            if (task != null) {
+                val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                val tagNames = task.tags.mapNotNull { id ->
+                    store.tags().associateBy { it.id }[id]?.name
+                }
+                AlertDialog(
+                    onDismissRequest = { selectedEntry = null },
+                    title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "Descripción: ${task.description}\n" +
+                                    "Tema: $topicName\n" +
+                                    "Tags: ${tagNames.joinToString(", ")}\n" +
+                                    "Fecha de comienzo: ${task.time.start}\n" +
+                                    "Fecha de final: ${task.time.end}\n" +
+                                    "Prioridad: ${task.priority}"
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                        Button(onClick = { }) { Text("Eliminar tarea") }
+                        Button(onClick = { }) { Text("Editar tarea") }
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
+        }
     }
 }
-
-// ── Constantes (ya las tienes definidas arriba, se reutilizan) ───────────
-// HOUR_HEIGHT, TIME_COL_W, START_HOUR, END_HOUR — mismas que WeekView
-
 @Composable
 fun DayView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
-    onViewModeChange: (CalendarViewMode) -> Unit
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage
 ) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
     val totalHours = END_HOUR - START_HOUR
     val totalHeightDp = HOUR_HEIGHT * totalHours
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
 
-    // Navegar día a día con un offset
     var dayOffset by remember { mutableStateOf(0) }
     val currentDay = remember(dayOffset) {
         today.plus(DatePeriod(days = dayOffset))
     }
 
-    // Scroll automático a la hora actual al abrir la vista
     LaunchedEffect(Unit) {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val nowFraction = (now.hour - START_HOUR).coerceAtLeast(0)
@@ -1214,7 +1301,6 @@ fun DayView(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-
         DayHeader(
             date = currentDay,
             onPreviousClick = { dayOffset-- },
@@ -1224,7 +1310,6 @@ fun DayView(
             scrollState = scrollState
         )
 
-        // Franja de eventos "todo el día" (sin hora)
         val allDayEntries = (sampleEntries[currentDay] ?: emptyList())
             .filter { it.time == "Vence hoy" || it.time == "Sin hora" }
 
@@ -1232,13 +1317,11 @@ fun DayView(
             AllDayStrip(entries = allDayEntries)
         }
 
-        // Cuadrícula de horas + eventos
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Columna de horas (idéntica a WeekView)
             Box(
                 modifier = Modifier
                     .width(TIME_COL_W)
@@ -1259,7 +1342,6 @@ fun DayView(
                 }
             }
 
-            // Columna única del día (ocupa todo el ancho restante)
             val timedEntries = (sampleEntries[currentDay] ?: emptyList())
                 .filter { it.time != "Vence hoy" && it.time != "Sin hora" }
 
@@ -1275,13 +1357,42 @@ fun DayView(
                     isToday = currentDay == today,
                     isSelected = true,
                     hourHeight = HOUR_HEIGHT,
-                    onDayClick = { onDateSelected(currentDay) }
+                    onEntryClick = { entry -> selectedEntry = entry }
+                )
+            }
+        }
+
+        selectedEntry?.let { entry ->
+            val task = entry.task
+            if (task != null) {
+                val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                val tagNames = task.tags.mapNotNull { id ->
+                    store.tags().associateBy { it.id }[id]?.name
+                }
+                AlertDialog(
+                    onDismissRequest = { selectedEntry = null },
+                    title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "Descripción: ${task.description}\n" +
+                                    "Tema: $topicName\n" +
+                                    "Tags: ${tagNames.joinToString(", ")}\n" +
+                                    "Fecha de comienzo: ${task.time.start}\n" +
+                                    "Fecha de final: ${task.time.end}\n" +
+                                    "Prioridad: ${task.priority}"
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                        Button(onClick = { }) { Text("Eliminar tarea") }
+                        Button(onClick = { }) { Text("Editar tarea") }
+                    },
+                    shape = RoundedCornerShape(16.dp)
                 )
             }
         }
     }
 }
-
 // ── Franja de eventos sin hora ───────────────────────────────────────────
 @Composable
 fun AllDayStrip(entries: List<SampleEntry>) {
