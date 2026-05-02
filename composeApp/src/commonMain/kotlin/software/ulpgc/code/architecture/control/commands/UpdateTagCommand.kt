@@ -1,4 +1,4 @@
-package software.ulpgc.code.architecture.control
+package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.Tag
@@ -10,11 +10,11 @@ class UpdateTagCommand internal constructor (private val currentTag: Tag,private
         currentTag, Tag(newName, newTopicId, currentTag.id),
     )
 
-    override fun execute(): Command {
+    override fun execute(): List<Command> {
         val currentClone = currentTag.copy()
         currentTag.name = newTag.name
         currentTag.topicId = newTag.topicId
         currentTag.dbState = DBState.UPDATED
-        return UpdateTagCommand(currentTag, currentClone)
+        return listOf(UpdateTagCommand(currentTag, currentClone))
     }
 }

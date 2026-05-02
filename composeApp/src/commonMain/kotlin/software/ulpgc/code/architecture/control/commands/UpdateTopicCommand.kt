@@ -1,4 +1,4 @@
-package software.ulpgc.code.architecture.control
+package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.Topic
@@ -9,11 +9,11 @@ class UpdateTopicCommand internal constructor (private val currentTopic: Topic, 
         currentTopic, Topic(newName, newColor, currentTopic.id),
     )
 
-    override fun execute(): Command {
+    override fun execute(): List<Command> {
         val currentClone = currentTopic.copy()
         currentTopic.name = newTopic.name
         currentTopic.color = newTopic.color
         currentTopic.dbState = DBState.UPDATED
-        return UpdateTopicCommand(currentTopic, currentClone)
+        return listOf(UpdateTopicCommand(currentTopic, currentClone))
     }
 }

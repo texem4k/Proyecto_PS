@@ -58,7 +58,7 @@ import software.ulpgc.code.application.ui.Screen
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.control.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.sp

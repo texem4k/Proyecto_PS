@@ -66,7 +66,7 @@ data class DBData(
                 topicId,
                 TimeFactory().createTime(Instant.parse(time.start), Instant.parse(time.end), time.type, time.id),
                 TaskInterval.entries[interval],
-                tags.toMutableList(),
+                tags.toMutableSet(),
                 id,
                 DBState.DEFAULT
             )
