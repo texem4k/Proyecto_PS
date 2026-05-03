@@ -70,7 +70,7 @@ fun CreateTagDialog(
         },
         confirmButton = {
             Button(onClick = {
-                val command = CommandBuilder(store).set("name", name).set("topicId", selectedTopic.toString()).build((CommandType.CREATE_TAG))
+                val command = CommandBuilder(store).set("name", name).set("topicId", selectedTopic?.id.toString()).build((CommandType.CREATE_TAG))
 
                 command
                     .onSuccess { CommandLauncher.launch(it) }

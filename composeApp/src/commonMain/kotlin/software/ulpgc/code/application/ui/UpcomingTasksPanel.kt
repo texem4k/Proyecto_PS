@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,18 +30,15 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.uuid.Uuid
 
-
 @Composable
 fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen, onRequestEditNavigation: (() -> Unit)? = null) {
     val tasks = tareas ?: store.tasks().toList()
     val topic = store.topics().find { x-> x.name==title }
+    val topicColor = topic?.color?.let { Color(it) } ?: MaterialTheme.colorScheme.surface
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf(-1) }
     var showDialog by remember { mutableStateOf(true) }
-
-
-
 
     val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico", "Eliminar un tag del tópico")
 
@@ -49,28 +47,25 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             .widthIn(max=500.dp)
             .heightIn(max=310.dp)
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(8.dp)
+            .padding(2.dp)
             .fillMaxWidth(0.8f),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(2.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(topic?.color!!)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ){
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp, top = 4.dp)
             ) {
-
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
@@ -101,7 +96,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                                 DropdownMenuItem(
                                     text = { Text(e) },
                                     onClick = {
-                                        selectedOption=options.indexOf(e)
+                                        selectedOption = options.indexOf(e)
                                         expandDropdown = false
                                         showDialog = true
                                     }
@@ -109,11 +104,10 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             }
                         }
 
-
                         if(showDialog) {
                             when(selectedOption){
-                                0 -> EditTopic(store,title, onDismiss={showDialog=false}, { onDeleted() })
-                                1 -> DeleteTopic(store,title, onDismiss={showDialog=false}, { onDeleted() })
+                                0 -> EditTopic(store, title, onDismiss={showDialog=false}, { onDeleted() })
+                                1 -> DeleteTopic(store, title, onDismiss={showDialog=false}, { onDeleted() })
                                 2 -> CreateTagDialog(store, onClose = {showDialog=false}, title)
                                 3 -> RemoveTag(store, onClose = {showDialog=false}, title)
                             }
@@ -121,15 +115,20 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     }
                 }
             }
+
             LazyColumn(
-                modifier = Modifier.padding(vertical =0.5f.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(vertical = 0.5f.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(tasks) { task ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth(0.95f)
                             .clickable { selectedTask = task },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
                         Row(
                             modifier = Modifier
@@ -167,6 +166,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     Spacer(Modifier.height(10.dp))
                 }
             }
+
             if (selectedTask != null) {
                 val tz = TimeZone.currentSystemDefault()
                 val startDate = selectedTask!!.time.start.toFormattedDate(tz)
@@ -195,11 +195,9 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                         }
                         Button(onClick = {
                             val command = CommandBuilder(store).set("id", selectedTask!!.id.toString()).build(CommandType.DELETE_TASK)
-
                             command
                                 .onSuccess { CommandLauncher.launch(it) }
                                 .onFailure { println("error: ${it.message}") }
-
                             onDeleted()
                             selectedTask = null
                         }) {
@@ -262,7 +260,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted
 
                     else -> {
 
-                        val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", "16").build(CommandType.UPDATE_TOPIC)
+                        val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", chosenColor!!.toArgb().toString()).build(CommandType.UPDATE_TOPIC)
 
                         command
                             .onSuccess { CommandLauncher.launch(it) }

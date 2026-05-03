@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.ColorWheelPicker
+import software.ulpgc.code.application.toRgbString
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -26,19 +28,22 @@ fun CreateTopicDialog(
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text("Crear tópico") },
-        text = {
-            Column {
+        text ={
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nombre") }
                 )
+
                 ColorWheelPicker(
                     wheelSize = 130.dp,
                     onColorSelected = { color ->
                         chosenColor = color
                     }
                 )
+                Text("Color seleccionado: ${chosenColor?.toRgbString()}")
+
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }

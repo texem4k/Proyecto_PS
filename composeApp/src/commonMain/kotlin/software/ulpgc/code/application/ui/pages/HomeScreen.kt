@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.menuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -184,9 +185,7 @@ fun HomeScreen(
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Card(modifier = Modifier.weight(1f).padding(8.dp)) {
-                        Text("Widget E")
-                    }
+                    menuTareas(store)
                 }
             }
         }

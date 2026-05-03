@@ -455,19 +455,16 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                             .set("description", form.taskDescription)
                             .set("topicId", form.taskTopic.toString())
                             .set("interval", form.taskInterval.toString())
+                            .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
 
-                        if (form.taskTags.isNotEmpty()) {
-                            builder = builder.set("tags", form.taskTags.joinToString(", "))
-                        }
-
                         if (task != null) {
-                            val command =CommandBuilder(store).set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
+                            val command =builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
                             command
                                 .onSuccess { CommandLauncher.launch(it) }
                                 .onFailure { println("error: ${it.message}") }
                         } else {
-                            val command = CommandBuilder(store).build(CommandType.CREATE_TASK)
+                            val command = builder.build(CommandType.CREATE_TASK)
 
                             command
                                 .onSuccess { CommandLauncher.launch(it) }
