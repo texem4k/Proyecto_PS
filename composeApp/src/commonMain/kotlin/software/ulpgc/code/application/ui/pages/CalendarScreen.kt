@@ -87,9 +87,10 @@ import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
+
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 @Composable
-fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
+fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     val sampleEntries = remember(store.tasks()) {
@@ -126,7 +127,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store
+                    store = store,
+                    onNavigate = onNavigate
                 )
                 CalendarViewMode.DIA -> DayView(
                     sampleEntries = sampleEntries,
@@ -142,7 +144,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store
+                    store = store,
+                    onNavigate = onNavigate
                 )
                 CalendarViewMode.AÑO -> YearView(
                     sampleEntries = sampleEntries,
@@ -150,7 +153,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store
+                    store = store,
+                    onNavigate = onNavigate
                 )
             }
         }
@@ -441,9 +445,11 @@ fun DayEntriesPanel(
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Storage,        // ← añadir
+    store: Storage,
     onDismiss: () -> Unit
 ) {
+    var showCreateTask by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -457,13 +463,31 @@ fun DayDetailDialog(
             DayEntriesPanel(date = date, entries = entries, store = store)
         },
         confirmButton = {
-            Button(onClick = {}) { Text("Crear Tarea")}
+            Button(onClick = { showCreateTask = true }) {  // ← solo cambia el estado
+                Text("Crear Tarea")
+            }
             TextButton(onClick = onDismiss) {
                 Text("Cerrar", color = Color(0xFF4F6EF7))
             }
         },
         shape = RoundedCornerShape(16.dp)
     )
+
+    // Segundo diálogo con el formulario
+    if (showCreateTask) {
+        AlertDialog(
+            onDismissRequest = { showCreateTask = false },
+            title = null,
+            text = {
+                CreateTask(
+                    store = store,
+                    onClose = { showCreateTask = false }
+                )
+            },
+            confirmButton = {},
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 }
 
 @Composable
@@ -472,6 +496,7 @@ fun MonthView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
+    onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     store: Storage
 ) {
@@ -559,7 +584,10 @@ fun MonthView(
                     date = selectedDate,
                     entries = entriesForDay,
                     store = store,
-                    onDismiss = { showDialog = false }
+                    onDismiss = {
+                        showDialog = false;
+                        this
+                    }
                 )
             }
         }
@@ -696,6 +724,7 @@ fun YearView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
+    onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     store: Storage
 ) {
@@ -1098,7 +1127,8 @@ fun WeekView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
-    store: Storage
+    store: Storage,
+    onNavigate: (Screen) -> Unit
 ) {
     val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
@@ -1106,6 +1136,7 @@ fun WeekView(
     val totalHeightDp = HOUR_HEIGHT * totalHours
     var weekOffset by remember { mutableStateOf(0) }
     var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+    var clickedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     val weekStart = remember(weekOffset) {
         val daysSinceMonday = currentDate.dayOfWeek.ordinal
@@ -1210,6 +1241,7 @@ fun WeekView(
                             .weight(1f)
                             .fillMaxHeight()
                             .border(0.5.dp, Color.Black.copy(alpha = 0.15f))
+                            .clickable{ clickedDate = date }
                     ) {
                         WeekDayColumn(
                             date       = date,
@@ -1255,6 +1287,53 @@ fun WeekView(
                     shape = RoundedCornerShape(16.dp)
                 )
             }
+        }
+
+        clickedDate?.let { date ->
+            AlertDialog(
+                onDismissRequest = { clickedDate = null },
+                title = {
+                    Text(
+                        text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                },
+                text = {
+                    val entries = sampleEntries[date] ?: emptyList()
+                    if (entries.isEmpty()) {
+                        Text("No hay eventos para este día")
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            entries.forEach { entry ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                                        .padding(7.dp)
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(entry.title)
+                                        Text(entry.time, color = Color.Gray)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        onNavigate(Screen.TASKS_CREATE)
+                        clickedDate = null
+                    }) {
+                        Text("Crear tarea")
+                    }
+                    TextButton(onClick = { clickedDate = null }) {
+                        Text("Cerrar", color = Color(0xFF4F6EF7))
+                    }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }
@@ -1539,6 +1618,7 @@ fun HomeCalendar(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
+    onNavigate: (Screen) -> Unit,
     store: Storage
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -1619,7 +1699,7 @@ fun HomeCalendar(
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(-2.dp)
+                            verticalArrangement = Arrangement.spacedBy(-3.dp)
                         ) {
                             Text(
                                 text = day.date.dayOfMonth.toString(),

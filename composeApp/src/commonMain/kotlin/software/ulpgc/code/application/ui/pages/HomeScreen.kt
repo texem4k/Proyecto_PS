@@ -220,6 +220,7 @@ fun HomeScreen(
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
                             store = store,
+                            onNavigate = onNavigate
                         )
                     }
                 }
