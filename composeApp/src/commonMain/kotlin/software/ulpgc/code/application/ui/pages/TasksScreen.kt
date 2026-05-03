@@ -18,7 +18,7 @@ import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
-import software.ulpgc.code.application.ui.filters.CreateTopicDialog
+import software.ulpgc.code.application.ui.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CreateTask

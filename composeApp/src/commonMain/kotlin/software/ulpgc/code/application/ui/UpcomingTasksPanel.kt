@@ -109,8 +109,8 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
                         if(showDialog) {
                             when(selectedOption){
-                                0 -> EditTopic(store,title, onDismiss={showDialog=false})
-                                1 -> DeleteTopic(store,title, onDismiss={showDialog=false})
+                                0 -> EditTopic(store,title, onDismiss={showDialog=false}, { onDeleted() })
+                                1 -> DeleteTopic(store,title, onDismiss={showDialog=false}, { onDeleted() })
                                 2 -> CreateTagDialog(store, onClose = {showDialog=false}, title)
                                 3 -> RemoveTag(store, onClose = {showDialog=false}, title)
                             }
@@ -208,7 +208,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 }
 
 @Composable
-fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
+fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
 
     val currentTopic = store.topics().find { it.name == topicName }
     var chosenColor by remember { mutableStateOf<Color?>(Color(currentTopic?.color!!)) }
@@ -263,6 +263,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
                         )
                         topicData = modifingForm()
                         onDismiss()
+                        onDeleted()
                     }
                 }
             }) {
@@ -279,7 +280,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
 
 
 @Composable
-fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
+fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
     val currentTopic = store.topics().find { it.name == topicName }
 
     AlertDialog(
@@ -295,6 +296,7 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit){
                         .set("id", currentTopic?.id.toString())
                         .build(CommandType.DELETE_TOPIC))
                 onDismiss()
+                onDeleted()
             }){
                 Text("Confirmar")
             }
