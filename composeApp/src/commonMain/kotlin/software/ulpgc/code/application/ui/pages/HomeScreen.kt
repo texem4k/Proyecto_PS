@@ -90,7 +90,9 @@ fun HomeScreen(
     // Dentro de HomeScreen, antes del Box:
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
-    val sampleEntries = remember(store.tasks()) {
+    var version by remember { mutableStateOf(0) }
+
+    val sampleEntries = remember(version) {
         store.tasks().groupBy { task ->
             task.time.start.toLocalDateTime(TimeZone.UTC).date
         }.mapValues { (_, tasks) ->
@@ -220,7 +222,8 @@ fun HomeScreen(
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
                             store = store,
-                            onNavigate = onNavigate
+                            onNavigate = onNavigate,
+                            onTaskCreated = { version++ },
                         )
                     }
                 }

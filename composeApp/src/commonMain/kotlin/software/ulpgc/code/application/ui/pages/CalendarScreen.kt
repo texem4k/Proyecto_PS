@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -71,7 +70,6 @@ import com.kizitonwose.calendar.core.minusMonths
 import com.kizitonwose.calendar.core.minusYears
 import com.kizitonwose.calendar.core.plusMonths
 import com.kizitonwose.calendar.core.plusYears
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -86,14 +84,20 @@ import kotlinx.datetime.todayIn
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.Card
 
 
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
+
 @Composable
-fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
+fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    val sampleEntries = remember(store.tasks()) {
+    var version by remember { mutableStateOf(0) }
+
+    val sampleEntries = remember(version) {
         store.tasks().groupBy { task ->
             task.time.start.toLocalDateTime(TimeZone.UTC).date
         }.mapValues { (_, tasks) ->
@@ -102,7 +106,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
                 val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
                 SampleEntry(
                     title = task.name,
-                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
+                    time = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                            "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
                     color = Color(0xFF4F6EF7),
                     task = task
                 )
@@ -110,14 +115,13 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
         }
     }
 
+    val onTaskCreated: () -> Unit = { version++ }
+
     var selectedDate by remember { mutableStateOf(today) }
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
-    // MonthView está al final
+
     Row(modifier = Modifier.fillMaxSize()) {
-        SideBar(
-            selectedScreen = Screen.CALENDAR,
-            onNavigate = onNavigate
-        )
+        SideBar(selectedScreen = Screen.CALENDAR, onNavigate = onNavigate)
 
         Box(modifier = Modifier.fillMaxSize()) {
             when (viewMode) {
@@ -128,7 +132,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
                     store = store,
-                    onNavigate = onNavigate
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated
                 )
                 CalendarViewMode.DIA -> DayView(
                     sampleEntries = sampleEntries,
@@ -136,7 +141,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store
+                    store = store,
+                    onTaskCreated = onTaskCreated
                 )
                 CalendarViewMode.SEMANA -> WeekView(
                     sampleEntries = sampleEntries,
@@ -145,7 +151,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
                     store = store,
-                    onNavigate = onNavigate
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated
                 )
                 CalendarViewMode.AÑO -> YearView(
                     sampleEntries = sampleEntries,
@@ -154,13 +161,17 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, ) {
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
                     store = store,
-                    onNavigate = onNavigate
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated
                 )
             }
         }
     }
 }
-data class SampleEntry(val title: String, val time: String, val color: Color, val task: Task?=null)
+
+data class SampleEntry(val title: String, val time: String, val color: Color, val task: Task? = null)
+
+// ── DayCell ──────────────────────────────────────────────────────────────────
 
 @Composable
 fun DayCell(
@@ -184,7 +195,13 @@ fun DayCell(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(24.dp)) {
-                Box (modifier = Modifier.size(25.dp).fillMaxHeight().padding(bottom = 2.dp, start = 4.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(25.dp)
+                        .fillMaxHeight()
+                        .padding(bottom = 2.dp, start = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = day.date.dayOfMonth.toString(),
                         color = when {
@@ -198,9 +215,7 @@ fun DayCell(
                         lineHeight = 15.sp
                     )
                 }
-                Box(Modifier.padding(start=4.dp).weight(1f).height(20.dp).background(Color.Black).fillMaxHeight())
             }
-            // Zona encargada de la previsualización de tareas
             if (entries.isNotEmpty()) {
                 Column(
                     modifier = Modifier
@@ -238,13 +253,16 @@ fun DayCell(
     }
 }
 
+// ── MonthHeader ──────────────────────────────────────────────────────────────
+
 @Composable
-fun MonthHeader(month: CalendarMonth,
-                onPreviousClick: () -> Unit,
-                onNextClick: () -> Unit,
-                viewMode: CalendarViewMode,
-                onViewModeChange: (CalendarViewMode) -> Unit,
-                scrollState: ScrollState
+fun MonthHeader(
+    month: CalendarMonth,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState
 ) {
     val monthNames = listOf(
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -257,16 +275,12 @@ fun MonthHeader(month: CalendarMonth,
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        //boton leyenda y popup
         var expandLegend by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f)) {
-            Button(
-                onClick = { expandLegend = true }
-            ) {
+            Button(onClick = { expandLegend = true }) {
                 Text(text = "Leyenda")
             }
-
             DropdownMenu(
                 expanded = expandLegend,
                 onDismissRequest = { expandLegend = false },
@@ -278,21 +292,16 @@ fun MonthHeader(month: CalendarMonth,
                     "Info" to Color.Blue,
                     "OK" to Color.Green
                 )
-
                 legendItems.forEach { (text, color) ->
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .background(color)
-                                )
+                                Box(modifier = Modifier.size(16.dp).background(color))
                                 Spacer(Modifier.width(8.dp))
                                 Text(text)
                             }
                         },
-                        onClick = { } // opcional
+                        onClick = {}
                     )
                 }
             }
@@ -308,9 +317,7 @@ fun MonthHeader(month: CalendarMonth,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 20.sp
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(onClick = onPreviousClick) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = null)
             }
@@ -321,21 +328,14 @@ fun MonthHeader(month: CalendarMonth,
 
         var expanded by remember { mutableStateOf(false) }
 
-        // Boton (día, mes. semana. año) y popup
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
-
             LaunchedEffect(scrollState.value) {
                 if (expanded) expanded = false
             }
-
-            // Box interior que envuelve SOLO el botón — el dropdown se ancla a este
             Box {
-                Button(
-                    onClick = { expanded = true }
-                ) {
+                Button(onClick = { expanded = true }) {
                     Text(text = viewMode.name)
                 }
-
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
@@ -369,6 +369,7 @@ fun MonthHeader(month: CalendarMonth,
     }
 }
 
+// ── DayEntriesPanel ──────────────────────────────────────────────────────────
 
 @Composable
 fun DayEntriesPanel(
@@ -380,7 +381,7 @@ fun DayEntriesPanel(
     var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -432,63 +433,83 @@ fun DayEntriesPanel(
                 },
                 confirmButton = {
                     Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
-                    Button(onClick = { }) { Text("Eliminar tarea") }
-                    Button(onClick = { }) { Text("Editar tarea") }
+                    Button(onClick = {}) { Text("Eliminar tarea") }
+                    Button(onClick = {}) { Text("Editar tarea") }
                 },
                 shape = RoundedCornerShape(16.dp)
             )
         }
     }
 }
-// Función encargada del popup de la celda de día
+
+// ── DayDetailDialog ──────────────────────────────────────────────────────────
+// FIX: if/else para que la X del segundo dialog funcione correctamente.
+// FIX: text añadido al primer AlertDialog.
+// FIX: onTaskCreated propagado hacia CreateTask.
+
 @Composable
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
     store: Storage,
+    onTaskCreated: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var showCreateTask by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-        },
-        text = {
-            DayEntriesPanel(date = date, entries = entries, store = store)
-        },
-        confirmButton = {
-            Button(onClick = { showCreateTask = true }) {  // ← solo cambia el estado
-                Text("Crear Tarea")
-            }
-            TextButton(onClick = onDismiss) {
-                Text("Cerrar", color = Color(0xFF4F6EF7))
-            }
-        },
-        shape = RoundedCornerShape(16.dp)
-    )
-
-    // Segundo diálogo con el formulario
-    if (showCreateTask) {
+    // Dialog principal — siempre presente mientras showCreateTask == false
+    if (!showCreateTask) {
         AlertDialog(
-            onDismissRequest = { showCreateTask = false },
-            title = null,
-            text = {
-                CreateTask(
-                    store = store,
-                    onClose = { showCreateTask = false }
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
             },
-            confirmButton = {},
+            text = {
+                DayEntriesPanel(date = date, entries = entries, store = store)
+            },
+            confirmButton = {
+                Row {
+                    Button(onClick = { showCreateTask = true }) { Text("Crear Tarea") }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onDismiss) { Text("Cerrar", color = Color(0xFF4F6EF7)) }
+                }
+            },
             shape = RoundedCornerShape(16.dp)
         )
     }
+
+    // Dialog de crear tarea — completamente separado, fuera del if/else
+    if (showCreateTask) {
+        Dialog(
+            onDismissRequest = { showCreateTask = false },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false  // evita cierres accidentales
+            )
+        ) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            ) {
+                CreateTask(
+                    store = store,
+                    onClose = {
+                        showCreateTask = false
+                        onTaskCreated()
+                    }
+                )
+            }
+        }
+    }
 }
+// ── MonthView ─────────────────────────────────────────────────────────────────
+// FIX: añadido onTaskCreated, eliminado `this` suelto en onDismiss.
 
 @Composable
 fun MonthView(
@@ -498,7 +519,8 @@ fun MonthView(
     viewMode: CalendarViewMode,
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Storage
+    store: Storage,
+    onTaskCreated: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentMonth = today.yearMonth
@@ -530,7 +552,6 @@ fun MonthView(
         val headerHeight = 100.dp
         val cellSize = (maxHeight - headerHeight) / weeks
         val calendarHeight = (cellSize * weeks) + headerHeight
-
         val scrollState = rememberScrollState()
 
         Column(modifier = Modifier.fillMaxWidth().padding(15.dp)) {
@@ -584,15 +605,16 @@ fun MonthView(
                     date = selectedDate,
                     entries = entriesForDay,
                     store = store,
-                    onDismiss = {
-                        showDialog = false;
-                        this
-                    }
+                    onTaskCreated = onTaskCreated,
+                    onDismiss = { showDialog = false }
                 )
             }
         }
     }
 }
+
+// ── WeekHeader ────────────────────────────────────────────────────────────────
+
 @Composable
 fun WeekHeader(
     startDate: LocalDate,
@@ -621,18 +643,15 @@ fun WeekHeader(
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ── Izquierda: Leyenda ───────────────────────────────────────────
         var expandLegend by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f)) {
             Button(onClick = { expandLegend = true }) {
                 Text(text = "Leyenda")
             }
-
             LaunchedEffect(scrollState.value) {
                 if (expandLegend) expandLegend = false
             }
-
             DropdownMenu(
                 expanded = expandLegend,
                 onDismissRequest = { expandLegend = false },
@@ -659,7 +678,6 @@ fun WeekHeader(
             }
         }
 
-        // ── Centro: título + flechas ─────────────────────────────────────
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.Center,
@@ -672,9 +690,7 @@ fun WeekHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(onClick = onPreviousClick) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Semana anterior")
             }
@@ -683,20 +699,16 @@ fun WeekHeader(
             }
         }
 
-        // ── Derecha: selector de vista ───────────────────────────────────
         var expanded by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
-
             LaunchedEffect(scrollState.value) {
                 if (expanded) expanded = false
             }
-
             Box {
                 Button(onClick = { expanded = true }) {
                     Text(text = viewMode.name)
                 }
-
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
@@ -718,6 +730,9 @@ fun WeekHeader(
     }
 }
 
+// ── YearView ──────────────────────────────────────────────────────────────────
+// FIX: añadido onTaskCreated.
+
 @Composable
 fun YearView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
@@ -726,7 +741,8 @@ fun YearView(
     viewMode: CalendarViewMode,
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Storage
+    store: Storage,
+    onTaskCreated: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentYear = remember { Year.now() }
@@ -745,7 +761,6 @@ fun YearView(
     var showDialog by remember { mutableStateOf(false) }
     var dialogDate by remember { mutableStateOf(selectedDate) }
 
-    // Columnas adaptativas según ancho de pantalla
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val monthColumns = when {
             maxWidth >= 900.dp -> 4
@@ -800,13 +815,14 @@ fun YearView(
                 date = dialogDate,
                 entries = entriesForDay,
                 store = store,
+                onTaskCreated = onTaskCreated,
                 onDismiss = { showDialog = false }
             )
         }
     }
 }
 
-// ── Cabecera de año con botones de navegación y selector de vista ──────────
+// ── YearHeader ────────────────────────────────────────────────────────────────
 
 @Composable
 fun YearHeader(
@@ -817,10 +833,8 @@ fun YearHeader(
     onPreviousYear: () -> Unit,
     onNextYear: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
 
-    // Cierra el popup si el usuario scrollea
     LaunchedEffect(yearState.isScrollInProgress) {
         if (yearState.isScrollInProgress) expanded = false
     }
@@ -831,7 +845,6 @@ fun YearHeader(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Año + navegación
         Row(
             modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically
@@ -839,20 +852,17 @@ fun YearHeader(
             IconButton(onClick = onPreviousYear) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
             }
-
             Text(
                 text = year.year.value.toString(),
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
-
             IconButton(onClick = onNextYear) {
                 Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
             }
         }
 
-        // Selector de vista (mismo estilo que MonthHeader)
         Box(contentAlignment = Alignment.CenterEnd) {
             Button(onClick = { expanded = true }) {
                 Text(text = viewMode.name)
@@ -890,7 +900,7 @@ fun YearHeader(
     }
 }
 
-// ── Cabecera de mes dentro de la vista anual ───────────────────────────────
+// ── YearMonthHeader ───────────────────────────────────────────────────────────
 
 @Composable
 fun YearMonthHeader(month: CalendarMonth) {
@@ -903,12 +913,11 @@ fun YearMonthHeader(month: CalendarMonth) {
             text = monthNames[month.yearMonth.month.ordinal],
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
-            textAlign = TextAlign.Center,           // ← centrar texto
+            textAlign = TextAlign.Center,
             modifier = Modifier
-                .fillMaxWidth()                     // ← necesario para que el center funcione
+                .fillMaxWidth()
                 .padding(vertical = 6.dp)
         )
-        // Días de la semana
         Row(modifier = Modifier.fillMaxWidth()) {
             listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
                 Text(
@@ -924,7 +933,7 @@ fun YearMonthHeader(month: CalendarMonth) {
     }
 }
 
-// ── Celda de día reducida para la vista anual ──────────────────────────────
+// ── YearDayCell ───────────────────────────────────────────────────────────────
 
 @Composable
 fun YearDayCell(
@@ -948,7 +957,6 @@ fun YearDayCell(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize()
         ) {
-            // Número del día
             Text(
                 text = day.date.dayOfMonth.toString(),
                 color = when {
@@ -961,7 +969,6 @@ fun YearDayCell(
                 fontSize = 12.sp,
                 lineHeight = 10.sp
             )
-
             if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
                 Box(
                     modifier = Modifier
@@ -984,18 +991,24 @@ fun YearDayCell(
     }
 }
 
+// ── Constantes de layout ──────────────────────────────────────────────────────
 
+private val HOUR_HEIGHT = 64.dp
+private val TIME_COL_W = 52.dp
+private val START_HOUR = 0
+private val END_HOUR = 24
 
-// ── Constantes de layout ────────────────────────────────────────────────────
-private val HOUR_HEIGHT = 64.dp   // altura de cada hora en dp
-private val TIME_COL_W = 52.dp    // ancho de la columna de horas
-private val START_HOUR = 0        // primera hora visible
-private val END_HOUR   = 24       // última hora visible
+// ── WeekEventChip ─────────────────────────────────────────────────────────────
 
-// ── Celda de evento en la columna de día ────────────────────────────────────
 @Composable
-fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeight: Dp, onClick: () -> Unit = {}) {
-    val topDp    = ((startHour - START_HOUR) * hourHeight.value).dp
+fun WeekEventChip(
+    entry: SampleEntry,
+    startHour: Float,
+    endHour: Float,
+    hourHeight: Dp,
+    onClick: () -> Unit = {}
+) {
+    val topDp = ((startHour - START_HOUR) * hourHeight.value).dp
     val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
 
     Box(
@@ -1011,7 +1024,7 @@ fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeig
                 color = entry.color,
                 shape = RoundedCornerShape(topStart = 5.dp, bottomStart = 5.dp)
             )
-            .clickable {onClick()}
+            .clickable { onClick() }
             .padding(horizontal = 5.dp, vertical = 3.dp)
     ) {
         Column {
@@ -1033,7 +1046,8 @@ fun WeekEventChip(entry: SampleEntry, startHour: Float, endHour: Float, hourHeig
     }
 }
 
-// ── Columna de un día (7 columnas en la cuadrícula) ─────────────────────────
+// ── WeekDayColumn ─────────────────────────────────────────────────────────────
+
 @Composable
 fun WeekDayColumn(
     date: LocalDate,
@@ -1111,15 +1125,17 @@ private fun parseEntryTime(time: String): Pair<Float, Float> {
     return try {
         val parts = time.split("·").map { it.trim() }
         val start = parts[0].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
-        val end   = if (parts.size > 1) parts[1].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
+        val end = if (parts.size > 1) parts[1].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
         else start + 0.5f
         start to end
     } catch (_: Exception) {
-        9f to 9.5f   // fallback: 09:00-09:30
+        9f to 9.5f
     }
 }
 
-// ── WeekView principal ──────────────────────────────────────────────────────
+// ── WeekView ──────────────────────────────────────────────────────────────────
+// FIX: añadido onTaskCreated, pasado a DayDetailDialog del clickedDate.
+
 @Composable
 fun WeekView(
     viewMode: CalendarViewMode,
@@ -1128,11 +1144,12 @@ fun WeekView(
     onDateSelected: (LocalDate) -> Unit,
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     store: Storage,
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    onTaskCreated: () -> Unit
 ) {
     val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
-    val totalHours  = END_HOUR - START_HOUR
+    val totalHours = END_HOUR - START_HOUR
     val totalHeightDp = HOUR_HEIGHT * totalHours
     var weekOffset by remember { mutableStateOf(0) }
     var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
@@ -1150,13 +1167,13 @@ fun WeekView(
 
     Column(modifier = Modifier.fillMaxSize()) {
         WeekHeader(
-            startDate        = weekDates.first(),
-            endDate          = weekDates.last(),
-            onPreviousClick  = { weekOffset-- },
-            onNextClick      = { weekOffset++ },
-            viewMode         = viewMode,
+            startDate = weekDates.first(),
+            endDate = weekDates.last(),
+            onPreviousClick = { weekOffset-- },
+            onNextClick = { weekOffset++ },
+            viewMode = viewMode,
             onViewModeChange = onViewModeChange,
-            scrollState      = scrollState
+            scrollState = scrollState
         )
 
         Row(
@@ -1241,12 +1258,12 @@ fun WeekView(
                             .weight(1f)
                             .fillMaxHeight()
                             .border(0.5.dp, Color.Black.copy(alpha = 0.15f))
-                            .clickable{ clickedDate = date }
+                            .clickable { clickedDate = date }
                     ) {
                         WeekDayColumn(
-                            date       = date,
-                            entries    = entries,
-                            isToday    = date == currentDate,
+                            date = date,
+                            entries = entries,
+                            isToday = date == currentDate,
                             isSelected = date == selectedDate,
                             hourHeight = HOUR_HEIGHT,
                             onEntryClick = { entry ->
@@ -1259,6 +1276,7 @@ fun WeekView(
             }
         }
 
+        // Dialog de detalle de entrada
         selectedEntry?.let { entry ->
             val task = entry.task
             if (task != null) {
@@ -1281,62 +1299,31 @@ fun WeekView(
                     },
                     confirmButton = {
                         Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
-                        Button(onClick = { }) { Text("Eliminar tarea") }
-                        Button(onClick = { }) { Text("Editar tarea") }
+                        Button(onClick = {}) { Text("Eliminar tarea") }
+                        Button(onClick = {}) { Text("Editar tarea") }
                     },
                     shape = RoundedCornerShape(16.dp)
                 )
             }
         }
 
+        // Dialog de día con DayDetailDialog (soporta crear tarea)
         clickedDate?.let { date ->
-            AlertDialog(
-                onDismissRequest = { clickedDate = null },
-                title = {
-                    Text(
-                        text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
-                text = {
-                    val entries = sampleEntries[date] ?: emptyList()
-                    if (entries.isEmpty()) {
-                        Text("No hay eventos para este día")
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            entries.forEach { entry ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
-                                        .padding(7.dp)
-                                ) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(entry.title)
-                                        Text(entry.time, color = Color.Gray)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        onNavigate(Screen.TASKS_CREATE)
-                        clickedDate = null
-                    }) {
-                        Text("Crear tarea")
-                    }
-                    TextButton(onClick = { clickedDate = null }) {
-                        Text("Cerrar", color = Color(0xFF4F6EF7))
-                    }
-                },
-                shape = RoundedCornerShape(16.dp)
+            val entriesForDay = sampleEntries[date] ?: emptyList()
+            DayDetailDialog(
+                date = date,
+                entries = entriesForDay,
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { clickedDate = null }
             )
         }
     }
 }
+
+// ── DayView ───────────────────────────────────────────────────────────────────
+// FIX: añadido onTaskCreated.
+
 @Composable
 fun DayView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
@@ -1344,13 +1331,15 @@ fun DayView(
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Storage
+    store: Storage,
+    onTaskCreated: () -> Unit
 ) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
     val totalHours = END_HOUR - START_HOUR
     val totalHeightDp = HOUR_HEIGHT * totalHours
     var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+    var showCreateDialog by remember { mutableStateOf(false) }
 
     var dayOffset by remember { mutableStateOf(0) }
     val currentDay = remember(dayOffset) {
@@ -1413,6 +1402,7 @@ fun DayView(
                     .weight(1f)
                     .height(totalHeightDp)
                     .border(0.5.dp, Color.Gray.copy(alpha = 0.15f))
+                    .clickable { showCreateDialog = true }
             ) {
                 WeekDayColumn(
                     date = currentDay,
@@ -1447,16 +1437,28 @@ fun DayView(
                     },
                     confirmButton = {
                         Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
-                        Button(onClick = { }) { Text("Eliminar tarea") }
-                        Button(onClick = { }) { Text("Editar tarea") }
+                        Button(onClick = {}) { Text("Eliminar tarea") }
+                        Button(onClick = {}) { Text("Editar tarea") }
                     },
                     shape = RoundedCornerShape(16.dp)
                 )
             }
         }
+
+        if (showCreateDialog) {
+            DayDetailDialog(
+                date = currentDay,
+                entries = sampleEntries[currentDay] ?: emptyList(),
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { showCreateDialog = false }
+            )
+        }
     }
 }
-// ── Franja de eventos sin hora ───────────────────────────────────────────
+
+// ── AllDayStrip ───────────────────────────────────────────────────────────────
+
 @Composable
 fun AllDayStrip(entries: List<SampleEntry>) {
     Row(
@@ -1494,7 +1496,8 @@ fun AllDayStrip(entries: List<SampleEntry>) {
     }
 }
 
-// ── Cabecera de la vista de día ──────────────────────────────────────────
+// ── DayHeader ─────────────────────────────────────────────────────────────────
+
 @Composable
 fun DayHeader(
     date: LocalDate,
@@ -1517,18 +1520,15 @@ fun DayHeader(
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ── Izquierda: Leyenda ───────────────────────────────────────────
         var expandLegend by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f)) {
             Button(onClick = { expandLegend = true }) {
                 Text(text = "Leyenda")
             }
-
             LaunchedEffect(scrollState.value) {
                 if (expandLegend) expandLegend = false
             }
-
             DropdownMenu(
                 expanded = expandLegend,
                 onDismissRequest = { expandLegend = false },
@@ -1555,7 +1555,6 @@ fun DayHeader(
             }
         }
 
-        // ── Centro: título + flechas ─────────────────────────────────────
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.Center,
@@ -1568,9 +1567,7 @@ fun DayHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(onClick = onPreviousClick) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Día anterior")
             }
@@ -1579,20 +1576,16 @@ fun DayHeader(
             }
         }
 
-        // ── Derecha: selector de vista ───────────────────────────────────
         var expanded by remember { mutableStateOf(false) }
 
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
-
             LaunchedEffect(scrollState.value) {
                 if (expanded) expanded = false
             }
-
             Box {
                 Button(onClick = { expanded = true }) {
                     Text(text = viewMode.name)
                 }
-
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
@@ -1613,13 +1606,18 @@ fun DayHeader(
         }
     }
 }
+
+// ── HomeCalendar ──────────────────────────────────────────────────────────────
+// FIX: añadido onTaskCreated, pasado a DayDetailDialog.
+
 @Composable
 fun HomeCalendar(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     onNavigate: (Screen) -> Unit,
-    store: Storage
+    store: Storage,
+    onTaskCreated: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentMonth = today.yearMonth
@@ -1640,9 +1638,7 @@ fun HomeCalendar(
 
     LaunchedEffect(calendarState) {
         snapshotFlow { calendarState.firstVisibleMonth }
-            .collect { month ->
-                weeks = month.weekDays.size
-            }
+            .collect { month -> weeks = month.weekDays.size }
     }
 
     var showDialog by remember { mutableStateOf(false) }
@@ -1681,7 +1677,6 @@ fun HomeCalendar(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(cellHeight)
-                            .padding(0.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 when {
@@ -1743,11 +1738,14 @@ fun HomeCalendar(
                 date = selectedDate,
                 entries = entriesForDay,
                 store = store,
+                onTaskCreated = onTaskCreated,
                 onDismiss = { showDialog = false }
             )
         }
     }
 }
+
+// ── miniCalendarHeader ────────────────────────────────────────────────────────
 
 @Composable
 fun miniCalendarHeader(
@@ -1766,7 +1764,6 @@ fun miniCalendarHeader(
             .padding(horizontal = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.Center,
@@ -1777,9 +1774,7 @@ fun miniCalendarHeader(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(onClick = onPreviousClick) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = null)
             }
