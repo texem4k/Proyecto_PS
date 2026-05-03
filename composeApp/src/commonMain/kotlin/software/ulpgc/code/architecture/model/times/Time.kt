@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.model.times
 
+import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -14,5 +15,7 @@ abstract class Time internal constructor(
         return "$type, $start, $end, $id"
     }
 
-
+    fun duration(): Duration {
+        return end - start
+    }
 }

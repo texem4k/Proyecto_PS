@@ -5,11 +5,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.exceptions.AppException
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
-class Store (private val manager: DBManager): Storage,
+class Store (private val manager: DBManager, private val onFailLoad: (AppException) -> Unit, private val afterLoad: (Storage) -> Unit): Storage,
     Coroutinable {
 
     private val topics: MutableSet<Topic> = mutableSetOf()
@@ -65,15 +67,21 @@ class Store (private val manager: DBManager): Storage,
     override val delayMilis: Long = 60_000L
 
     override suspend fun onInit() {
+        LogMaster.log("Cargando datos BD")
         loadDBData()
+        LogMaster.log("Finalizado carga de datos BD")
         _ready.value = true
-        TaskMonitor(this)
+        afterLoad(this)
     }
 
     private fun loadDBData() {
-        addTopics(manager.topics())
-        addTags(manager.tags())
-        addTasks(manager.tasks())
+        try {
+            addTopics(manager.topics().getOrThrow())
+            addTags(manager.tags().getOrThrow())
+            addTasks(manager.tasks().getOrThrow())
+        } catch (e: AppException) {
+            onFailLoad(e)
+        }
     }
 
     override suspend fun execute() {
@@ -86,5 +94,6 @@ class Store (private val manager: DBManager): Storage,
 
     override suspend fun onDispose() {
         execute()
+        LogMaster.log("Parando guardado automático")
     }
 }
