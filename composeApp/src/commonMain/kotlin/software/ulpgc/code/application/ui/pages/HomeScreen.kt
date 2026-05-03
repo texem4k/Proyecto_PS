@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,10 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -48,16 +44,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.application.ui.menuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 
-
-// ---------------------------------------------------------------------------
-// Modelos
-// ---------------------------------------------------------------------------
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -66,9 +58,6 @@ data class DialMenuItem(
     val onClick: () -> Unit
 )
 
-// ---------------------------------------------------------------------------
-// HomeScreen
-// ---------------------------------------------------------------------------
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -229,9 +218,7 @@ fun HomeScreen(
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Card(modifier = Modifier.weight(1f).padding(8.dp)) {
-                        Text("Widget E")
-                    }
+                    menuTareas(store)
                 }
             }
         }

@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kotlinSerialization)
+    id("com.google.gms.google-services") version "4.4.0"
 }
 
 kotlin {
@@ -91,6 +92,7 @@ kotlin {
             implementation(libs.foundation.v1103)
             implementation(libs.jetbrains.material3.v190)
             implementation(libs.ui.v1103)
+            api("io.github.mirzemehdi:kmpnotifier:1.6.1")
             //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
         }
 

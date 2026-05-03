@@ -29,7 +29,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import software.ulpgc.code.application.ui.DateTextField
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -38,6 +37,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import software.ulpgc.code.architecture.model.times.Time
 import software.ulpgc.code.architecture.model.times.TimeFactory
+import kotlin.onFailure
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -47,7 +47,7 @@ data class FormState(
     var taskName: String = "",
     var taskDescription: String = "",
     var taskTopic: Uuid? = null,
-    var taskTags: List<Uuid> = emptyList(), // ← List en vez de MutableList
+    var taskTags: List<Uuid> = emptyList(),
     var taskStartDateString: String = "",
     var taskStartDate: Instant? = null,
     var taskFinalDateString: String = "",
@@ -93,7 +93,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 taskFinalDateString = task.time.end.toFormattedDate(TimeZone.currentSystemDefault()),
                 taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
-                taskTags = task.tags.toList(),// ← toList()
+                taskTags = task.tags.toList(),
             )
         } else {
             form = FormState()
@@ -109,9 +109,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             )
             Button(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                onClick = {
-                    formError = false
-                    onClose() },
+                onClick = { formError = false; onClose() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             ) {
                 Text("✖\uFE0E")
@@ -125,10 +123,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             title = { Text("Error") },
             text = { messageError?.let { Text(it) } },
             confirmButton = {
-                Button(onClick = {
-                    formError = false
-                    createTask = false
-                }) {
+                Button(onClick = { formError = false; createTask = false }) {
                     Text("Aceptar")
                 }
             }
@@ -174,9 +169,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             section = "* Selecciona el tópico:",
             items = store.topics().toList(),
             selection = DropdownSelection.Single(form.taskTopic),
-            onItemSelected = {
-                form = form.copy(taskTopic = it, taskTags = emptyList()) // ← emptyList()
-            },
+            onItemSelected = { form = form.copy(taskTopic = it) },
             itemId = { it.id },
             itemName = { it.name }
         )
@@ -187,9 +180,8 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
             selection = DropdownSelection.Multiple(form.taskTags),
             onItemSelected = { id ->
                 val updatedTags = form.taskTags.toMutableList()
-                if (id in updatedTags) updatedTags.remove(id)
-                else updatedTags.add(id)
-                form = form.copy(taskTags = updatedTags.toList()) // ← toList() para nueva referencia
+                if (id in updatedTags) updatedTags.remove(id) else updatedTags.add(id)
+                form = form.copy(taskTags = updatedTags.toList())
             },
             itemId = { it.id },
             itemName = { it.name }
@@ -200,7 +192,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 .padding(bottom = 16.dp)
                 .border(1.dp, Color.Gray, shape = RoundedCornerShape(16.dp))
                 .padding(8.dp)
-                .fillMaxWidth(0.25f),
+                .fillMaxWidth(0.50f),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             fun Modifier.selected(selected: Boolean) =
@@ -210,12 +202,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 )
 
             @Composable
-            fun ModeButton(
-                onClick: () -> Unit,
-                selected: Boolean,
-                icon: ImageVector,
-                label: String
-            ) {
+            fun ModeButton(onClick: () -> Unit, selected: Boolean, icon: ImageVector, label: String) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -224,17 +211,8 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                         .clickable { onClick() }
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Icon(
-                        icon,
-                        contentDescription = label,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Text(
-                        text = label,
-                        fontSize = 9.sp,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 11.sp
-                    )
+                    Icon(icon, contentDescription = label, modifier = Modifier.size(32.dp))
+                    Text(text = label, fontSize = 9.sp, textAlign = TextAlign.Center, lineHeight = 11.sp)
                 }
             }
 
@@ -244,14 +222,12 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 icon = Icons.Default.CalendarToday,
                 label = "Inicio y\nfin"
             )
-
             ModeButton(
                 onClick = { mode = CreateMode.WITH_TIME },
                 selected = mode == CreateMode.WITH_TIME,
                 icon = Icons.Default.Schedule,
                 label = "Inicio y\nduración"
             )
-
             ModeButton(
                 onClick = { mode = CreateMode.WITH_DURATION },
                 selected = mode == CreateMode.WITH_DURATION,
@@ -262,73 +238,105 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
 
         when (mode) {
             CreateMode.SIMPLE -> {
-                DateTextField(
-                    value = form.taskStartDateString,
-                    onValueChange = { form = form.copy(taskStartDateString = it) },
-                    label = "Fecha de inicio"
-                )
-                TimeTextField(
-                    value = form.taskStartHour,
-                    onValueChange = { form = form.copy(taskStartHour = it) },
-                    type = "inicio"
-                )
-                DateTextField(
-                    value = form.taskFinalDateString,
-                    onValueChange = { form = form.copy(taskFinalDateString = it) },
-                    label = "Fecha de fin"
-                )
-                TimeTextField(
-                    value = form.taskFinalHour,
-                    onValueChange = { form = form.copy(taskFinalHour = it) },
-                    type = "final"
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.50f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DatePickerField(
+                        value = form.taskStartDateString,
+                        onValueChange = { str, instant ->
+                            form = form.copy(taskStartDateString = str, taskStartDate = instant)
+                        },
+                        label = "Fecha de inicio",
+                        modifier = Modifier.weight(1f)
+                    )
+                    TimePickerField(
+                        value = form.taskStartHour,
+                        onValueChange = { form = form.copy(taskStartHour = it) },
+                        type = "inicio",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.50f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DatePickerField(
+                        value = form.taskFinalDateString,
+                        onValueChange = { str, instant ->
+                            form = form.copy(taskFinalDateString = str, taskFinalDate = instant)
+                        },
+                        label = "Fecha de fin",
+                        modifier = Modifier.weight(1f)
+                    )
+                    TimePickerField(
+                        value = form.taskFinalHour,
+                        onValueChange = { form = form.copy(taskFinalHour = it) },
+                        type = "final",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             CreateMode.WITH_TIME -> {
-                DateTextField(
-                    value = form.taskStartDateString,
-                    onValueChange = { form = form.copy(taskStartDateString = it) },
-                    label = "Fecha inicio"
-                )
-                TimeTextField(
-                    value = form.taskStartHour,
-                    onValueChange = { form = form.copy(taskStartHour = it) },
-                    type = "inicio"
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.50f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DatePickerField(
+                        value = form.taskStartDateString,
+                        onValueChange = { str, instant ->
+                            form = form.copy(taskStartDateString = str, taskStartDate = instant)
+                        },
+                        label = "Fecha inicio",
+                        modifier = Modifier.weight(1f)
+                    )
+                    TimePickerField(
+                        value = form.taskStartHour,
+                        onValueChange = { form = form.copy(taskStartHour = it) },
+                        type = "inicio",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 OutlinedTextField(
                     value = form.taskDuration,
                     onValueChange = {
-                        if (it.all { c -> c.isDigit() }) {
-                            form = form.copy(taskDuration = it)
-                        }
+                        if (it.all { c -> c.isDigit() }) form = form.copy(taskDuration = it)
                     },
                     label = { Text("Duración (horas)") },
-                    modifier = Modifier.fillMaxWidth(0.25f).padding(bottom = 16.dp),
+                    modifier = Modifier.fillMaxWidth(0.50f).padding(bottom = 16.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(32.dp)
                 )
             }
 
             CreateMode.WITH_DURATION -> {
-                DateTextField(
-                    value = form.taskFinalDateString,
-                    onValueChange = { form = form.copy(taskFinalDateString = it) },
-                    label = "Fecha final"
-                )
-                TimeTextField(
-                    value = form.taskFinalHour,
-                    onValueChange = { form = form.copy(taskFinalHour = it) },
-                    type = "final"
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.50f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DatePickerField(
+                        value = form.taskFinalDateString,
+                        onValueChange = { str, instant ->
+                            form = form.copy(taskFinalDateString = str, taskFinalDate = instant)
+                        },
+                        label = "Fecha final",
+                        modifier = Modifier.weight(1f)
+                    )
+                    TimePickerField(
+                        value = form.taskFinalHour,
+                        onValueChange = { form = form.copy(taskFinalHour = it) },
+                        type = "final",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 OutlinedTextField(
                     value = form.taskDuration,
                     onValueChange = {
-                        if (it.all { c -> c.isDigit() }) {
-                            form = form.copy(taskDuration = it)
-                        }
+                        if (it.all { c -> c.isDigit() }) form = form.copy(taskDuration = it)
                     },
                     label = { Text("Duración (horas)") },
-                    modifier = Modifier.fillMaxWidth(0.25f).padding(bottom = 16.dp),
+                    modifier = Modifier.fillMaxWidth(0.50f).padding(bottom = 16.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(32.dp)
                 )
@@ -338,7 +346,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(bottom = 8.dp)) {
             Checkbox(
                 checked = checkedState.value,
-                onCheckedChange = { isChecked -> checkedState.value = isChecked }
+                onCheckedChange = { checkedState.value = it }
             )
             Text("Tarea periódica")
         }
@@ -395,7 +403,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                                 messageError = "La hora de inicio no puede estar vacío"
                                 formError = true
                             } else {
-                                form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
+                                form.taskStartDate = createInstantFromDateAndHour(form.taskStartDate!!, form.taskStartHour)
                                 m = isValidDate(form.taskStartDate, "inicial")
                                 if (m.isNotEmpty()) throw IllegalArgumentException(m)
                                 time = TimeFactory().createTime(form.taskStartDate!!, form.taskDuration.toLong())
@@ -410,7 +418,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                                 messageError = "La hora de finalización no puede estar vacío"
                                 formError = true
                             } else {
-                                form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+                                form.taskFinalDate = createInstantFromDateAndHour(form.taskFinalDate!!, form.taskFinalHour)
                                 m = isValidDate(form.taskFinalDate, "final")
                                 if (m.isNotEmpty()) throw IllegalArgumentException(m)
                                 time = TimeFactory().createTime(form.taskDuration.toLong(), form.taskFinalDate!!)
@@ -425,8 +433,8 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                                 messageError = "La hora final e inicial no puede estar vacío"
                                 formError = true
                             } else {
-                                form.taskStartDate = createInstant(form.taskStartDateString, form.taskStartHour)
-                                form.taskFinalDate = createInstant(form.taskFinalDateString, form.taskFinalHour)
+                                form.taskStartDate = createInstantFromDateAndHour(form.taskStartDate!!, form.taskStartHour)
+                                form.taskFinalDate = createInstantFromDateAndHour(form.taskFinalDate!!, form.taskFinalHour)
                                 time = TimeFactory().createTime(form.taskStartDate!!, form.taskFinalDate!!)
                                 if (isValidDate(form.taskStartDate, "inicial").isNotEmpty() ||
                                     isValidDate(form.taskFinalDate, "final").isNotEmpty()) {
@@ -447,16 +455,20 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                             .set("description", form.taskDescription)
                             .set("topicId", form.taskTopic.toString())
                             .set("interval", form.taskInterval.toString())
+                            .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
 
-                        if (form.taskTags.isNotEmpty()) {
-                            builder = builder.set("tags", form.taskTags.joinToString(", "))
-                        }
-
                         if (task != null) {
-                            CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
+                            val command =builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
                         } else {
-                            CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
+                            val command = builder.build(CommandType.CREATE_TASK)
+
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
                         }
                         onClose()
                     }
@@ -473,104 +485,43 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
 }
 
 
-fun formatDate(input: String): String {
-    val digits = input.filter { it.isDigit() }.take(8)
-
-    return when {
-        digits.length <= 2 -> digits
-        digits.length <= 4 -> "${digits.take(2)}/${digits.drop(2)}"
-        else -> "${digits.take(2)}/${digits.substring(2, 4)}/${digits.drop(4)}"
-    }
-}
-
 fun isValidDate(date: Instant?, type: String): String {
-    if (date != null) {
-        if (date < Clock.System.now().toDatetime()) {
-            return "La fecha $type no puede ser anterior a la fecha actual"
-        }
+    if (date != null && date < Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds())) {
+        return "La fecha $type no puede ser anterior a la fecha actual"
     }
     return ""
 }
 
-private fun Instant.toDatetime(): Instant =
-    Instant.fromEpochMilliseconds(this.toEpochMilliseconds())
-
-fun createInstant(fecha: String, hora: String): Instant {
+fun createInstantFromDateAndHour(dateInstant: Instant, hora: String): Instant {
+    val tz = TimeZone.currentSystemDefault()
+    val localDate = dateInstant.toLocalDateTime(tz).date
     val parts = hora.split(':')
-    val hour = if (parts.size >= 2) parts[0].toIntOrNull() ?: 0 else 0
-    val minute = if (parts.size >= 2) parts[1].toIntOrNull() ?: 0 else 0
-
+    val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+    val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
     return LocalDateTime(
-        year = fecha.substring(4, 8).toInt(),
-        month = fecha.substring(2, 4).toInt(),
-        day = fecha.take(2).toInt(),
+        year = localDate.year,
+        month = localDate.month,
+        dayOfMonth = localDate.dayOfMonth,
         hour = hour,
         minute = minute,
         second = 0,
         nanosecond = 0
-    ).toInstant(TimeZone.UTC)
+    ).toInstant(tz)
 }
 
 fun validateDateErrorMessage(e: Exception, m: String): String {
-    if (e.toString().contains("Argument") && e.message.toString() == m) {
-        return m
-    }
+    if (e.toString().contains("Argument") && e.message.toString() == m) return m
     return "Los valores de día y mes deben ser correctos (0-31/1-12)"
 }
 
-@Composable
-fun TimeTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    type: String,
-    read: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        readOnly = read,
-        onValueChange = { newValue ->
-            val digits = newValue.filter { it.isDigit() }
-            if (digits.length > 4) return@OutlinedTextField
-            if (digits.length >= 2) {
-                val hours = digits.take(2).toIntOrNull() ?: return@OutlinedTextField
-                if (hours > 23) return@OutlinedTextField
-            }
-            if (digits.length >= 4) {
-                val minutes = digits.takeLast(2).toIntOrNull() ?: return@OutlinedTextField
-                if (minutes > 59) return@OutlinedTextField
-            }
-            val formatted = when {
-                digits.length <= 2 -> digits
-                else -> "${digits.take(2)}:${digits.drop(2)}"
-            }
-            onValueChange(formatted)
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        placeholder = { Text("hh:mm") },
-        label = { Text("Hora de $type") },
-        modifier = modifier.fillMaxWidth(0.25f).padding(bottom = 16.dp),
-        shape = RoundedCornerShape(32.dp)
-    )
-}
-
-fun Instant.toFormattedHour(
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): String {
+fun Instant.toFormattedHour(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val localDateTime = this.toLocalDateTime(timeZone)
-    val hour = localDateTime.hour.toString().padStart(2, '0')
-    val minute = localDateTime.minute.toString().padStart(2, '0')
-    return "$hour:$minute"
+    return "${localDateTime.hour.toString().padStart(2, '0')}:${localDateTime.minute.toString().padStart(2, '0')}"
 }
 
-fun Instant.toFormattedDate(
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): String {
+fun Instant.toFormattedDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val localDate = this.toLocalDateTime(timeZone).date
-    val day = localDate.day.toString().padStart(2, '0')
-    val month = localDate.month.number.toString().padStart(2, '0')
-    val year = localDate.year
-    return "$day$month$year"
+    return "${localDate.day.toString().padStart(2, '0')}${localDate.month.number.toString().padStart(2, '0')}${localDate.year}"
 }
 
 @Composable
@@ -586,7 +537,7 @@ fun TextFieldCustom(
         onValueChange = { onValueChange(it) },
         label = { Text(label) },
         isError = label.contains("tarea") || label.contains("Prioridad") && value.isBlank(),
-        modifier = Modifier.fillMaxWidth(0.25f).padding(bottom = 16.dp),
+        modifier = Modifier.fillMaxWidth(0.50f).padding(bottom = 16.dp),
         keyboardOptions = keyboardOptions,
         placeholder = placeholder?.let { { Text(it) } },
         shape = RoundedCornerShape(32.dp)
@@ -606,21 +557,11 @@ fun <T> DropdownCustom(
     var expanded by remember { mutableStateOf(false) }
 
     val displayText = when (selection) {
-        is DropdownSelection.Single -> {
-            if (selection.id != null) {
-                items.find { itemId(it) == selection.id }?.let { itemName(it) } ?: "Seleccionar..."
-            } else {
-                "Seleccionar..."
-            }
-        }
-        is DropdownSelection.Multiple -> {
-            if (selection.ids.isEmpty()) {
-                "Seleccionar..."
-            } else {
-                items.filter { itemId(it) in selection.ids }
-                    .joinToString(", ") { itemName(it) }
-            }
-        }
+        is DropdownSelection.Single ->
+            items.find { itemId(it) == selection.id }?.let { itemName(it) } ?: "Seleccionar..."
+        is DropdownSelection.Multiple ->
+            if (selection.ids.isEmpty()) "Seleccionar..."
+            else items.filter { itemId(it) in selection.ids }.joinToString(", ") { itemName(it) }
     }
 
     ExposedDropdownMenuBox(
@@ -633,38 +574,25 @@ fun <T> DropdownCustom(
             onValueChange = {},
             readOnly = true,
             label = { Text(section) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(0.25f),
+            modifier = Modifier.menuAnchor().fillMaxWidth(0.50f),
             shape = RoundedCornerShape(32.dp),
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
         )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEach { item ->
                 val isSelected = when (selection) {
                     is DropdownSelection.Single -> itemId(item) == selection.id
                     is DropdownSelection.Multiple -> itemId(item) in selection.ids
                 }
-
                 DropdownMenuItem(
                     text = { Text(itemName(item)) },
                     onClick = {
                         onItemSelected(itemId(item))
-                        if (selection is DropdownSelection.Single) {
-                            expanded = false
-                        }
+                        if (selection is DropdownSelection.Single) expanded = false
                     },
                     trailingIcon = {
-                        if (isSelected) {
-                            Icon(Icons.Default.Check, contentDescription = null)
-                        }
+                        if (isSelected) Icon(Icons.Default.Check, contentDescription = null)
                     }
                 )
             }
@@ -672,6 +600,125 @@ fun <T> DropdownCustom(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerField(
+    value: String,
+    onValueChange: (String, Instant) -> Unit,  // ← string + instant
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    val displayText = if (value.length == 8) {
+        "${value.take(2)}/${value.substring(2, 4)}/${value.drop(4)}"
+    } else ""
+
+    Box(modifier = modifier.padding(bottom = 16.dp)) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            placeholder = { Text("Seleccionar fecha") },
+            trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(32.dp),
+            enabled = false,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        )
+        Box(modifier = Modifier.matchParentSize().clickable { showPicker = true })
+    }
+
+    if (showPicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val instant = Instant.fromEpochMilliseconds(millis)
+                        val tz = TimeZone.currentSystemDefault()
+                        onValueChange(instant.toFormattedDate(tz), instant)
+                    }
+                    showPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    type: String
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    val initialHour = value.split(':').getOrNull(0)?.toIntOrNull() ?: 0
+    val initialMinute = value.split(':').getOrNull(1)?.toIntOrNull() ?: 0
+
+    Box(modifier = modifier.padding(bottom = 16.dp)) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Hora de $type") },
+            placeholder = { Text("hh:mm") },
+            trailingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(32.dp),
+            enabled = false,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        )
+        Box(modifier = Modifier.matchParentSize().clickable { showPicker = true })
+    }
+
+    if (showPicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true
+        )
+        AlertDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val h = timePickerState.hour.toString().padStart(2, '0')
+                    val m = timePickerState.minute.toString().padStart(2, '0')
+                    onValueChange("$h:$m")
+                    showPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Cancelar") }
+            },
+            text = { TimePicker(state = timePickerState) }
+        )
+    }
+}
 
 sealed class DropdownSelection {
     data class Single(val id: Uuid?) : DropdownSelection()

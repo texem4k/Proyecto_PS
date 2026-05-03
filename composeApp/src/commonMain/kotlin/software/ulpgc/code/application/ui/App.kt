@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import software.ulpgc.code.application.control.TaskNotifier
 import software.ulpgc.code.application.io.DatabaseDriverFactory
 import software.ulpgc.code.application.io.JSONParser
 import software.ulpgc.code.application.io.SQLiteDBManager
@@ -16,9 +17,13 @@ import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
+
+import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.application.ui.pages.SearchResultsDialog
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.model.tasks.TaskMonitor
+
 
 @Composable
 fun App(
@@ -30,12 +35,16 @@ fun App(
     var refreshKey by remember { mutableStateOf(0) }
     var store by remember { mutableStateOf<Store?>(null) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var storeError by remember { mutableStateOf<AppException?>(null) }
     var startEditMode by remember { mutableStateOf(false) }
     var showResults by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        store = Store(SQLiteDBManager(databaseDriverFactory, seedData))
+        store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
+            TaskNotifier.setUpWith(store)
+            TaskMonitor(store)
+        })
     }
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false
@@ -47,6 +56,7 @@ fun App(
                 .safeContentPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            storeError?.let { error -> StoreErrorDisplay(error) }
             if (storeReady) {
                 key(refreshKey){
                     when (screen) {
@@ -166,4 +176,9 @@ fun App(
             )
         }
     }
+}
+
+@Composable
+fun StoreErrorDisplay(exception: AppException) {
+
 }

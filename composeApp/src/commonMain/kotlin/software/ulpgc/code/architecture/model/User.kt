@@ -5,4 +5,8 @@ import kotlin.uuid.Uuid
 data class User(
     var id: Uuid = Uuid.random(),
     var name: String,
-)
+) {
+    override fun toString(): String {
+        return "User(id=$id, name='$name')"
+    }
+}

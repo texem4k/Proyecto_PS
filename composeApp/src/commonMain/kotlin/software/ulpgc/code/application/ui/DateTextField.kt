@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.pages.formatDate
 
 @Composable
 fun DateTextField(
