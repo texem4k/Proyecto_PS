@@ -1556,104 +1556,116 @@ fun HomeCalendar(
         outDateStyle = OutDateStyle.EndOfRow
     )
 
+    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
+
+    LaunchedEffect(calendarState) {
+        snapshotFlow { calendarState.firstVisibleMonth }
+            .collect { month ->
+                weeks = month.weekDays.size
+            }
+    }
+
     var showDialog by remember { mutableStateOf(false) }
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .padding(8.dp)
     ) {
-
-        HorizontalCalendar(
-            modifier = Modifier.fillMaxSize(),
-            state = calendarState,
-            monthHeader = { month ->
-                miniCalendarHeader(
-                    month = month,
-                    onPreviousClick = {
-                        coroutineScope.launch {
-                            calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
-                        }
-                    },
-                    onNextClick = {
-                        coroutineScope.launch {
-                            calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
-                        }
-                    }
-                )
-            },
-            dayContent = { day ->
-                val isSelected = day.date == selectedDate
-                val entries = sampleEntries[day.date] ?: emptyList()
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .padding(2.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            when {
-                                day.date == selectedDate -> Color(0xFF4F6EF7)
-                                day.date == today -> Color(0xFF4F6EF7).copy(alpha = 0.15f)
-                                else -> Color.Transparent
+        val headerHeight = 80.dp
+        val cellHeight = (maxHeight - headerHeight) / weeks
+        Column {
+            HorizontalCalendar(
+                modifier = Modifier.fillMaxSize(),
+                state = calendarState,
+                monthHeader = { month ->
+                    miniCalendarHeader(
+                        month = month,
+                        onPreviousClick = {
+                            coroutineScope.launch {
+                                calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
                             }
-                        )
-                        .clickable(enabled = day.position == DayPosition.MonthDate) {
-                            onDateSelected(day.date)
-                            showDialog = true
                         },
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Text(
-                            text = day.date.dayOfMonth.toString(),
-                            fontSize = 10.sp,
-                            color = when {
-                                day.date == selectedDate -> Color.White
-                                day.date == today -> Color(0xFF4F6EF7)
-                                day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
-                                else -> Color.Unspecified
+                        onNextClick = {
+                            coroutineScope.launch {
+                                calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
+                            }
+                        }
+                    )
+                },
+                dayContent = { day ->
+                    val isSelected = day.date == selectedDate
+                    val entries = sampleEntries[day.date] ?: emptyList()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(cellHeight)
+                            .padding(0.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                when {
+                                    day.date == selectedDate -> Color(0xFF4F6EF7)
+                                    day.date == today -> Color(0xFF4F6EF7).copy(alpha = 0.15f)
+                                    else -> Color.Transparent
+                                }
+                            )
+                            .clickable(enabled = day.position == DayPosition.MonthDate) {
+                                onDateSelected(day.date)
+                                showDialog = true
                             },
-                            fontWeight = if (day.date == today || day.date == selectedDate) FontWeight.Bold else FontWeight.Normal
-                        )
-                        if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .background(
-                                        color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF4F6EF7),
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = entries.size.toString(),
-                                    modifier = Modifier.offset(y = -2.dp),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) Color(0xFF4F6EF7) else Color.White
-                                )
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(-2.dp)
+                        ) {
+                            Text(
+                                text = day.date.dayOfMonth.toString(),
+                                fontSize = 10.sp,
+                                color = when {
+                                    day.date == selectedDate -> Color.White
+                                    day.date == today -> Color(0xFF4F6EF7)
+                                    day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                                    else -> Color.Unspecified
+                                },
+                                fontWeight = if (day.date == today || day.date == selectedDate) FontWeight.Bold else FontWeight.Normal
+                            )
+                            if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .background(
+                                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF4F6EF7),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = entries.size.toString(),
+                                        modifier = Modifier.offset(y = -2.dp),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color(0xFF4F6EF7) else Color.White
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
-        )
-    }
+            )
+        }
 
-    if (showDialog) {
-        val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
-        DayDetailDialog(
-            date = selectedDate,
-            entries = entriesForDay,
-            store = store,
-            onDismiss = { showDialog = false }
-        )
+        if (showDialog) {
+            val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+            DayDetailDialog(
+                date = selectedDate,
+                entries = entriesForDay,
+                store = store,
+                onDismiss = { showDialog = false }
+            )
+        }
     }
 }
 
@@ -1671,7 +1683,7 @@ fun miniCalendarHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 9.dp, vertical = 0.5.dp),
+            .padding(horizontal = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
