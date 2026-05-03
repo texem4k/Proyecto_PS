@@ -44,12 +44,15 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+import kotlin.time.Clock
 
 
 // ---------------------------------------------------------------------------
@@ -82,6 +85,26 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    // Dentro de HomeScreen, antes del Box:
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    var selectedDate by remember { mutableStateOf(today) }
+    val sampleEntries = remember(store.tasks()) {
+        store.tasks().groupBy { task ->
+            task.time.start.toLocalDateTime(TimeZone.UTC).date
+        }.mapValues { (_, tasks) ->
+            tasks.map { task ->
+                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
+                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
+                SampleEntry(
+                    title = task.name,
+                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
+                    color = Color(0xFF4F6EF7),
+                    task = task
+                )
+            }
+        }
     }
 
     Box(
@@ -192,7 +215,12 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f).padding(8.dp),
                         shape = RoundedCornerShape(0.dp)
                     ) {
-                        Text("Widget C")
+                        HomeCalendar(
+                            sampleEntries = sampleEntries,
+                            selectedDate = selectedDate,
+                            onDateSelected = { selectedDate = it },
+                            store = store,
+                        )
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {

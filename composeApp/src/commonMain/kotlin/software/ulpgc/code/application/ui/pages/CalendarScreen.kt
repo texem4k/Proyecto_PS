@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -203,7 +204,7 @@ fun DayCell(
                         .padding(horizontal = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    entries.take(2).forEach { entry ->
+                    entries.take(3).forEach { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -733,7 +734,7 @@ fun YearView(
                     yearState = yearState,
                     viewMode = viewMode,
                     onViewModeChange = onViewModeChange,
-                    onPreviousYear = { visibleYear = visibleYear.minusYears(1) }, // aquí sí puede mutar
+                    onPreviousYear = { visibleYear = visibleYear.minusYears(1) },
                     onNextYear = { visibleYear = visibleYear.plusYears(1) }
                 )
             },
@@ -1530,6 +1531,181 @@ fun DayHeader(
                     }
                 }
             }
+        }
+    }
+}
+@Composable
+fun HomeCalendar(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    store: Storage
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = today.yearMonth
+
+    val coroutineScope = rememberCoroutineScope()
+    val startMonth = remember { currentMonth.minusMonths(12) }
+    val endMonth = remember { currentMonth.plusMonths(12) }
+
+    val calendarState = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfRow
+    )
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(8.dp)
+    ) {
+
+        HorizontalCalendar(
+            modifier = Modifier.fillMaxSize(),
+            state = calendarState,
+            monthHeader = { month ->
+                miniCalendarHeader(
+                    month = month,
+                    onPreviousClick = {
+                        coroutineScope.launch {
+                            calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
+                        }
+                    },
+                    onNextClick = {
+                        coroutineScope.launch {
+                            calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
+                        }
+                    }
+                )
+            },
+            dayContent = { day ->
+                val isSelected = day.date == selectedDate
+                val entries = sampleEntries[day.date] ?: emptyList()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .padding(2.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            when {
+                                day.date == selectedDate -> Color(0xFF4F6EF7)
+                                day.date == today -> Color(0xFF4F6EF7).copy(alpha = 0.15f)
+                                else -> Color.Transparent
+                            }
+                        )
+                        .clickable(enabled = day.position == DayPosition.MonthDate) {
+                            onDateSelected(day.date)
+                            showDialog = true
+                        },
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Text(
+                            text = day.date.dayOfMonth.toString(),
+                            fontSize = 10.sp,
+                            color = when {
+                                day.date == selectedDate -> Color.White
+                                day.date == today -> Color(0xFF4F6EF7)
+                                day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                                else -> Color.Unspecified
+                            },
+                            fontWeight = if (day.date == today || day.date == selectedDate) FontWeight.Bold else FontWeight.Normal
+                        )
+                        if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(
+                                        color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF4F6EF7),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = entries.size.toString(),
+                                    modifier = Modifier.offset(y = -2.dp),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color(0xFF4F6EF7) else Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (showDialog) {
+        val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+        DayDetailDialog(
+            date = selectedDate,
+            entries = entriesForDay,
+            store = store,
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+fun miniCalendarHeader(
+    month: CalendarMonth,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 9.dp, vertical = 0.5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+            Text(
+                text = day,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = Color.Black
+            )
         }
     }
 }
