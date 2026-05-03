@@ -10,9 +10,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import software.ulpgc.code.application.ColorWheelPicker
+import software.ulpgc.code.application.toRgbString
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
 import software.ulpgc.code.application.ui.filters.RemoveTag
 import software.ulpgc.code.application.ui.pages.CreateTask
@@ -206,8 +210,9 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 @Composable
 fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
 
-
     val currentTopic = store.topics().find { it.name == topicName }
+    var chosenColor by remember { mutableStateOf<Color?>(Color(currentTopic?.color!!)) }
+
     var topicData by remember(topicName) {
         mutableStateOf(modifingForm().copy(name = topicName))
     }
@@ -216,14 +221,23 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Editar tópico") },
         text = {
-            Column {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
                     value = topicData.name,
                     onValueChange = { topicData = topicData.copy(name = it) },
-                    isError = topicData.name.isBlank()
+                    isError = topicData.name.isBlank(),
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
-                if (topicData.error?.isNotBlank() == true) {
-                    topicData.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+                ColorWheelPicker(
+                    wheelSize = 130.dp,
+                    onColorSelected = { color ->
+                        chosenColor = color
+                    }
+                )
+                Text("Color seleccionado: ${chosenColor?.toRgbString()}")
+                if(topicData.error != null) {
+                    Text(topicData.error.toString(), color = MaterialTheme.colorScheme.error)
                 }
             }
         },
@@ -236,6 +250,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit) {
                     exists -> topicData = topicData.copy(error = "Ya existe un tópico con ese nombre")
                     topicData.name.isBlank() -> topicData =
                         topicData.copy(error = "El nombre no puede estar vacío")
+                    chosenColor===null -> topicData.copy(error="Debes seleccionar un color para el tópico")
 
                     else -> {
 
