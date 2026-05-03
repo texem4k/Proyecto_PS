@@ -9,9 +9,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.architecture.control.commands.Command
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Topic
 
@@ -68,12 +70,11 @@ fun CreateTagDialog(
         },
         confirmButton = {
             Button(onClick = {
-                CommandLauncher.launch(
-                    CommandBuilder(store)
-                        .set("name", name)
-                        .set("topicId", selectedTopic?.id.toString())
-                        .build(CommandType.CREATE_TAG)
-                )
+                val command = CommandBuilder(store).set("name", name).set("topicId", selectedTopic.toString()).build((CommandType.CREATE_TAG))
+
+                command
+                    .onSuccess { CommandLauncher.launch(it) }
+                    .onFailure { println("error: ${it.message}") }
                 onClose()
             }) {
                 Text("Crear")
@@ -130,12 +131,12 @@ fun RemoveTag(store: Storage,
         },
         confirmButton = {
             Button(onClick = {
-                CommandLauncher.launch(
-                    CommandBuilder(store)
-                        .set("name", selectedTag)
-                        .set("id", selectedTagUuid)
-                        .build(CommandType.DELETE_TAG)
-                )
+                val command = CommandBuilder(store).set("name", selectedTag).set("id", selectedTagUuid).build((CommandType.DELETE_TAG))
+
+                command
+                    .onSuccess { CommandLauncher.launch(it) }
+                    .onFailure { println("error: ${it.message}") }
+
                 onClose()
             }) {
                 Text("Eliminar tag")

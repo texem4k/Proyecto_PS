@@ -16,16 +16,14 @@ import software.ulpgc.code.application.io.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
-import software.ulpgc.code.application.ui.pages.SearchTaskScreen
+
 import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.application.ui.pages.SearchResultsDialog
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
-//tags.joinToString(", ") {it.toString()}
-//CommandLauncher.launch(CommandBuilder(store).set(atributos del comando).build(tipo de comando))
-//actualizar tags -> tags.joinToString(", ") {it.toString()}
+
 @Composable
 fun App(
     databaseDriverFactory: DatabaseDriverFactory

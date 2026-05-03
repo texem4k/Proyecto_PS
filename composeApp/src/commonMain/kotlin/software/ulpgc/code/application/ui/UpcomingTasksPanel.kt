@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
+import androidx.compose.material3.FloatingActionButtonDefaults.elevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,12 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.datetime.TimeZone
 import software.ulpgc.code.application.ColorWheelPicker
 import software.ulpgc.code.application.toRgbString
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
 import software.ulpgc.code.application.ui.filters.RemoveTag
-import software.ulpgc.code.application.ui.pages.CreateTask
+import software.ulpgc.code.application.ui.pages.toFormattedDate
+import software.ulpgc.code.application.ui.pages.toFormattedHour
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -31,6 +33,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen, onRequestEditNavigation: (() -> Unit)? = null) {
     val tasks = tareas ?: store.tasks().toList()
+    val topic = store.topics().find { x-> x.name==title }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf(-1) }
@@ -57,10 +60,10 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = Color(topic?.color!!)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        ) {
+        ){
 
             Box(
                 modifier = Modifier
@@ -75,7 +78,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .fillMaxWidth() // importante para centrar el texto correctamente
+                        .fillMaxWidth()
                 )
 
                 if (screen == Screen.TASKS) {
@@ -134,9 +137,8 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                                 .padding(horizontal = 8.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Botón de completar
                             IconButton(
-                                onClick = { /* onTaskComplete(task) */ },
+                                onClick = { },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
@@ -148,7 +150,6 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
                             Spacer(Modifier.width(8.dp))
 
-                            // Contenido de la tarea
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = task.name,
@@ -167,7 +168,11 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 }
             }
             if (selectedTask != null) {
-
+                val tz = TimeZone.currentSystemDefault()
+                val startDate = selectedTask!!.time.start.toFormattedDate(tz)
+                val startHour = selectedTask!!.time.start.toFormattedHour(tz)
+                val endDate = selectedTask!!.time.end.toFormattedDate(tz)
+                val endHour = selectedTask!!.time.end.toFormattedHour(tz)
                 val tagNames = selectedTask!!.tags.mapNotNull { id ->
                     store.tags().associateBy { it.id }[id]?.name
                 }
@@ -176,10 +181,10 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                     title = { Text(selectedTask!!.name) },
                     text = {
                         Text("Descripción: ${selectedTask!!.description}\nTema: ${store.topics().find
-                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nTags: " +tagNames.joinToString(", ")+
-                                "\nFecha de comienzo: " +
-                                "${selectedTask!!.time.start.toString().substring(0, 16)}\nFecha de final: ${selectedTask!!
-                                    .time.end.toString().substring(0, 16)}\nPrioridad: ${selectedTask!!.priority}")
+                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nTags: " + tagNames.joinToString(", ") +
+                                "\nFecha de comienzo: $startDate $startHour" +
+                                "\nFecha de final: $endDate $endHour" +
+                                "\nPrioridad: ${selectedTask!!.priority}")
                     },
                     confirmButton = {
                         Button(onClick = {
@@ -189,9 +194,12 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             Text("Editar tarea")
                         }
                         Button(onClick = {
-                            CommandLauncher.launch(
-                                CommandBuilder(store).set("id", selectedTask!!
-                                .id.toString()).build(CommandType.DELETE_TASK))
+                            val command = CommandBuilder(store).set("id", selectedTask!!.id.toString()).build(CommandType.DELETE_TASK)
+
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
+
                             onDeleted()
                             selectedTask = null
                         }) {
@@ -254,13 +262,11 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted
 
                     else -> {
 
-                        CommandLauncher.launch(
-                            CommandBuilder(store)
-                                .set("id", currentTopic?.id.toString())
-                                .set("name", topicData.name)
-                                .set("color", "16")
-                                .build(CommandType.UPDATE_TOPIC)
-                        )
+                        val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", "16").build(CommandType.UPDATE_TOPIC)
+
+                        command
+                            .onSuccess { CommandLauncher.launch(it) }
+                            .onFailure { println("error: ${it.message}") }
                         topicData = modifingForm()
                         onDismiss()
                         onDeleted()
@@ -291,10 +297,8 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit, onDele
         },
         confirmButton = {
             Button(onClick = {
-                CommandLauncher.launch(
-                    CommandBuilder(store)
-                        .set("id", currentTopic?.id.toString())
-                        .build(CommandType.DELETE_TOPIC))
+                val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).build(CommandType.DELETE_TOPIC)
+                command.onSuccess{CommandLauncher.launch(it)}.onFailure { println("error: ${it.message}") }
                 onDismiss()
                 onDeleted()
             }){

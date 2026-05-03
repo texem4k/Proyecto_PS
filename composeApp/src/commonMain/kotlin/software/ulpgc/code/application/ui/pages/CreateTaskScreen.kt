@@ -37,6 +37,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import software.ulpgc.code.architecture.model.times.Time
 import software.ulpgc.code.architecture.model.times.TimeFactory
+import kotlin.onFailure
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -461,9 +462,16 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                         }
 
                         if (task != null) {
-                            CommandLauncher.launch(builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK))
+                            val command =CommandBuilder(store).set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
                         } else {
-                            CommandLauncher.launch(builder.build(CommandType.CREATE_TASK))
+                            val command = CommandBuilder(store).build(CommandType.CREATE_TASK)
+
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
                         }
                         onClose()
                     }
