@@ -87,6 +87,9 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
 
 
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
@@ -116,6 +119,7 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     }
 
     val onTaskCreated: () -> Unit = { version++ }
+    val onDeleted: () -> Unit = { version++ }
 
     var selectedDate by remember { mutableStateOf(today) }
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
@@ -133,7 +137,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onViewModeChange = { viewMode = it },
                     store = store,
                     onNavigate = onNavigate,
-                    onTaskCreated = onTaskCreated
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted
                 )
                 CalendarViewMode.DIA -> DayView(
                     sampleEntries = sampleEntries,
@@ -142,7 +147,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
                     store = store,
-                    onTaskCreated = onTaskCreated
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted
                 )
                 CalendarViewMode.SEMANA -> WeekView(
                     sampleEntries = sampleEntries,
@@ -152,7 +158,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onViewModeChange = { viewMode = it },
                     store = store,
                     onNavigate = onNavigate,
-                    onTaskCreated = onTaskCreated
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted
                 )
                 CalendarViewMode.AÑO -> YearView(
                     sampleEntries = sampleEntries,
@@ -162,7 +169,8 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
                     onViewModeChange = { viewMode = it },
                     store = store,
                     onNavigate = onNavigate,
-                    onTaskCreated = onTaskCreated
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted
                 )
             }
         }
@@ -376,7 +384,8 @@ fun DayEntriesPanel(
     date: LocalDate,
     entries: List<SampleEntry>,
     store: Storage,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeleted: () -> Unit
 ) {
     var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
 
@@ -433,7 +442,15 @@ fun DayEntriesPanel(
                 },
                 confirmButton = {
                     Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
-                    Button(onClick = {}) { Text("Eliminar tarea") }
+                    Button(onClick = {
+                        CommandLauncher.launch(
+                            CommandBuilder(store)
+                                .set("id", task.id.toString())
+                                .build(CommandType.DELETE_TASK)
+                        )
+                        selectedEntry = null
+                        onDeleted()
+                    }) { Text("Eliminar tarea") }
                     Button(onClick = {}) { Text("Editar tarea") }
                 },
                 shape = RoundedCornerShape(16.dp)
@@ -453,7 +470,8 @@ fun DayDetailDialog(
     entries: List<SampleEntry>,
     store: Storage,
     onTaskCreated: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     var showCreateTask by remember { mutableStateOf(false) }
 
@@ -469,7 +487,7 @@ fun DayDetailDialog(
                 )
             },
             text = {
-                DayEntriesPanel(date = date, entries = entries, store = store)
+                DayEntriesPanel(date = date, entries = entries, store = store, onDeleted = onDeleted)
             },
             confirmButton = {
                 Row {
@@ -520,7 +538,8 @@ fun MonthView(
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     store: Storage,
-    onTaskCreated: () -> Unit
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentMonth = today.yearMonth
@@ -606,7 +625,8 @@ fun MonthView(
                     entries = entriesForDay,
                     store = store,
                     onTaskCreated = onTaskCreated,
-                    onDismiss = { showDialog = false }
+                    onDismiss = { showDialog = false },
+                    onDeleted = onDeleted
                 )
             }
         }
@@ -742,7 +762,8 @@ fun YearView(
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     store: Storage,
-    onTaskCreated: () -> Unit
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentYear = remember { Year.now() }
@@ -816,7 +837,8 @@ fun YearView(
                 entries = entriesForDay,
                 store = store,
                 onTaskCreated = onTaskCreated,
-                onDismiss = { showDialog = false }
+                onDismiss = { showDialog = false },
+                onDeleted = onDeleted
             )
         }
     }
@@ -1145,7 +1167,8 @@ fun WeekView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     store: Storage,
     onNavigate: (Screen) -> Unit,
-    onTaskCreated: () -> Unit
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
@@ -1315,7 +1338,8 @@ fun WeekView(
                 entries = entriesForDay,
                 store = store,
                 onTaskCreated = onTaskCreated,
-                onDismiss = { clickedDate = null }
+                onDismiss = { clickedDate = null },
+                onDeleted = onDeleted
             )
         }
     }
@@ -1332,7 +1356,8 @@ fun DayView(
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
     store: Storage,
-    onTaskCreated: () -> Unit
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val scrollState = rememberScrollState()
@@ -1451,7 +1476,8 @@ fun DayView(
                 entries = sampleEntries[currentDay] ?: emptyList(),
                 store = store,
                 onTaskCreated = onTaskCreated,
-                onDismiss = { showCreateDialog = false }
+                onDismiss = { showCreateDialog = false },
+                onDeleted = onDeleted
             )
         }
     }
@@ -1617,7 +1643,8 @@ fun HomeCalendar(
     onDateSelected: (LocalDate) -> Unit,
     onNavigate: (Screen) -> Unit,
     store: Storage,
-    onTaskCreated: () -> Unit
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentMonth = today.yearMonth
@@ -1739,7 +1766,8 @@ fun HomeCalendar(
                 entries = entriesForDay,
                 store = store,
                 onTaskCreated = onTaskCreated,
-                onDismiss = { showDialog = false }
+                onDismiss = { showDialog = false },
+                onDeleted = onDeleted
             )
         }
     }

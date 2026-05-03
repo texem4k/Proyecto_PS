@@ -224,6 +224,7 @@ fun HomeScreen(
                             store = store,
                             onNavigate = onNavigate,
                             onTaskCreated = { version++ },
+                            onDeleted = { version-- },
                         )
                     }
                 }
