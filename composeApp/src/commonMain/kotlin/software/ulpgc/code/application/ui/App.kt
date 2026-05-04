@@ -17,13 +17,12 @@ import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
-
-import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.application.ui.pages.SearchResultsDialog
+import software.ulpgc.code.architecture.control.exceptions.AppException
+import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
-
 
 @Composable
 fun App(
@@ -41,11 +40,13 @@ fun App(
     var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
     var showThemeDialog by remember { mutableStateOf(false) }
 
+
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
         store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
             TaskNotifier.setUpWith(store)
             TaskMonitor(store)
+            TaskOptimizer.setUp(store)
         })
     }
 
