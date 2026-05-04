@@ -1,9 +1,14 @@
 package software.ulpgc.code.architecture.model.tasks
 
+import org.koin.core.time.inMs
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.times.Time
 import kotlin.uuid.Uuid
+import kotlin.math.*
+import kotlin.time.Duration
+
+private const val MAX = 10.0
 
 class Task (
     var priority: Int,
@@ -27,4 +32,14 @@ class Task (
                 "tags=$tags, isCompleted=$isCompleted)"
     }
 
+    fun significanceFactor(): Double {
+        val hoursUntilEnd = hoursFrom(this.time.timeUntilEnd())
+        val hoursDuration = hoursFrom(this.time.duration())
+        val exponent = 1.0 / hoursDuration
+        val factor = exponent * 0.9 * (hoursUntilEnd - hoursDuration * (3.75 + 0.2 * this.priority))
+        return MAX * (1 + 10.0.pow(factor)).pow(-1)
+    }
+    private fun hoursFrom(time: Duration): Double {
+        return time.inMs / 3600000.0
+    }
 }
