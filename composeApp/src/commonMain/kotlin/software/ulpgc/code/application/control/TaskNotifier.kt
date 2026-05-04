@@ -40,7 +40,7 @@ object TaskNotifier : Coroutinable {
             )
             NotificationState.FINISHED -> notifier.notify(
                 "Tarea terminada",
-                "La tarea ${task.name} a llegado a su fecha final."
+                "La tarea ${task.name} a llegado a su fecha final. Recuerda marcarla como terminada."
             )
         }
         notificationStates[task.id] = state

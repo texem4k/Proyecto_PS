@@ -25,6 +25,9 @@ class TaskMonitor(
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.dbState = DBState.UPDATED
+    }
+
+    private fun sendNotification(task: Task) {
         notifier.notify(
             "Tarea renovada",
             "La tarea ${task.name} se ha renovado para la fecha " +
