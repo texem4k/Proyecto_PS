@@ -85,7 +85,7 @@ updateTag:
 UPDATE Tag SET name = ?, topicId = ? WHERE id = ?;
 
 updateTask:
-UPDATE Task SET name = ?, userId = ?, priority = ?, description = ?, interval = ?, topicId = ? WHERE id = ?;
+UPDATE Task SET name = ?, userId = ?, priority = ?, description = ?, interval = ?, topicId = ?, isCompleted = ? WHERE id = ?;
 
 updateTime:
 UPDATE Time SET type = ?, start = ?, end = ? WHERE id = ?;

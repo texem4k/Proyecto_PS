@@ -1,6 +1,5 @@
 package software.ulpgc.code.architecture.model.times
 
-import org.koin.core.time.inMs
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant

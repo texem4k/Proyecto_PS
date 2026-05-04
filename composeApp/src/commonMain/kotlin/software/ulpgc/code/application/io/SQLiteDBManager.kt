@@ -119,6 +119,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                     obj.description,
                     obj.interval.ordinal.toLong(),
                     obj.topicId.toString(),
+                    obj.isCompleted,
                     obj.id.toString()
                 )
                 dbQuery.updateTime(

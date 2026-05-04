@@ -1,6 +1,5 @@
 package software.ulpgc.code.architecture.model.tasks
 
-import org.koin.core.time.inMs
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.times.Time
@@ -40,6 +39,6 @@ class Task (
         return MAX * (1 + 10.0.pow(factor)).pow(-1)
     }
     private fun hoursFrom(time: Duration): Double {
-        return time.inMs / 3600000.0
+        return time.inWholeMilliseconds/ 3600000.0
     }
 }
