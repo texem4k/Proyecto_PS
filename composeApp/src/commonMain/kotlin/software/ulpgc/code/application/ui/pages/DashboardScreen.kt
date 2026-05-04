@@ -3,6 +3,7 @@ package software.ulpgc.code.application.ui.pages
 import Screen
 import software.ulpgc.code.application.ui.UpcomingTasksPanel
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,13 +36,15 @@ fun DashboardScreen(
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
-    onDeleted: () -> Unit = {}
+    onDeleted: () -> Unit = {},
+    onSettingsClick: () -> Unit={}
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
 
         SideBar(
             selectedScreen = Screen.DASHBOARD,
             onNavigate = onNavigate,
+            onSettingsClick = onSettingsClick
         )
 
         Column(
@@ -50,66 +53,52 @@ fun DashboardScreen(
                 .fillMaxHeight()
                 .padding(16.dp)
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth().weight(0.4f),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text(
-                        text = "Widget 1",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp, top = 4.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
+            // ── Mitad superior: dividida en 2 columnas ──
             Row(
-                modifier = Modifier.fillMaxWidth().weight(0.6f),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(bottom = 8.dp)
             ) {
-                val group = store.tasks().groupBy { it.topicId }
-                val items = group.entries.toList().take(2)
-                items.forEach { (titulo, tareasGrupo) ->
-                    val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                    UpcomingTasksPanel(
-                        store = store,
-                        tareas = tareasGrupo,
-                        title = topicName,
-                        screen = Screen.DASHBOARD
-                    )
+                // Celda superior izquierda
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(end = 8.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Panel izquierdo")
+                    }
+                }
+
+                // Celda superior derecha
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Panel derecho")
+                    }
                 }
             }
-        }
 
-        Column(
-            modifier = Modifier
-                .weight(1.3f)
-                .fillMaxHeight()
-                .padding(16.dp)
-        ) {
+            // ── Mitad inferior: gráfica a todo el ancho ──
             Card(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(8.dp)
-            ) {
-                Text("Widget E")
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(8.dp),
-                shape = RoundedCornerShape(30.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 val tasks = remember(store) { store.tasks().toList() }
                 HabitTrackerChart(tasks = tasks)

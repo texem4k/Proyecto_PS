@@ -58,7 +58,7 @@ fun HabitTrackerChart(
         Spacer(Modifier.height(8.dp))
 
         // Gráfica
-        TaskCompletionChart(stats = stats)
+        TaskCompletionChart(stats = stats, isWeekly = mode == ChartMode.WEEKLY)
     }
 }
 

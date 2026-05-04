@@ -95,7 +95,7 @@ import software.ulpgc.code.architecture.control.commands.CommandType
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 
 @Composable
-fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
+fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, onSettingsClick: () -> Unit={}) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     var version by remember { mutableStateOf(0) }
@@ -128,7 +128,7 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
 
     Row(modifier = Modifier.fillMaxSize()) {
-        SideBar(selectedScreen = Screen.CALENDAR, onNavigate = onNavigate)
+        SideBar(selectedScreen = Screen.CALENDAR, onNavigate = onNavigate, onSettingsClick = onSettingsClick)
 
         Box(modifier = Modifier.fillMaxSize()) {
             when (viewMode) {

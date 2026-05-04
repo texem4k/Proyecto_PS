@@ -122,9 +122,6 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             .fillMaxWidth(0.95f)
                             .clickable { selectedTask = task },
                         shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
                     ) {
                         Row(
                             modifier = Modifier

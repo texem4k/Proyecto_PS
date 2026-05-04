@@ -42,7 +42,9 @@ fun TasksScreen(
     taskToEdit: Task? = null,
     onEditDone: () -> Unit = {},
     showResults: Boolean=false,
-    onShowResults: (Boolean) -> Unit={}
+    onShowResults: (Boolean) -> Unit={},
+    onSettingsClick: () -> Unit={}
+
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -96,7 +98,8 @@ fun TasksScreen(
 
             SideBar(
                 selectedScreen = Screen.TASKS,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                onSettingsClick = onSettingsClick
             )
 
             Column(
