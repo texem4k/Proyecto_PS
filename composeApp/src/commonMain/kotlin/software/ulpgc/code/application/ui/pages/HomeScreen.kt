@@ -65,6 +65,10 @@ import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
+import kotlin.sequences.forEach
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -92,25 +96,44 @@ fun HomeScreen(
         focusRequester.requestFocus()
     }
 
+    // Dentro de HomeScreen, antes del Box:
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
 
     val sampleEntries = remember(version) {
-        store.tasks().groupBy { task ->
-            task.time.start.toLocalDateTime(TimeZone.UTC).date
-        }.mapValues { (_, tasks) ->
-            tasks.map { task ->
-                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
-                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
-                SampleEntry(
+        val topicsById = store.topics().associateBy { it.id }
+
+        val tasks = store.tasks()
+
+        // Construimos el mapa manualmente: día → lista de entries
+        val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
+
+        tasks.forEach { task ->
+            val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+            // Iteramos todos los días desde startDate hasta endDate (inclusive)
+            var current = startDate
+            while (current <= endDate) {
+                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+                val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+                val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+
+                val entry = SampleEntry(
                     title = task.name,
-                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
-                    color = Color(0xFF4F6EF7),
-                    task = task
+                    time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                            "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
+                    color = Color(topicColor),
+                    task  = task
                 )
+
+                map.getOrPut(current) { mutableListOf() }.add(entry)
+                current = current.plus(1, DateTimeUnit.DAY)
             }
         }
+
+        map
     }
 
     Box(
@@ -149,7 +172,6 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .padding(16.dp)
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -246,7 +268,6 @@ fun HomeScreen(
                         }
                     }
                 }
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -266,6 +287,7 @@ fun HomeScreen(
                         )
                     }
                 }
+
             }
 
             Column(

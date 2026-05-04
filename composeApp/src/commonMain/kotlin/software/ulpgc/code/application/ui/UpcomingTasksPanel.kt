@@ -200,14 +200,10 @@ fun TaskInformationDialog(
     onDeleted: () -> Unit = {},
     onRequestEditNavigation: (() -> Unit)? = null
 ) {
-    val tz = TimeZone.currentSystemDefault()
-    val startDate = selectedTask.time.start.toFormattedDateDisplay(tz)
-    val startHour = selectedTask.time.start.toFormattedHour(tz)
-    val endDate = selectedTask.time.end.toFormattedDateDisplay(tz)
-    val endHour = selectedTask.time.end.toFormattedHour(tz)
     val tagNames = selectedTask.tags.mapNotNull { id ->
         store.tags().associateBy { it.id }[id]?.name
     }
+    val timeData = selectedTask.time.mostrar().split(",")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -217,8 +213,8 @@ fun TaskInformationDialog(
                 "Descripción: ${selectedTask.description}\n" +
                         "Tema: ${store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
                         "Tags: ${tagNames.joinToString(", ")}\n" +
-                        "Fecha de comienzo: $startDate $startHour\n" +
-                        "Fecha de final: $endDate $endHour\n" +
+                        "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
+                        "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
                         "Prioridad: ${selectedTask.priority}"
             )
         },
