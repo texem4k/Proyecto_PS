@@ -5,6 +5,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
@@ -25,6 +26,7 @@ object TaskNotifier : Coroutinable {
     }
 
     private fun notify(task: Task, state: NotificationState) {
+        LogMaster.log("Notificando ${task.name} como ${state.name}")
         when (state) {
             NotificationState.REMINDED -> notifier.notify(
                 "Recordatorio de tarea",
@@ -38,7 +40,7 @@ object TaskNotifier : Coroutinable {
             )
             NotificationState.FINISHED -> notifier.notify(
                 "Tarea terminada",
-                "La tarea ${task.name} a llegado a su fecha final."
+                "La tarea ${task.name} a llegado a su fecha final. Recuerda marcarla como terminada."
             )
         }
         notificationStates[task.id] = state
@@ -66,12 +68,11 @@ object TaskNotifier : Coroutinable {
     }
 
     override suspend fun execute() {
-        store?.tasks()?.forEach { task ->
+        store?.tasks()?.filterNot(Task::isCompleted)?.forEach { task ->
             if (hasFinished(task)) {
                 if (notificationStates[task.id] == NotificationState.FINISHED) return
                 notify(task, NotificationState.FINISHED)
-            }
-            else if (isImportant(task)) {
+            } else if (isImportant(task)) {
                 if (notificationStates[task.id] == NotificationState.IMPORTANT) return
                 notify(task, NotificationState.IMPORTANT)
             } else if (shouldRemind(task)) {

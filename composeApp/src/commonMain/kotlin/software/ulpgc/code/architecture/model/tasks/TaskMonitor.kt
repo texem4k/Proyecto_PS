@@ -25,6 +25,9 @@ class TaskMonitor(
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.dbState = DBState.UPDATED
+    }
+
+    private fun sendNotification(task: Task) {
         notifier.notify(
             "Tarea renovada",
             "La tarea ${task.name} se ha renovado para la fecha " +
@@ -46,7 +49,12 @@ class TaskMonitor(
     override suspend fun execute() {
         store.tasks()
             .filter { needsRenewal(it) }
-            .forEach { renew(it) }
+            .forEach {
+                while(needsRenewal(it)) {
+                    renew(it)
+                }
+                sendNotification(it)
+            }
     }
 
     override suspend fun onDispose() {

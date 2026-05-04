@@ -1,40 +1,37 @@
 package software.ulpgc.code.application.ui.pages
 
-import UpcomingTasksPanel
+import Screen
+import software.ulpgc.code.application.ui.UpcomingTasksPanel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -42,13 +39,27 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
-import software.ulpgc.code.application.ui.filters.FilterContent
-import software.ulpgc.code.application.ui.Screen
-import software.ulpgc.code.application.ui.filters.TaskFilters
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import software.ulpgc.code.application.ui.DialMenu
+import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.menuTareas
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.control.commands.CommandLauncher
-import androidx.compose.runtime.LaunchedEffect
+import kotlin.time.Clock
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
+data class DialMenuItem(
+    val icon: ImageVector,
+    val label: String,
+    val color: Color,
+    val onClick: () -> Unit
+)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,17 +68,38 @@ fun HomeScreen(
     store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
-    filters: TaskFilters,
     onEdit: (Task) -> Unit = {},
-    onDeleted: () -> Unit = {}
-
+    onDeleted: () -> Unit = {},
+    onSearch:() -> Unit
 ) {
-    var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+
+    // Dentro de HomeScreen, antes del Box:
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    var selectedDate by remember { mutableStateOf(today) }
+    var version by remember { mutableStateOf(0) }
+
+    val sampleEntries = remember(version) {
+        store.tasks().groupBy { task ->
+            task.time.start.toLocalDateTime(TimeZone.UTC).date
+        }.mapValues { (_, tasks) ->
+            tasks.map { task ->
+                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
+                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
+                SampleEntry(
+                    title = task.name,
+                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
+                    color = Color(0xFF4F6EF7),
+                    task = task
+                )
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -75,7 +107,6 @@ fun HomeScreen(
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-
                 when {
                     event.isCtrlPressed && event.key == Key.Z -> {
                         CommandLauncher.undo()
@@ -91,64 +122,107 @@ fun HomeScreen(
                 }
             }
     ) {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            SearchBar(text = searchText, onTextChange = onSearchTextChange, onSearch = { onNavigate(Screen.RESULTS) })
+        Row(modifier = Modifier.fillMaxSize()) {
 
-            Button(onClick = { showFilters = true }) {
-                Text("Filtrado de tareas")
-            }
-            Row {
-                if (showFilters) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showFilters = false }
+            SideBar(
+                selectedScreen = Screen.HOME,
+                onNavigate = onNavigate,
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(2.7f)
+                    .fillMaxHeight()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().weight(0.35f),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    SearchBar(
+                        text = searchText,
+                        onTextChange = onSearchTextChange,
+                        onSearch = onSearch
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(0.3f).weight(0.1f).padding(start = 52.dp)
+                ) {
+                    Text("Tareas Prioritarias", fontSize = 24.sp)
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp, bottom = 24.dp),
+                        thickness = 5.dp
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().weight(0.55f),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+
+                ) {
+                    val group = store.tasks().groupBy { it.topicId }
+                    val items = group.entries.toList().take(2)
+                    items.forEach { (titulo, tareasGrupo) ->
+                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.HOME, onEdit = { task ->
+                            onEdit(task)
+                            onNavigate(Screen.TASKS)
+                        } )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.1f)
+                        .padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Center
+                )
+                {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(300.dp)
                     ) {
-                        FilterContent(
-                            onApply = { newFilters ->
-                                filters.topics = newFilters.topics
-                                filters.status = newFilters.status
-                                filters.priority = newFilters.priority
-                                filters.hasFilter = newFilters.hasFilter
-                                showFilters = false
-                                onNavigate(Screen.RESULTS)
-                            }, store,
-                            onNavigate = onNavigate,
-                            onDismiss = { showFilters = false }
-
+                        DialMenu(
+                            onCreateTask = { onNavigate(Screen.TASKS_CREATE) },
+                            onCreateTopic = { onNavigate(Screen.TOPIC_CREATE) },
+                            onCreateTag = { onNavigate(Screen.TAG_CREATE) }
                         )
                     }
                 }
+
             }
-            Box(modifier = Modifier.weight(1f)) {
-                val group = store.tasks().groupBy { it.topicId }
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth(0.5f),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalArrangement = Arrangement.spacedBy(64.dp)
-                ) {
-                    items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, false, onEdit = onEdit)
+
+            Column(
+                modifier = Modifier
+                    .weight(1.3f)
+                    .fillMaxHeight()
+                    .padding(16.dp)
+            ) {
+                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    Card(
+                        modifier = Modifier.weight(1f).padding(8.dp),
+                        shape = RoundedCornerShape(0.dp)
+                    ) {
+                        HomeCalendar(
+                            sampleEntries = sampleEntries,
+                            selectedDate = selectedDate,
+                            onDateSelected = { selectedDate = it },
+                            store = store,
+                            onNavigate = onNavigate,
+                            onTaskCreated = { version++ },
+                            onDeleted = { version-- },
+                            onEdit = { version++ }
+                        )
                     }
                 }
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Blue,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.CREATE_TASK) }) {
-                    Text("Crear tarea")
-                }
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red,
-                        contentColor = Color.White
-                    ),
-                    onClick = { onNavigate(Screen.DELETE_TASK) }) {
-                    Text("Eliminar tarea")
+                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    menuTareas(store)
                 }
             }
         }
@@ -165,15 +239,13 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     ) {
         OutlinedTextField(
             value = text,
-            modifier = Modifier.fillMaxWidth(0.3f),
+            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.25f),
             shape = RoundedCornerShape(32.dp),
             onValueChange = { onTextChange(it) },
             placeholder = { Text("Buscar...") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = { onSearch() }
-            )
+            keyboardActions = KeyboardActions(onSearch = { onSearch() })
         )
     }
 }
