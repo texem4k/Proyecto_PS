@@ -23,15 +23,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import software.ulpgc.code.architecture.io.Storage
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.graph.HabitTrackerChart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,28 +59,8 @@ fun DashboardScreen(
                 onNavigate = onNavigate,
             )
 
-            /*
-            Column(
-                modifier = Modifier
-                    .weight(2.7f)
-                    .fillMaxHeight()
-                    .padding(16.dp)
 
-            ) {
-            */
-
-                /*
-                // Fila superior: dos widgets lado a lado
-                Row(modifier = Modifier.fillMaxWidth().weight(0.35f),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Top) {
-                    SearchBar(
-                        text = searchText,
-                        onTextChange = onSearchTextChange,
-                        onSearch = { onNavigate(Screen.RESULTS) })
-                }
-                 */
-
-                Column(modifier = Modifier.fillMaxWidth(0.6f).weight(0.40f).padding(start = 52.dp),) {
+                Column(modifier = Modifier.fillMaxWidth(0.6f).weight(0.40f).padding(start = 52.dp)) {
                     Card(modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(
@@ -117,14 +101,14 @@ fun DashboardScreen(
                     .padding(16.dp)
             ) {
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Card(modifier = Modifier.weight(1f).padding(8.dp, ), shape = RoundedCornerShape(0.dp)) {
-
-                        Text("Widget C")
+                    Card(modifier = Modifier.weight(1f).padding(8.dp)) {
+                        Text("Widget E")
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Card(modifier = Modifier.weight(1f).padding(8.dp)) {
-                        Text("Widget E")
+                    Card(modifier = Modifier.weight(1f).padding(8.dp), shape = RoundedCornerShape(8.dp)) {
+                        val tasks = remember(store) { store.tasks().toList() }
+                        HabitTrackerChart(tasks = tasks)
                     }
                 }
             }

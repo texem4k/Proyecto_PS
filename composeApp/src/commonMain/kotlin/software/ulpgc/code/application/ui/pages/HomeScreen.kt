@@ -135,7 +135,8 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth().weight(0.55f),
                     verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+
                 ) {
                     val group = store.tasks().groupBy { it.topicId }
                     val items = group.entries.toList().take(2)
