@@ -112,7 +112,7 @@ fun TasksScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.15f),
+                        .weight(0.17f),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -158,7 +158,7 @@ fun TasksScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.75f),
+                        .weight(0.73f),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {

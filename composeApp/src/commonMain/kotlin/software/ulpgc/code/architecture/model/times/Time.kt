@@ -3,6 +3,7 @@ package software.ulpgc.code.architecture.model.times
 import kotlinx.datetime.TimeZone
 import software.ulpgc.code.application.ui.pages.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.pages.toFormattedHour
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.uuid.Uuid

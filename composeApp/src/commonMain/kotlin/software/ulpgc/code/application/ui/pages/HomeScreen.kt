@@ -68,6 +68,7 @@ import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import software.ulpgc.code.application.ui.TaskInformationDialog
 import kotlin.sequences.forEach
 
 data class DialMenuItem(
@@ -91,6 +92,7 @@ fun HomeScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -175,7 +177,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.16f),
+                        .weight(0.17f),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.Top
                 ) {
@@ -188,8 +190,7 @@ fun HomeScreen(
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 52.dp),
+                        .fillMaxWidth(),
                     verticalArrangement = Arrangement.Top,
 
                 ) {
@@ -214,7 +215,7 @@ fun HomeScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { },
+                                .clickable { selectedTask = task } ,
                             shape = RoundedCornerShape(8.dp),
                         ) {
                             Row(
@@ -330,6 +331,15 @@ fun HomeScreen(
             }
         }
     }
+    if (selectedTask != null) {
+        TaskInformationDialog(
+            selectedTask = selectedTask!!,
+            showActions = false,
+            store = store,
+            onDismiss = { selectedTask = null }
+        )
+    }
+
 }
 
 @Composable
@@ -342,7 +352,7 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     ) {
         OutlinedTextField(
             value = text,
-            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(),
+            modifier = Modifier.fillMaxWidth(0.7f).height(56.dp),
             shape = RoundedCornerShape(32.dp),
             onValueChange = { onTextChange(it) },
             placeholder = { Text("Buscar...") },
@@ -352,3 +362,4 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
         )
     }
 }
+

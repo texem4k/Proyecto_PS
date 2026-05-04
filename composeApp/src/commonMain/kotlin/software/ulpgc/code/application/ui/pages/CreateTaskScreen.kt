@@ -119,7 +119,9 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
             Button(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 onClick = { formError = false; onClose() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
             ) {
                 Text("✖\uFE0E")
             }
@@ -386,9 +388,16 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
         }
 
         Button(
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue,
-                contentColor = Color.White,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            MaterialTheme.colorScheme.primary
+                        )),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp
             ),
             modifier = Modifier.padding(top = 32.dp),
             onClick = {
@@ -403,8 +412,22 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     if (form.taskName.isEmpty()) {
                         messageError = "La tarea debe tener algún nombre"
                         formError = true
-                    } else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty()) {
-                        messageError = "Debes rellenar al menos un campo de fecha"
+                    } else if (form.taskPriority.isEmpty()) {
+                        messageError = "Debes rellenar el campo de prioridad"
+                        formError = true
+                    } else if (form.taskStartDateString.isEmpty() && form.taskFinalDateString.isEmpty() && form.taskStartHour.isEmpty() && form.taskFinalHour.isEmpty()) {
+                        messageError = "Debes rellenar todos los campos de fecha"
+                        formError = true
+
+                    } else if (form.taskStartDateString.isEmpty() && form.taskStartHour.isEmpty() && form.taskDuration.isEmpty()) {
+                        messageError = "Debes rellenar todos los campos de fecha"
+                        formError = true
+
+                    }else if (form.taskFinalDateString.isEmpty() && form.taskFinalHour.isEmpty() && form.taskDuration.isEmpty()) {
+                        messageError = "Debes rellenar todos los campos de fecha"
+                        formError = true
+                    }else if (form.taskTopic == null) {
+                        messageError = "La tarea debe tener un tópico"
                         formError = true
                     } else if (form.taskStartDateString.length == 8 && form.taskDuration.isNotEmpty()) {
                         try {
@@ -553,7 +576,6 @@ fun TextFieldCustom(
         value = value,
         onValueChange = { onValueChange(it) },
         label = { Text(label) },
-        isError = label.contains("tarea") || label.contains("Prioridad") && value.isBlank(),
         modifier = Modifier.fillMaxWidth(0.50f).padding(bottom = 16.dp),
         keyboardOptions = keyboardOptions,
         placeholder = placeholder?.let { { Text(it) } },
