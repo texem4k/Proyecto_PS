@@ -22,11 +22,10 @@ private val ModernoColorScheme = lightColorScheme(
     background = Color(0xFFF5F5F7),
     onBackground = Color(0xFF1C1C1E),
 
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1C1C1E),
-
     surfaceVariant = Color(0xFFE5E5EA),
     onSurfaceVariant = Color(0xFF8E8E93),
+
+    inverseSurface = Color(0xFF2C2C2E),
 
     outline = Color(0xFF8E8E93),
     outlineVariant = Color(0xFFE5E5EA),
