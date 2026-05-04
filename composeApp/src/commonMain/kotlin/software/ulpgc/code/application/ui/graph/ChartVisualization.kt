@@ -122,7 +122,7 @@ fun TaskCompletionChart(stats: List<DayStats>) {
                     title = "Nº de tareas"
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
-                    itemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { 8 }),
+                    itemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { 0 }),
                     label = rememberAxisLabelComponent(style = TextStyle(color = textColor, fontSize = 10.sp)),
                     line  = rememberAxisLineComponent(fill = Fill(axisColor)),
                     tick  = rememberAxisTickComponent(fill = Fill(axisColor)),

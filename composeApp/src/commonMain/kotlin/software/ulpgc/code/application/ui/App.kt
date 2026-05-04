@@ -48,7 +48,7 @@ fun App(
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false
 
-    MaterialTheme {
+    AppTheme {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.primaryContainer)

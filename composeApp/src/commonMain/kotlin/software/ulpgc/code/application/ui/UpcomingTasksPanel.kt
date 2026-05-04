@@ -43,25 +43,17 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
     val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico", "Eliminar un tag del tópico")
 
-    Box(
+    Card(
         modifier = Modifier
-            .widthIn(max=500.dp)
-            .heightIn(max=310.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(2.dp)
+            .widthIn(max = 500.dp)
+            .heightIn(max = 310.dp)
             .fillMaxWidth(0.8f),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        ){
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ){
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -188,7 +180,6 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 }
             }
         }
-    }
 }
 
 @Composable

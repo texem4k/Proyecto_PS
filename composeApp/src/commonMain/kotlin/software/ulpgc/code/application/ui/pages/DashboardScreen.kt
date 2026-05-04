@@ -105,13 +105,14 @@ fun DashboardScreen(
                         Text("Widget E")
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Card(modifier = Modifier.weight(1f).padding(8.dp), shape = RoundedCornerShape(8.dp)) {
-                        val tasks = remember(store) { store.tasks().toList() }
-                        HabitTrackerChart(tasks = tasks)
-                    }
+            }
+            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Card(modifier = Modifier.weight(1f).padding(8.dp), shape = RoundedCornerShape(30.dp)) {
+                    val tasks = remember(store) { store.tasks().toList() }
+                    HabitTrackerChart(tasks = tasks)
                 }
             }
         }
+
     }
 }
