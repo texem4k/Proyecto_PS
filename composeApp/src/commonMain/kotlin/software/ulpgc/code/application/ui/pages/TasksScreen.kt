@@ -17,7 +17,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.application.ui.filters.CreateTagDialog
+import software.ulpgc.code.application.ui.CreateTagDialog
 import software.ulpgc.code.application.ui.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
@@ -112,7 +112,7 @@ fun TasksScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.30f),
+                        .weight(0.15f),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -158,7 +158,7 @@ fun TasksScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.60f),
+                        .weight(0.75f),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {

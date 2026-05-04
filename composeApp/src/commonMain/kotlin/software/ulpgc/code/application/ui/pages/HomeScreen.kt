@@ -3,22 +3,32 @@ package software.ulpgc.code.application.ui.pages
 import Screen
 import software.ulpgc.code.application.ui.UpcomingTasksPanel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -52,6 +62,9 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandType
+import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -70,8 +83,8 @@ fun HomeScreen(
     onSearchTextChange: (String) -> Unit,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
-    onSearch:() -> Unit,
-    onSettingsClick: () -> Unit={}
+    onSearch: () -> Unit,
+    onSettingsClick: () -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -79,7 +92,6 @@ fun HomeScreen(
         focusRequester.requestFocus()
     }
 
-    // Dentro de HomeScreen, antes del Box:
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
@@ -137,8 +149,11 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .padding(16.dp)
             ) {
+
                 Row(
-                    modifier = Modifier.fillMaxWidth().weight(0.35f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.16f),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.Top
                 ) {
@@ -150,33 +165,88 @@ fun HomeScreen(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth(0.3f).weight(0.1f).padding(start = 52.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 52.dp),
+                    verticalArrangement = Arrangement.Top,
+
                 ) {
                     Text("Tareas Prioritarias", fontSize = 24.sp)
                     Divider(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp, bottom = 24.dp),
+                            .fillMaxWidth(0.4f)
+                            .padding(top = 4.dp, bottom = 16.dp),
                         thickness = 5.dp
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().weight(0.55f),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.65f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val group = store.tasks().groupBy { it.topicId }
-                    val items = group.entries.toList().take(2)
-                    items.forEach { (titulo, tareasGrupo) ->
-                        val topicName = store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-                        UpcomingTasksPanel(store, tareasGrupo, topicName, screen = Screen.HOME, onEdit = { task ->
-                            onEdit(task)
-                            onNavigate(Screen.TASKS)
-                        } )
+                    items(TaskOptimizer.sortedTasks.toList().slice(0..minOf(3, TaskOptimizer.sortedTasks.toList().lastIndex))) { task ->
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { },
+                            shape = RoundedCornerShape(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+                                IconButton(
+                                    onClick = {
+                                        val command = CommandBuilder(store)
+                                            .set("id", task.id.toString())
+                                            .build(CommandType.MARK_COMPLETE)
+
+                                        command
+                                            .onSuccess { CommandLauncher.launch(it) }
+                                            .onFailure { println("error: ${it.message}") }
+
+                                        onDeleted()
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.CheckCircle,
+                                        contentDescription = "Completar tarea",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(Modifier.width(8.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = task.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                    )
+
+                                    Spacer(Modifier.height(4.dp))
+                                    val tz = TimeZone.currentSystemDefault()
+                                    val endDate = task.time.end.toFormattedDateDisplay(tz)
+                                    val endHour = task.time.end.toFormattedHour(tz)
+
+                                    Text(
+                                        text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -184,8 +254,7 @@ fun HomeScreen(
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
-                )
-                {
+                ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(300.dp)
@@ -197,7 +266,6 @@ fun HomeScreen(
                         )
                     }
                 }
-
             }
 
             Column(
@@ -206,9 +274,15 @@ fun HomeScreen(
                     .fillMaxHeight()
                     .padding(16.dp)
             ) {
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
                     Card(
-                        modifier = Modifier.weight(1f).padding(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp),
                         shape = RoundedCornerShape(0.dp)
                     ) {
                         HomeCalendar(
@@ -223,7 +297,12 @@ fun HomeScreen(
                         )
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
                     menuTareas(store)
                 }
             }
@@ -241,7 +320,7 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     ) {
         OutlinedTextField(
             value = text,
-            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.25f),
+            modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight(),
             shape = RoundedCornerShape(32.dp),
             onValueChange = { onTextChange(it) },
             placeholder = { Text("Buscar...") },

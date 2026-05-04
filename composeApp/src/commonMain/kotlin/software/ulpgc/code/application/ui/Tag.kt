@@ -1,19 +1,26 @@
-package software.ulpgc.code.application.ui.filters
+package software.ulpgc.code.application.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.control.commands.Command
+import software.ulpgc.code.application.ui.pages.TextFieldCustom
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Topic
 
@@ -40,21 +47,24 @@ fun CreateTagDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
-                TextField(
+                TextFieldCustom(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre") }
+                    label = "Nombre",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+
                 )
 
                 Spacer(Modifier.height(8.dp))
 
-                Button(onClick = { expanded = true }) {
+                Button(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(0.5f)) {
                     selectedTopic?.name?.let { Text(it) }
+
                 }
 
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
                 ) {
                     store.topics().forEach {
                         DropdownMenuItem(
@@ -84,6 +94,7 @@ fun CreateTagDialog(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemoveTag(store: Storage,
               onClose: () -> Unit,
@@ -91,11 +102,11 @@ fun RemoveTag(store: Storage,
 ) {
 
     val currentTopic = store.topics().find { x->x.name == topicName }
+    val topicTags = store.tags().filter { x -> x.topicId == currentTopic?.id }
     var expanded by remember { mutableStateOf(false) }
     var selectedTag by remember { mutableStateOf("Ninguno") }
+    var selectedTagName by remember { mutableStateOf("Ninguno") }
     var selectedTagUuid by remember { mutableStateOf("") }
-    val tags = store.tags().filter { x -> x.topicId== currentTopic?.id }
-
 
 
     AlertDialog(
@@ -104,27 +115,45 @@ fun RemoveTag(store: Storage,
         text = {
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
-                Text("Tópico seleccionado: ${topicName}")
+                Text("Tópico seleccionado: $topicName")
 
                 Spacer(Modifier.height(8.dp))
 
-                Button(onClick = { expanded = true }) {
-                    Text(selectedTag)
-                }
-
-                DropdownMenu(
+                ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onExpandedChange = { if (topicTags.toList().isNotEmpty()) expanded = it },
+                    modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    store.tags().filter {x -> x.topicId== currentTopic?.id }.forEach {
-                        DropdownMenuItem(
-                            text = { Text(it.name) },
-                            onClick = {
-                                selectedTagUuid=it.id.toString()
-                                selectedTag=it.name
-                                expanded = false
-                            }
-                        )
+                    OutlinedTextField(
+                        value = selectedTagName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Selecciona un tag") },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(0.50f),
+                        shape = RoundedCornerShape(32.dp),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        topicTags.forEach { tag ->
+                            val isSelected = tag.id.toString() == selectedTagUuid
+
+                            DropdownMenuItem(
+                                text = { Text(tag.name) },
+                                onClick = {
+                                    selectedTagUuid = tag.id.toString()
+                                    selectedTagName = tag.name
+                                    selectedTag = tag.name
+                                    expanded = false
+                                },
+                                trailingIcon = {
+                                    if (isSelected) Icon(Icons.Default.Check, contentDescription = null)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -140,6 +169,122 @@ fun RemoveTag(store: Storage,
                 onClose()
             }) {
                 Text("Eliminar tag")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onClose() }) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+
+@Composable
+fun EditTag(store: Storage,
+            onClose: () -> Unit,
+            topicName: String){
+
+    val currentTopic = store.topics().find { x->x.name == topicName }
+    var expanded by remember { mutableStateOf(false) }
+    var errMessage by remember { mutableStateOf(false) }
+    var selectedTag by remember { mutableStateOf("Ninguno") }
+    var selectedTagName by remember { mutableStateOf("Ninguno") }
+    var selectedTagUuid by remember { mutableStateOf("") }
+    val tags = store.tags().filter { x -> x.topicId== currentTopic?.id }
+
+    AlertDialog(
+        onDismissRequest = { onClose() },
+        title = { Text("Edita un tag") },
+        text = {
+            val topicTags = store.tags().filter { x -> x.topicId == currentTopic?.id }
+            val hasTags = topicTags.toList().isNotEmpty()
+            val isTagSelected = hasTags && selectedTagName != "Ninguno"
+
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+                Text("Tópico seleccionado: $topicName")
+
+                Spacer(Modifier.height(8.dp))
+
+                if (isTagSelected) {
+                    TextFieldCustom(
+                        value = selectedTag,
+                        onValueChange = { selectedTag = it },
+                        label = "Nuevo nombre para el tag",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    )
+                }
+
+                // 1. Primero el desplegable para seleccionar el tag
+                Button(
+                    onClick = { if (hasTags) expanded = true },
+                    modifier = Modifier.fillMaxWidth(0.5f),
+                    enabled = hasTags  // Deshabilitado si no hay tags
+                ) {
+                    Text(if (hasTags) selectedTagName else "Sin tags")
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    topicTags.forEach {
+                        DropdownMenuItem(
+                            text = { Text(it.name) },
+                            onClick = {
+                                selectedTagUuid = it.id.toString()
+                                selectedTagName = it.name
+                                selectedTag = selectedTagName
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+
+
+                Spacer(Modifier.height(8.dp))
+
+                if (errMessage) {
+                    Text(
+                        text = if (!hasTags)
+                            "El tópico no tiene tags asociados"
+                        else
+                            "Debes seleccionar un tag antes de actualizar",
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            // Calcular aquí también para el botón de confirmar
+            val hasTags = store.tags().any { x -> x.topicId == currentTopic?.id }
+
+            Button(
+                onClick = {
+                    if (!hasTags || selectedTagName == "Ninguno") {
+                        errMessage = true
+                    } else {
+                        val command = CommandBuilder(store)
+                            .set("id", selectedTagUuid)
+                            .set("name", selectedTag)
+                            .set("topicId", currentTopic?.id.toString())
+                            .build(CommandType.UPDATE_TAG)
+
+                        command
+                            .onSuccess { CommandLauncher.launch(it) }
+                            .onFailure { println("error: ${it.message}") }
+
+                        onClose()
+                    }
+                },
+                enabled = hasTags  // Botón deshabilitado si no hay tags
+            ) {
+                Text("Actualizar tag")
             }
         },
         dismissButton = {

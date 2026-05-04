@@ -39,7 +39,7 @@ fun menuTareas(store: Storage) {
     val filteredTasks = if (showCompleted) {
         taskList.filter { it.isCompleted }.takeLast(5)
     } else {
-        taskList.filter { !it.isCompleted }.take(5)
+        taskList.sortedBy { it.time.end}.take(5)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -91,7 +91,7 @@ fun menuTareas(store: Storage) {
         ) {
             filteredTasks.forEach { task ->
                 Card(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(0.99f)
                         .clickable { selectedTask = task },
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(

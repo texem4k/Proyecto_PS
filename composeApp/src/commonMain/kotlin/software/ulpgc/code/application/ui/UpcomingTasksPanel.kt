@@ -6,25 +6,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
-import androidx.compose.material3.FloatingActionButtonDefaults.elevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
 import software.ulpgc.code.application.ColorWheelPicker
 import software.ulpgc.code.application.toRgbString
-import software.ulpgc.code.application.ui.filters.CreateTagDialog
-import software.ulpgc.code.application.ui.filters.RemoveTag
-import software.ulpgc.code.application.ui.pages.toFormattedDate
+import software.ulpgc.code.application.ui.pages.TextFieldCustom
 import software.ulpgc.code.application.ui.pages.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.pages.toFormattedHour
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
@@ -44,7 +43,12 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
     var selectedOption by remember { mutableStateOf(-1) }
     var showDialog by remember { mutableStateOf(true) }
 
-    val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico", "Eliminar un tag del tópico")
+    val options = listOf(
+        "Editar tópico",
+        "Eliminar tópico",
+        "Añadir tag al tópico",
+        "Eliminar un tag del tópico",
+        "Editar tag")
 
     Card(
         modifier = Modifier
@@ -106,6 +110,7 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                                 1 -> DeleteTopic(store, title, onDismiss={showDialog=false}, { onDeleted() })
                                 2 -> CreateTagDialog(store, onClose = {showDialog=false}, title)
                                 3 -> RemoveTag(store, onClose = {showDialog=false}, title)
+                                4 -> EditTag(store, onClose = {showDialog=false}, title)
                             }
                         }
                     }
@@ -154,9 +159,12 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                                     text = task.name,
                                     style = MaterialTheme.typography.titleSmall,
                                 )
+                                val tz = TimeZone.currentSystemDefault()
+                                val endDate = task.time.end.toFormattedDateDisplay(tz)
+                                val endHour = task.time.end.toFormattedHour(tz)
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} ${task.time.end}",
+                                    text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -180,104 +188,6 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                 }
             }
         }
-}
-
-@Composable
-fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
-
-    val currentTopic = store.topics().find { it.name == topicName }
-    var chosenColor by remember { mutableStateOf<Color?>(Color(currentTopic?.color!!)) }
-
-    var topicData by remember(topicName) {
-        mutableStateOf(modifingForm().copy(name = topicName))
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Editar tópico") },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                TextField(
-                    value = topicData.name,
-                    onValueChange = { topicData = topicData.copy(name = it) },
-                    isError = topicData.name.isBlank(),
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-
-                ColorWheelPicker(
-                    wheelSize = 130.dp,
-                    onColorSelected = { color ->
-                        chosenColor = color
-                    }
-                )
-                Text("Color seleccionado: ${chosenColor?.toRgbString()}")
-                if(topicData.error != null) {
-                    Text(topicData.error.toString(), color = MaterialTheme.colorScheme.error)
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                val exists = store.topics().any {
-                    it.name == topicData.name && it.id != currentTopic?.id
-                }
-                when {
-                    exists -> topicData = topicData.copy(error = "Ya existe un tópico con ese nombre")
-                    topicData.name.isBlank() -> topicData =
-                        topicData.copy(error = "El nombre no puede estar vacío")
-                    chosenColor===null -> topicData.copy(error="Debes seleccionar un color para el tópico")
-
-                    else -> {
-
-                        val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", chosenColor!!.toArgb().toString()).build(CommandType.UPDATE_TOPIC)
-
-                        command
-                            .onSuccess { CommandLauncher.launch(it) }
-                            .onFailure { println("error: ${it.message}") }
-                        topicData = modifingForm()
-                        onDismiss()
-                        onDeleted()
-                    }
-                }
-            }) {
-                Text("Actualizar tópico")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
-
-@Composable
-fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
-    val currentTopic = store.topics().find { it.name == topicName }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Eliminar tópico") },
-        text = {
-            Text("¿Seguro que quieres eliminar el tópico '${currentTopic?.name}' para eliminar?")
-        },
-        confirmButton = {
-            Button(onClick = {
-                val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).build(CommandType.DELETE_TOPIC)
-                command.onSuccess{CommandLauncher.launch(it)}.onFailure { println("error: ${it.message}") }
-                onDismiss()
-                onDeleted()
-            }){
-                Text("Confirmar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
 }
 
 @Composable
