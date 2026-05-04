@@ -101,17 +101,19 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     var version by remember { mutableStateOf(0) }
 
     val sampleEntries = remember(version) {
+        val topicsById = store.topics().associateBy { it.id }
         store.tasks().groupBy { task ->
             task.time.start.toLocalDateTime(TimeZone.UTC).date
         }.mapValues { (_, tasks) ->
             tasks.map { task ->
                 val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
                 val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
+                val topicColor = topicsById[task.topicId]?.color ?: 0xFF4F6EF7.toInt()
                 SampleEntry(
                     title = task.name,
                     time = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
                             "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                    color = Color(0xFF4F6EF7),
+                    color = Color(topicColor),
                     task = task
                 )
             }
