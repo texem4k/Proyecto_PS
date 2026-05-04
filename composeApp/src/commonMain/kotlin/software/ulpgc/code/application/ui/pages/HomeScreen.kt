@@ -70,7 +70,8 @@ fun HomeScreen(
     onSearchTextChange: (String) -> Unit,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
-    onSearch:() -> Unit
+    onSearch:() -> Unit,
+    onSettingsClick: () -> Unit={}
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -127,6 +128,7 @@ fun HomeScreen(
             SideBar(
                 selectedScreen = Screen.HOME,
                 onNavigate = onNavigate,
+                onSettingsClick = onSettingsClick
             )
 
             Column(
