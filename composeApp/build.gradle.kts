@@ -94,6 +94,8 @@ kotlin {
             implementation(libs.ui.v1103)
             api("io.github.mirzemehdi:kmpnotifier:1.6.1")
             //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
+            // build.gradle.kts (shared module)
+            implementation("com.patrykandpatrick.vico:multiplatform:2.4.4")
         }
 
 

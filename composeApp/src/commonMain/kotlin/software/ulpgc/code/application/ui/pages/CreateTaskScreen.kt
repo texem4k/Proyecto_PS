@@ -533,6 +533,14 @@ fun Instant.toFormattedDate(timeZone: TimeZone = TimeZone.currentSystemDefault()
     return "${localDate.day.toString().padStart(2, '0')}${localDate.month.number.toString().padStart(2, '0')}${localDate.year}"
 }
 
+fun Instant.toFormattedDateDisplay(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val localDate = this.toLocalDateTime(timeZone).date
+    val day = localDate.day.toString().padStart(2, '0')
+    val month = localDate.month.number.toString().padStart(2, '0')
+    val year = localDate.year
+    return "$day/$month/$year"
+}
+
 @Composable
 fun TextFieldCustom(
     value: String,

@@ -66,10 +66,8 @@ fun SideBar(
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // Empuja el resto al fondo
         Spacer(modifier = Modifier.weight(1f))
 
-        // Iconos inferiores
         bottomItems.forEach { item ->
             SideBarNavItem(
                 item = item,

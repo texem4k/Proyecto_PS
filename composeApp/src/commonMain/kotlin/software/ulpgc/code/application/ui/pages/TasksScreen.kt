@@ -160,7 +160,7 @@ fun TasksScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     var taskList by remember { mutableStateOf(store.tasks().toList()) }
-                    val group = taskList.groupBy { it.topicId }
+                    val group = taskList.filter {it.isCompleted == false}.groupBy { it.topicId }
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),

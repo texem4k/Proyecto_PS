@@ -25,6 +25,7 @@ import software.ulpgc.code.application.toRgbString
 import software.ulpgc.code.application.ui.filters.CreateTagDialog
 import software.ulpgc.code.application.ui.filters.RemoveTag
 import software.ulpgc.code.application.ui.pages.toFormattedDate
+import software.ulpgc.code.application.ui.pages.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.pages.toFormattedHour
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
@@ -45,25 +46,17 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
     val options = listOf("Editar tópico", "Eliminar tópico", "Añadir tag al tópico", "Eliminar un tag del tópico")
 
-    Box(
+    Card(
         modifier = Modifier
-            .widthIn(max=500.dp)
-            .heightIn(max=310.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(2.dp)
+            .widthIn(max = 500.dp)
+            .heightIn(max = 310.dp)
             .fillMaxWidth(0.8f),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(2.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        ){
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ){
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +133,14 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(
-                                onClick = { },
+                                onClick = {
+                                    val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.MARK_COMPLETE)
+
+                                    command
+                                        .onSuccess { CommandLauncher.launch(it) }
+                                        .onFailure { println("error: ${it.message}") }
+                                    onDeleted()
+                                },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
@@ -171,49 +171,18 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             }
 
             if (selectedTask != null) {
-                val tz = TimeZone.currentSystemDefault()
-                val startDate = selectedTask!!.time.start.toFormattedDate(tz)
-                val startHour = selectedTask!!.time.start.toFormattedHour(tz)
-                val endDate = selectedTask!!.time.end.toFormattedDate(tz)
-                val endHour = selectedTask!!.time.end.toFormattedHour(tz)
-                val tagNames = selectedTask!!.tags.mapNotNull { id ->
-                    store.tags().associateBy { it.id }[id]?.name
+                if (selectedTask != null) {
+                    TaskInformationDialog(
+                        selectedTask = selectedTask!!,
+                        store = store,
+                        onDismiss = { selectedTask = null },
+                        onEdit = { onEdit(it) },
+                        onDeleted = { onDeleted(); selectedTask = null },
+                        onRequestEditNavigation = onRequestEditNavigation
+                    )
                 }
-                AlertDialog(
-                    onDismissRequest = { selectedTask = null },
-                    title = { Text(selectedTask!!.name) },
-                    text = {
-                        Text("Descripción: ${selectedTask!!.description}\nTema: ${store.topics().find
-                        { it.id == selectedTask!!.topicId }?.name ?: "Sin tópico"}\nTags: " + tagNames.joinToString(", ") +
-                                "\nFecha de comienzo: $startDate $startHour" +
-                                "\nFecha de final: $endDate $endHour" +
-                                "\nPrioridad: ${selectedTask!!.priority}")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            onEdit(selectedTask!!)
-                            onRequestEditNavigation?.invoke()
-                        }) {
-                            Text("Editar tarea")
-                        }
-                        Button(onClick = {
-                            val command = CommandBuilder(store).set("id", selectedTask!!.id.toString()).build(CommandType.DELETE_TASK)
-                            command
-                                .onSuccess { CommandLauncher.launch(it) }
-                                .onFailure { println("error: ${it.message}") }
-                            onDeleted()
-                            selectedTask = null
-                        }) {
-                            Text("Eliminar tarea")
-                        }
-                        Button(onClick = { selectedTask = null }) {
-                            Text("Cerrar")
-                        }
-                    }
-                )
             }
         }
-    }
 }
 
 @Composable
@@ -313,6 +282,69 @@ fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit, onDele
         }
     )
 }
+
+@Composable
+fun TaskInformationDialog(
+    selectedTask: Task,
+    store: Storage,
+    onDismiss: () -> Unit,
+    showActions: Boolean = true,
+    onEdit: (Task) -> Unit = {},
+    onDeleted: () -> Unit = {},
+    onRequestEditNavigation: (() -> Unit)? = null
+) {
+    val tz = TimeZone.currentSystemDefault()
+    val startDate = selectedTask.time.start.toFormattedDateDisplay(tz)
+    val startHour = selectedTask.time.start.toFormattedHour(tz)
+    val endDate = selectedTask.time.end.toFormattedDateDisplay(tz)
+    val endHour = selectedTask.time.end.toFormattedHour(tz)
+    val tagNames = selectedTask.tags.mapNotNull { id ->
+        store.tags().associateBy { it.id }[id]?.name
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(selectedTask.name) },
+        text = {
+            Text(
+                "Descripción: ${selectedTask.description}\n" +
+                        "Tema: ${store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
+                        "Tags: ${tagNames.joinToString(", ")}\n" +
+                        "Fecha de comienzo: $startDate $startHour\n" +
+                        "Fecha de final: $endDate $endHour\n" +
+                        "Prioridad: ${selectedTask.priority}"
+            )
+        },
+        confirmButton = {
+            if (showActions) {
+                Button(onClick = {
+                    onEdit(selectedTask)
+                    onRequestEditNavigation?.invoke()
+                }) {
+                    Text("Editar tarea")
+                }
+                Button(onClick = {
+                    val command = CommandBuilder(store)
+                        .set("id", selectedTask.id.toString())
+                        .build(CommandType.DELETE_TASK)
+                    command
+                        .onSuccess { CommandLauncher.launch(it) }
+                        .onFailure { println("error: ${it.message}") }
+                    onDeleted()
+                    onDismiss()
+                }) {
+                    Text("Eliminar tarea")
+                }
+            }
+            Button(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+
+
 
 data class modifingForm(
     var name: String = "",
