@@ -37,6 +37,8 @@ fun App(
     var storeError by remember { mutableStateOf<AppException?>(null) }
     var startEditMode by remember { mutableStateOf(false) }
     var showResults by remember { mutableStateOf(false) }
+    var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -50,7 +52,18 @@ fun App(
 
     val storeReady = store?.ready?.collectAsState()?.value ?: false
 
-    AppTheme {
+    AppTheme(theme = selectedTheme) {
+        if (showThemeDialog) {
+            ThemeDialog(
+                current = selectedTheme,
+                onThemeSelected = {
+                    selectedTheme = it
+                },
+                onDismiss = {
+                    showThemeDialog = false
+                }
+            )
+        }
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.primaryContainer)
@@ -75,7 +88,8 @@ fun App(
                             onSearch = {
                                 filters.hasFilter = false
                                 showResults = true
-                            }
+                            },
+                            onSettingsClick = { showThemeDialog = true }
                         )
 
                         Screen.TASKS -> TasksScreen(
@@ -97,7 +111,8 @@ fun App(
                                 taskToEdit = null
                             },
                             showResults = showResults,
-                            onShowResults = { showResults = it }
+                            onShowResults = { showResults = it },
+                            onSettingsClick = { showThemeDialog = true }
                         )
 
                         Screen.TASKS_CREATE -> TasksScreen(
@@ -150,11 +165,13 @@ fun App(
                             store!!,
                             searchText,
                             onSearchTextChange = { searchText = it },
+                            onSettingsClick = { showThemeDialog = true }
                         )
 
                         Screen.CALENDAR -> CalendarScreen(
                             onNavigate = { screen = it },
-                            store!!
+                            store!!,
+                            onSettingsClick = { showThemeDialog = true }
                         )
 
                         else -> {}

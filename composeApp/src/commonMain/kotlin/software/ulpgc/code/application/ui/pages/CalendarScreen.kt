@@ -87,6 +87,8 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -95,27 +97,44 @@ import software.ulpgc.code.architecture.control.commands.CommandType
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 
 @Composable
-fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
+fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage, onSettingsClick: () -> Unit={}) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     var version by remember { mutableStateOf(0) }
 
     val sampleEntries = remember(version) {
-        store.tasks().groupBy { task ->
-            task.time.start.toLocalDateTime(TimeZone.UTC).date
-        }.mapValues { (_, tasks) ->
-            tasks.map { task ->
-                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
-                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
-                SampleEntry(
+        val topicsById = store.topics().associateBy { it.id }
+
+        val tasks = store.tasks()
+
+        // Construimos el mapa manualmente: día → lista de entries
+        val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
+
+        tasks.forEach { task ->
+            val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+            // Iteramos todos los días desde startDate hasta endDate (inclusive)
+            var current = startDate
+            while (current <= endDate) {
+                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+                val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+                val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+
+                val entry = SampleEntry(
                     title = task.name,
-                    time = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                    time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
                             "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                    color = Color(0xFF4F6EF7),
-                    task = task
+                    color = Color(topicColor),
+                    task  = task
                 )
+
+                map.getOrPut(current) { mutableListOf() }.add(entry)
+                current = current.plus(1, DateTimeUnit.DAY)
             }
         }
+
+        map
     }
 
     val onTaskCreated: () -> Unit = { version++ }
@@ -126,7 +145,7 @@ fun CalendarScreen(onNavigate: (Screen) -> Unit, store: Storage) {
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
 
     Row(modifier = Modifier.fillMaxSize()) {
-        SideBar(selectedScreen = Screen.CALENDAR, onNavigate = onNavigate)
+        SideBar(selectedScreen = Screen.CALENDAR, onNavigate = onNavigate, onSettingsClick = onSettingsClick)
 
         Box(modifier = Modifier.fillMaxSize()) {
             when (viewMode) {
@@ -1074,6 +1093,7 @@ fun WeekEventChip(
 ) {
     val topDp = ((startHour - START_HOUR) * hourHeight.value).dp
     val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
+    val timeData = entry.task!!.time!!.mostrar().split(",")
 
     Box(
         modifier = Modifier
@@ -1094,17 +1114,19 @@ fun WeekEventChip(
         Column {
             Text(
                 text = entry.title,
-                fontSize = 11.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = entry.color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = entry.time,
-                fontSize = 9.sp,
+                text = "Desde: ${timeData[0]} - ${timeData[1]}\n" +
+                        "Hasta: ${timeData[2]} - ${timeData[3]}",
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
                 color = entry.color.copy(alpha = 0.8f),
-                maxLines = 1
+                maxLines = 8
             )
         }
     }
@@ -1147,14 +1169,36 @@ fun WeekDayColumn(
         }
 
         entries.forEach { entry ->
-            val (startH, endH) = parseEntryTime(entry.time)
-            WeekEventChip(
-                entry = entry,
-                startHour = startH,
-                endHour = endH,
-                hourHeight = hourHeight,
-                onClick = { onEntryClick(entry) }
-            )
+            val task = entry.task
+            if (task != null) {
+                val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val endDate = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+                var (startH, endH) = parseEntryTime(entry.time)
+
+                when (date) {
+                    startDate -> {
+                        // primer día → empieza a su hora real, termina al final del día
+                        endH = END_HOUR.toFloat()
+                    }
+                    endDate -> {
+                        // último día → empieza a las 00:00, termina a su hora real
+                        startH = START_HOUR.toFloat()
+                    }
+                    else -> {
+                        // días intermedios → ocupa TODO el día
+                        startH = START_HOUR.toFloat()
+                        endH = END_HOUR.toFloat()
+                    }
+                }
+                WeekEventChip(
+                    entry = entry,
+                    startHour = startH,
+                    endHour = endH,
+                    hourHeight = hourHeight,
+                    onClick = { onEntryClick(entry) }
+                )
+            }
         }
 
         if (isToday) {
@@ -1768,7 +1812,7 @@ fun HomeCalendar(
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(-3.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
                                 text = day.date.dayOfMonth.toString(),

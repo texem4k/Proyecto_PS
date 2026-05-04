@@ -47,11 +47,11 @@ fun SearchResultsDialog(
     filters: TaskFilters
 ) {
 
-    val creamBackground = Color(0xFFFDF6E3)
-    val creamSurface = Color(0xFFF5ECD7)
-    val creamBorder = Color(0xFFD4B896)
-    val textBrown = Color(0xFF5C4033)
-    val textBrownLight = Color(0xFF8D6E63)
+    val background = MaterialTheme.colorScheme.surface
+    val surface = MaterialTheme.colorScheme.surfaceVariant
+    val border = MaterialTheme.colorScheme.outline
+    val textPrimary = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
 
     val topicsList = remember { mutableListOf<String>() }
     val priorityList = remember { mutableListOf<String>() }
@@ -102,18 +102,16 @@ fun SearchResultsDialog(
             modifier = Modifier
                 .fillMaxWidth(0.40f)
                 .fillMaxHeight(0.70f)
-                .background(creamBackground, RoundedCornerShape(20.dp))
-                .border(1.dp, creamBorder, RoundedCornerShape(20.dp))
+                .background(background, RoundedCornerShape(20.dp))
+                .border(1.dp, border, RoundedCornerShape(20.dp))
                 .padding(20.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Top
             ) {
-
-                // ── Header ──────────────────────────────────────────────
                 Row(
-                    modifier = Modifier.fillMaxWidth(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -121,7 +119,7 @@ fun SearchResultsDialog(
                         text = if (filters.hasFilter) "Filtrado de tareas" else "Resultados de \"$value\"",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = textBrown
+                        color = textPrimary
                     )
                     IconButton(
                         onClick = {
@@ -133,26 +131,45 @@ fun SearchResultsDialog(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Cerrar",
-                            tint = textBrownLight
+                            tint = textSecondary
                         )
                     }
                 }
 
-                // ── Chips de filtros activos ─────────────────────────────
                 if (filters.hasFilter) {
                     Spacer(Modifier.height(8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (topicsList.isNotEmpty()) FilterChipRow("Tópicos", topicsList, creamSurface, creamBorder, textBrown, textBrownLight)
-                        if (priorityList.isNotEmpty()) FilterChipRow("Prioridad", priorityList, creamSurface, creamBorder, textBrown, textBrownLight)
-                        if (tagsList.isNotEmpty()) FilterChipRow("Tags", tagsList, creamSurface, creamBorder, textBrown, textBrownLight)
+                        if (topicsList.isNotEmpty()) FilterChipRow(
+                            "Tópicos",
+                            topicsList,
+                            surface,
+                            border,
+                            textPrimary,
+                            textSecondary
+                        )
+                        if (priorityList.isNotEmpty()) FilterChipRow(
+                            "Prioridad",
+                            priorityList,
+                            surface,
+                            border,
+                            textPrimary,
+                            textSecondary
+                        )
+                        if (tagsList.isNotEmpty()) FilterChipRow(
+                            "Tags",
+                            tagsList,
+                            surface,
+                            border,
+                            textPrimary,
+                            textSecondary
+                        )
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
-                HorizontalDivider(color = creamBorder)
+                HorizontalDivider(color = border)
                 Spacer(Modifier.height(12.dp))
 
-                // ── Contenido ────────────────────────────────────────────
                 if (search.isNotEmpty()) {
                     Box(modifier = Modifier.weight(2f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                         UpcomingTasksPanel(
@@ -178,7 +195,7 @@ fun SearchResultsDialog(
                             Text(
                                 text = "Sin resultados para \"$value\"",
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = textBrownLight,
+                                color = textSecondary,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -189,39 +206,39 @@ fun SearchResultsDialog(
     }
 }
 
-@Composable
-private fun FilterChipRow(
-    label: String,
-    items: List<String>,
-    surface: Color,
-    border: Color,
-    textPrimary: Color,
-    textSecondary: Color
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth()
+    @Composable
+    private fun FilterChipRow(
+        label: String,
+        items: List<String>,
+        surface: Color,
+        border: Color,
+        textPrimary: Color,
+        textSecondary: Color
     ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.labelSmall,
-            color = textSecondary,
-            fontWeight = FontWeight.SemiBold
-        )
-        items.forEach { item ->
-            Box(
-                modifier = Modifier
-                    .background(surface, RoundedCornerShape(50))
-                    .border(1.dp, border, RoundedCornerShape(50))
-                    .padding(horizontal = 10.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = item,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = textPrimary
-                )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "$label:",
+                style = MaterialTheme.typography.labelSmall,
+                color = textSecondary,
+                fontWeight = FontWeight.SemiBold
+            )
+            items.forEach { item ->
+                Box(
+                    modifier = Modifier
+                        .background(surface, RoundedCornerShape(50))
+                        .border(1.dp, border, RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = item,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textPrimary
+                    )
+                }
             }
         }
     }
-}
