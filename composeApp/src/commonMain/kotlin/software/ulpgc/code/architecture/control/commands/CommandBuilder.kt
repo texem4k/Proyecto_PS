@@ -130,7 +130,9 @@ class CommandBuilder internal constructor (private val store: Storage) {
     }
 
     private fun tags(): Result<MutableSet<Uuid>> = runCatching {
-        return getOrThrow("tags", { tags -> tags.split(", ").map { Uuid.parse(it) }.toMutableSet()})
+        return getOrThrow("tags", { tags ->
+            if(tags=="") mutableSetOf()
+            else tags.split(", ").map { Uuid.parse(it) }.toMutableSet()})
     }
 
     private fun color(): Result<Int> = runCatching {

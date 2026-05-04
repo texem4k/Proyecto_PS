@@ -14,8 +14,6 @@ plugins {
     id("com.google.gms.google-services") version "4.4.0"
 }
 
-
-
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
@@ -89,8 +87,15 @@ kotlin {
             implementation(libs.kotlinx.coroutines)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation(compose.materialIconsExtended)
+            implementation("com.kizitonwose.calendar:compose-multiplatform:2.10.1")
+            implementation(libs.compose.runtime)
+            implementation(libs.foundation.v1103)
+            implementation(libs.jetbrains.material3.v190)
+            implementation(libs.ui.v1103)
             api("io.github.mirzemehdi:kmpnotifier:1.6.1")
             //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
+            // build.gradle.kts (shared module)
+            implementation("com.patrykandpatrick.vico:multiplatform:2.4.4")
         }
 
 

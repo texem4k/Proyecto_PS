@@ -18,7 +18,6 @@ import software.ulpgc.code.application.ui.pages.DeleteTaskScreen
 import software.ulpgc.code.application.ui.pages.HomeScreen
 import software.ulpgc.code.application.ui.pages.SearchTaskScreen
 import software.ulpgc.code.architecture.control.exceptions.AppException
-import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
@@ -40,7 +39,6 @@ fun App(
         store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
             TaskNotifier.setUpWith(store)
             TaskMonitor(store)
-            TaskOptimizer.setUp(store)
         })
     }
 
