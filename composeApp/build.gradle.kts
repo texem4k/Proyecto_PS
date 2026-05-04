@@ -150,9 +150,11 @@ compose.desktop {
         mainClass = "software.ulpgc.code.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "software.ulpgc.code"
+            targetFormats(TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Ordo"
             packageVersion = "1.0.0"
+            modules("java.instrument", "java.sql", "jdk.unsupported")
+            windows { menuGroup = "Ordo" }
         }
     }
 }
