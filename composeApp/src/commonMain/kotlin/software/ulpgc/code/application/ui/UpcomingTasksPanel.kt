@@ -1,3 +1,6 @@
+package software.ulpgc.code.application.ui
+
+import Screen
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn

@@ -173,7 +173,7 @@ fun TasksScreen(
                             val topicName =
                                 store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
 
-                            UpcomingTasksPanel(
+                            _root_ide_package_.software.ulpgc.code.application.ui.UpcomingTasksPanel(
                                 store,
                                 tareasGrupo,
                                 topicName,
