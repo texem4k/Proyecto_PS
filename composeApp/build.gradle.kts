@@ -87,6 +87,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation(compose.materialIconsExtended)
+            implementation("com.kizitonwose.calendar:compose-multiplatform:2.10.1")
             implementation(libs.compose.runtime)
             implementation(libs.foundation.v1103)
             implementation(libs.jetbrains.material3.v190)

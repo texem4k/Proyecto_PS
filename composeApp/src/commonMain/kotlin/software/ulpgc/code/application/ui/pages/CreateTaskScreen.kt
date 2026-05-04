@@ -24,8 +24,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.number
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -67,7 +69,7 @@ enum class CreateMode {
 
 
 @Composable
-fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
+fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialDate: LocalDate? = null) {
 
     var form by remember { mutableStateOf(FormState()) }
     var formError by remember { mutableStateOf(false) }
@@ -95,7 +97,14 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null) {
                 taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskTags = task.tags.toList(),
             )
-        } else {
+        } else if (initialDate != null){
+            val instant = initialDate.atStartOfDayIn(TimeZone.currentSystemDefault())
+            form = FormState(
+                taskStartDate = instant,
+                taskStartDateString = instant.toFormattedDate(TimeZone.currentSystemDefault()),
+            )
+        }
+        else {
             form = FormState()
         }
     }

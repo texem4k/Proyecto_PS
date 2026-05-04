@@ -1,7 +1,7 @@
 package software.ulpgc.code.application.ui.pages
 
 import Screen
-import UpcomingTasksPanel
+import software.ulpgc.code.application.ui.UpcomingTasksPanel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,13 +41,17 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.menuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-
+import kotlin.time.Clock
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -71,6 +76,28 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    // Dentro de HomeScreen, antes del Box:
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    var selectedDate by remember { mutableStateOf(today) }
+    var version by remember { mutableStateOf(0) }
+
+    val sampleEntries = remember(version) {
+        store.tasks().groupBy { task ->
+            task.time.start.toLocalDateTime(TimeZone.UTC).date
+        }.mapValues { (_, tasks) ->
+            tasks.map { task ->
+                val startTime = task.time.start.toLocalDateTime(TimeZone.UTC)
+                val endTime = task.time.end.toLocalDateTime(TimeZone.UTC)
+                SampleEntry(
+                    title = task.name,
+                    time = "${startTime.hour.toString().padStart(2,'0')}:${startTime.minute.toString().padStart(2,'0')} · ${endTime.hour.toString().padStart(2,'0')}:${endTime.minute.toString().padStart(2,'0')}",
+                    color = Color(0xFF4F6EF7),
+                    task = task
+                )
+            }
+        }
     }
 
     Box(
@@ -182,7 +209,16 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f).padding(8.dp),
                         shape = RoundedCornerShape(0.dp)
                     ) {
-                        Text("Widget C")
+                        HomeCalendar(
+                            sampleEntries = sampleEntries,
+                            selectedDate = selectedDate,
+                            onDateSelected = { selectedDate = it },
+                            store = store,
+                            onNavigate = onNavigate,
+                            onTaskCreated = { version++ },
+                            onDeleted = { version-- },
+                            onEdit = { version++ }
+                        )
                     }
                 }
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
