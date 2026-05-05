@@ -181,7 +181,7 @@ fun SearchResultsDialog(
                     }
                 } else {
                     Box(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
