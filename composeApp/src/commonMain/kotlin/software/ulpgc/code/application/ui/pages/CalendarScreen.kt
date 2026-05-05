@@ -95,6 +95,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.focusable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
@@ -109,6 +110,8 @@ import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.model.tasks.MAX
 import software.ulpgc.code.architecture.model.Priority
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
 
@@ -310,19 +313,7 @@ fun DayCell(
     val tasks = entries.mapNotNull { it.task }
     val priorities = tasks.map { it.priority }
 
-    val urgencyColor: Color = remember(priorities) {
-        if (priorities.isEmpty()) Color.Transparent
-        else {
-            val avg = priorities.average()
-            val t = (avg / MAX).coerceIn(0.0, 1.0).toFloat()
-            Color(
-                red = t,
-                green = 1f - t,
-                blue = 0f,
-                alpha = 0.8f
-            )
-        }
-    }
+    val urgencyColor: Color = urgencyColorFromEntries(entries)
 
     Box(
         modifier = Modifier
@@ -1161,6 +1152,11 @@ fun YearDayCell(
     today: LocalDate,
     onClick: () -> Unit
 ) {
+    val dayUrgencyColor by remember {
+        derivedStateOf {
+                urgencyColorFromEntries(entries)
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1192,7 +1188,7 @@ fun YearDayCell(
                     modifier = Modifier
                         .size(25.dp)
                         .background(
-                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF4F6EF7),
+                            color = dayUrgencyColor,
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -1201,7 +1197,7 @@ fun YearDayCell(
                         text = entries.size.toString(),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isSelected) Color(0xFF4F6EF7) else Color.White
+                        color = Color.White
                     )
                 }
             }
@@ -1419,7 +1415,16 @@ fun WeekView(
                 .background(Color.White)
                 .padding(start = TIME_COL_W)
         ) {
+
+            val dayUrgencyColor = remember(weekOffset, sampleEntries.values.flatten().map { entry -> entry.title to entry.task?.priority }) {
+                weekDates.associateWith { date ->
+                    urgencyColorFromEntries(sampleEntries[date] ?: emptyList())
+                }
+            }
+
             val dayLetters = listOf("L", "M", "X", "J", "V", "S", "D")
+            var urgencyColor: Color?;
+
             weekDates.forEachIndexed { index, date ->
                 Column(
                     modifier = Modifier.weight(1f),
@@ -1431,26 +1436,43 @@ fun WeekView(
                         fontWeight = FontWeight.SemiBold,
                         color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray
                     )
-                    if (date == currentDate) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .background(Color(0xFF4F6EF7), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = date.dayOfMonth.toString(),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+
+                    Box(
+                        modifier = Modifier.size(28.dp),  // tamaño fijo igual para todos los días
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Círculo azul de fondo solo si es hoy
+                        if (date == currentDate) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(Color(0xFF4F6EF7), CircleShape)
                             )
                         }
-                    } else {
+
                         Text(
                             text = date.dayOfMonth.toString(),
                             fontSize = 13.sp,
-                            fontWeight = if (date == selectedDate) FontWeight.Bold else FontWeight.Normal,
-                            color = if (date == selectedDate) Color(0xFF4F6EF7) else Color.Black
+                            fontWeight = when {
+                                date == currentDate -> FontWeight.Bold
+                                date == selectedDate -> FontWeight.Bold
+                                else -> FontWeight.Normal
+                            },
+                            color = when {
+                                date == currentDate -> Color.White
+                                date == selectedDate -> Color(0xFF4F6EF7)
+                                else -> Color.Black
+                            }
+                        )
+                    }
+
+                    urgencyColor = dayUrgencyColor[date]
+                    if (urgencyColor != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .background(dayUrgencyColor[date]!!)
                         )
                     }
                 }
@@ -1974,6 +1996,14 @@ fun HomeCalendar(
 
     var showDialog by remember { mutableStateOf(false) }
 
+    val dayUrgencyColor by remember {
+        derivedStateOf {
+            sampleEntries.mapValues { (_, entries) ->
+                urgencyColorFromEntries(entries)
+            }
+        }
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -2043,11 +2073,9 @@ fun HomeCalendar(
                                     modifier = Modifier
                                         .size(20.dp)
                                         .background(
-                                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(
-                                                0xFF4F6EF7
-                                            ),
+                                            color = dayUrgencyColor[day.date]!!,
                                             shape = CircleShape
-                                        ),
+                                            ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -2055,7 +2083,7 @@ fun HomeCalendar(
                                         modifier = Modifier.offset(y = -2.dp),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) Color(0xFF4F6EF7) else Color.White
+                                        color = Color.White
                                     )
                                 }
                             }
@@ -2130,4 +2158,11 @@ fun miniCalendarHeader(
             )
         }
     }
+}
+
+fun urgencyColorFromEntries(entries: List<SampleEntry>): Color {
+    val priorities = entries.mapNotNull { it.task?.priority }
+    if (priorities.isEmpty()) return Color.Transparent
+    val t = (priorities.average() / MAX).coerceIn(0.0, 1.0).toFloat()
+    return Color(red = t, green = 1f - t, blue = 0f, alpha = 0.6f)
 }
