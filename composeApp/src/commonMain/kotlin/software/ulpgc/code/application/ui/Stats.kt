@@ -40,14 +40,9 @@ fun menuTareas(store: Storage) {
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     val filteredTasks = if (showCompleted) {
-        taskList.filter { it.isCompleted }.takeLast(5)
+        taskList.filter { it.isCompleted }.takeLast(4)
     } else {
-        taskList.filter {
-            when (val time = it.time) {
-                is EndBasedTime, is BoundedTime -> it.time.end > Clock.System.now()
-                else -> true
-            }
-        }.sortedBy { it.time.end}.take(5)
+        taskList.filter { !it.isCompleted }.takeLast(4)
     }
 
 
@@ -73,7 +68,7 @@ fun menuTareas(store: Storage) {
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Tareas próximas")
+                Text("Tareas sin completar")
             }
 
             Button(
