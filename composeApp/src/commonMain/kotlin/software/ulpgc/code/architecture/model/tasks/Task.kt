@@ -7,7 +7,7 @@ import kotlin.uuid.Uuid
 import kotlin.math.*
 import kotlin.time.Duration
 
-private const val MAX = 10.0
+const val MAX = 10.0
 
 class Task (
     var priority: Int,

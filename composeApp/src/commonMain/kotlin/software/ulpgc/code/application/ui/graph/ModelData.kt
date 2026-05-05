@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui.graph
+        package software.ulpgc.code.application.ui.graph
 
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit

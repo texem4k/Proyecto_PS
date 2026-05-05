@@ -28,18 +28,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.model.times.BoundedTime
+import software.ulpgc.code.architecture.model.times.EndBasedTime
+import software.ulpgc.code.architecture.model.times.StartBasedTime
+import kotlin.time.Clock
 
 @Composable
 fun menuTareas(store: Storage) {
     var taskList by remember { mutableStateOf(store.tasks().toList()) }
     var showCompleted by remember { mutableStateOf(false) }
-    var selectedTask by remember { mutableStateOf<Task?>(null) }  // ← añade esto
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     val filteredTasks = if (showCompleted) {
         taskList.filter { it.isCompleted }.takeLast(5)
     } else {
-        taskList.sortedBy { it.time.end}.take(5)
+        taskList.filter {
+            when (val time = it.time) {
+                is EndBasedTime, is BoundedTime -> it.time.end > Clock.System.now()
+                else -> true
+            }
+        }.sortedBy { it.time.end}.take(5)
     }
+
+
 
     Column(modifier = Modifier.fillMaxSize()) {
 
