@@ -63,6 +63,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import kotlin.sequences.forEach

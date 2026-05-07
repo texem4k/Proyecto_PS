@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import software.ulpgc.code.application.ui.SideBar
@@ -56,20 +55,17 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import kotlinx.datetime.DateTimeUnit
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.CreateTask
+import software.ulpgc.code.application.ui.TaskInformationDialog
 import software.ulpgc.code.application.ui.pages.Calendar.Views.DayView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.MonthView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.WeekView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.YearView
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
-import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
-import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.model.tasks.MAX
-import software.ulpgc.code.architecture.model.Priority
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,7 +208,7 @@ fun CalendarScreen(
 
 //TODO PREGUNTAR A TEXE Y ENRIQUE SI ESTO EXISTE
 //EXISTE CUANDO SE PUEDA CAMBIARLO POR TASK INFORMATION DIALOG
-@Composable
+/*@Composable
 fun TaskDetailDialog(
     entry: SampleEntry,
     store: Storage,
@@ -257,7 +253,7 @@ fun TaskDetailDialog(
             shape = RoundedCornerShape(16.dp)
         )
     }
-}
+}*/
 
 @Composable
 fun DayEntriesPanel(
@@ -303,16 +299,18 @@ fun DayEntriesPanel(
         }
     }
 
-    selectedEntry?.let { entry ->
-        TaskDetailDialog(
-            entry = entry,
+    selectedEntry?.task?.let { task ->
+        TaskInformationDialog(
+            selectedTask = task,
             store = store,
             onDismiss = { selectedEntry = null },
-            onDeleted = onDeleted,
-            onEdit = { task ->
-                taskToEdit = task
-                showCreateTask = true
+            onEdit = { editedTask ->
                 selectedEntry = null
+                onEdit()
+            },
+            onDeleted = {
+                selectedEntry = null
+                onDeleted()
             }
         )
     }
