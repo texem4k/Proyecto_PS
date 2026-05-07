@@ -1,8 +1,9 @@
-package software.ulpgc.code.application
+package software.ulpgc.code.application.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
@@ -37,7 +38,6 @@ fun ColorWheelPicker(
             modifier = Modifier.size(wheelSize),
             contentAlignment = Alignment.Center
         ) {
-            // Rueda cromática
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -66,7 +66,6 @@ fun ColorWheelPicker(
             ) {
                 drawColorWheel()
 
-                // Indicador de selección
                 selectorPosition?.let { pos ->
                     drawCircle(
                         color = Color.White,
@@ -84,8 +83,7 @@ fun ColorWheelPicker(
                 }
             }
 
-            // Centro: muestra el color seleccionado
-            androidx.compose.foundation.layout.Box(
+            Box(
                 modifier = Modifier
                     .size(72.dp)
                     .clip(CircleShape)
@@ -99,8 +97,6 @@ fun ColorWheelPicker(
         }
     }
 }
-
-// Dibuja la rueda HSL completa con sectores y gradiente de saturación
 private fun DrawScope.drawColorWheel() {
     val radius = size.minDimension / 2f
     val innerRadius = radius * 0.38f
@@ -130,7 +126,6 @@ private fun DrawScope.drawColorWheel() {
         }
     }
 
-    // Borrar el centro para dejar el hueco
     drawCircle(
         color = Color.Transparent,
         radius = innerRadius,
@@ -138,7 +133,6 @@ private fun DrawScope.drawColorWheel() {
     )
 }
 
-// Calcula el color y la posición a partir del toque
 private fun pickColor(
     offset: Offset,
     width: Float,
@@ -153,7 +147,7 @@ private fun pickColor(
     val dy = offset.y - cy
     val dist = sqrt(dx * dx + dy * dy)
 
-    if (dist < innerRadius || dist > radius) return null
+    if (dist !in innerRadius..radius) return null
 
     var angle = atan2(dy, dx) + (PI / 2f).toFloat()
     if (angle < 0) angle += (2 * PI).toFloat()

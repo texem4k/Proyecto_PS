@@ -30,7 +30,7 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
-fun menuTareas(store: Storage) {
+fun MenuTareas(store: Storage) {
     var taskList by remember { mutableStateOf(store.tasks().toList()) }
     var showCompleted by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
@@ -127,7 +127,6 @@ fun menuTareas(store: Storage) {
         if (selectedTask != null) {
             TaskInformationDialog(
                 selectedTask = selectedTask!!,
-                showActions = false,
                 store = store,
                 onDismiss = { selectedTask = null }
             )

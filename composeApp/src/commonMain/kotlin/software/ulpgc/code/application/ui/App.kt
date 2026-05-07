@@ -4,7 +4,10 @@ import TasksScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -195,5 +198,20 @@ fun App(
 
 @Composable
 fun StoreErrorDisplay(exception: AppException) {
-
+    AlertDialog(
+        onDismissRequest = {},
+        title = {
+            Text("Error")
+        },
+        text = {
+            Text(
+                exception.message ?: "Ha ocurrido un error inesperado"
+            )
+        },
+        confirmButton = {
+            Button(onClick = {}) {
+                Text("Aceptar")
+            }
+        }
+    )
 }

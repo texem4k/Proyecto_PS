@@ -39,7 +39,6 @@ fun TasksScreen(
     autoOpen: AutoOpen? = null,
     taskToEdit: Task? = null,
     onEditDone: () -> Unit = {},
-    showResults: Boolean=false,
     onShowResults: (Boolean) -> Unit={},
     onSettingsClick: () -> Unit={}
 

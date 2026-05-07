@@ -30,21 +30,32 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.uuid.Uuid
 
+enum class TopicOption(val label: String) {
+    EDIT_TOPIC("Editar tópico"),
+    DELETE_TOPIC("Eliminar tópico"),
+    ADD_TAG("Añadir tag al tópico"),
+    REMOVE_TAG("Eliminar un tag del tópico"),
+    EDIT_TAG("Editar tag")
+}
+
 @Composable
-fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen, onRequestEditNavigation: (() -> Unit)? = null) {
+fun UpcomingTasksPanel(
+    store: Storage,
+    tareas: List<Task>? = null,
+    title: String,
+    onEdit: (Task) -> Unit = {},
+    onDeleted: () -> Unit = {},
+    screen: Screen,
+    onRequestEditNavigation: (() -> Unit)? = null
+) {
     val tasks = tareas ?: store.tasks().toList()
-    val topic = store.topics().find { x-> x.name==title }
+    val topic = store.topics().find { it.name == title }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf(-1) }
-    var showDialog by remember { mutableStateOf(true) }
+    var selectedOption by remember { mutableStateOf<TopicOption?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
 
-    val options = listOf(
-        "Editar tópico",
-        "Eliminar tópico",
-        "Añadir tag al tópico",
-        "Eliminar un tag del tópico",
-        "Editar tag")
+    val cardColor = topic?.color?.let { Color(it).copy(alpha = 0.25f) } ?: MaterialTheme.colorScheme.surface
 
     Card(
         modifier = Modifier
@@ -52,194 +63,128 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
             .heightIn(max = 310.dp)
             .fillMaxWidth(0.8f),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = topic?.color?.let { Color(it) }?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ){
-            Box(
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp, top = 4.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
+                    .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp, top = 4.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth()
-                )
+            )
 
-                if (screen == Screen.TASKS) {
-                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                        IconButton(
-                            onClick = { expandDropdown = true },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Opciones",
+            if (screen == Screen.TASKS) {
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    IconButton(
+                        onClick = { expandDropdown = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones",
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = expandDropdown,
+                        onDismissRequest = { expandDropdown = false }
+                    ) {
+                        TopicOption.entries.forEachIndexed { _, option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    selectedOption = option
+                                    expandDropdown = false
+                                    showDialog = true
+                                }
                             )
                         }
+                    }
 
-                        DropdownMenu(
-                            expanded = expandDropdown,
-                            onDismissRequest = { expandDropdown = false }
-                        ) {
-                            options.forEach { e ->
-                                DropdownMenuItem(
-                                    text = { Text(e) },
-                                    onClick = {
-                                        selectedOption = options.indexOf(e)
-                                        expandDropdown = false
-                                        showDialog = true
-                                    }
-                                )
-                            }
-                        }
-
-                        if(showDialog) {
-                            when(selectedOption){
-                                0 -> EditTopic(store, title, onDismiss = { showDialog = false }, { onDeleted() })
-                                1 -> DeleteTopic(store, title, onDismiss = { showDialog = false }, { onDeleted() })
-                                2 -> CreateTagDialog(store, onClose = { showDialog = false }, title)
-                                3 -> RemoveTag(store, onClose = { showDialog = false }, title)
-                                4 -> EditTag(store, onClose = { showDialog = false }, title)
-                            }
+                    if (showDialog) {
+                        when (selectedOption) {
+                            TopicOption.EDIT_TOPIC -> EditTopic(store, title, onDismiss = { showDialog = false }) { onDeleted() }
+                            TopicOption.DELETE_TOPIC -> DeleteTopic(store, title, onDismiss = { showDialog = false }) { onDeleted() }
+                            TopicOption.ADD_TAG -> CreateTagDialog(store, onClose = { showDialog = false }, title)
+                            TopicOption.REMOVE_TAG -> RemoveTag(store, onClose = { showDialog = false }, title)
+                            TopicOption.EDIT_TAG -> EditTag(store, onClose = { showDialog = false }, title)
+                            null -> {}
                         }
                     }
                 }
             }
+        }
 
-            LazyColumn(
-                modifier = Modifier.padding(vertical = 0.5f.dp).fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                items(tasks) { task ->
-                    Card(
+        LazyColumn(
+            modifier = Modifier.padding(vertical = 0.5f.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(tasks) { task ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .clickable { selectedTask = task },
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth(0.95f)
-                            .clickable { selectedTask = task },
-                        shape = RoundedCornerShape(8.dp),
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            MarkTaskIcon(store, task, onDeleted = { onDeleted() })
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = task.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                val tz = TimeZone.currentSystemDefault()
-                                val endDate = task.time.end.toFormattedDateDisplay(tz)
-                                val endHour = task.time.end.toFormattedHour(tz)
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                        MarkTaskIcon(store, task, onDeleted = { onDeleted() })
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = task.name,
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            val tz = TimeZone.currentSystemDefault()
+                            val endDate = task.time.end.toFormattedDateDisplay(tz)
+                            val endHour = task.time.end.toFormattedHour(tz)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
                 }
-            }
-
-            if (selectedTask != null) {
-                if (selectedTask != null) {
-                    TaskInformationDialog(
-                        selectedTask = selectedTask!!,
-                        store = store,
-                        onDismiss = { selectedTask = null },
-                        onEdit = { onEdit(it) },
-                        onDeleted = { onDeleted(); selectedTask = null },
-                        onRequestEditNavigation = onRequestEditNavigation
-                    )
-                }
+                Spacer(Modifier.height(10.dp))
             }
         }
-}
 
-@Composable
-fun TaskInformationDialog(
-    selectedTask: Task,
-    store: Storage,
-    onDismiss: () -> Unit,
-    showActions: Boolean = true,
-    onEdit: (Task) -> Unit = {},
-    onDeleted: () -> Unit = {},
-    onRequestEditNavigation: (() -> Unit)? = null
-) {
-    val tagNames = selectedTask.tags.mapNotNull { id ->
-        store.tags().associateBy { it.id }[id]?.name
-    }
-    val timeData = selectedTask.time.mostrar().split(",")
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(selectedTask.name) },
-        text = {
-            Text(
-                "Descripción: ${selectedTask.description}\n" +
-                        "Tema: ${store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
-                        "Tags: ${tagNames.joinToString(", ")}\n" +
-                        "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
-                        "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
-                        "Prioridad: ${selectedTask.priority}"
+        if (selectedTask != null) {
+            TaskInformationDialog(
+                selectedTask = selectedTask!!,
+                store = store,
+                onDismiss = { selectedTask = null },
+                onEdit = { onEdit(it) },
+                onDeleted = { onDeleted(); selectedTask = null },
+                onRequestEditNavigation = onRequestEditNavigation
             )
-        },
-        confirmButton = {
-            if (showActions) {
-                Button(onClick = {
-                    onEdit(selectedTask)
-                    onRequestEditNavigation?.invoke()
-                }) {
-                    Text("Editar tarea")
-                }
-                Button(onClick = {
-                    val command = CommandBuilder(store)
-                        .set("id", selectedTask.id.toString())
-                        .build(CommandType.DELETE_TASK)
-                    command
-                        .onSuccess { CommandLauncher.launch(it) }
-                        .onFailure { println("error: ${it.message}") }
-                    onDeleted()
-                    onDismiss()
-                }) {
-                    Text("Eliminar tarea")
-                }
-            }
-            Button(onClick = onDismiss) {
-                Text("Cerrar")
-            }
         }
-    )
+    }
 }
 
-
-
 @Composable
-fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit){
+fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit) {
     IconButton(
         onClick = {
             val command = CommandBuilder(store)
                 .set("id", task.id.toString())
                 .build(CommandType.MARK_COMPLETE)
-
             command
-                .onSuccess {
-                    CommandLauncher.launch(it)
-                    onDeleted()}
+                .onSuccess { CommandLauncher.launch(it); onDeleted() }
                 .onFailure { println("error: ${it.message}") }
-
             onDeleted()
         },
         modifier = Modifier.size(32.dp)
@@ -250,14 +195,5 @@ fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit){
             tint = MaterialTheme.colorScheme.primary
         )
     }
-
     Spacer(Modifier.width(8.dp))
 }
-
-
-data class modifingForm(
-    var name: String = "",
-    var id: Uuid? = null,
-    var isEditing: Boolean = false,
-    var error: String?=null
-)

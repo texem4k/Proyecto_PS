@@ -28,7 +28,6 @@ import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
-import software.ulpgc.code.application.ui.widgets.menuTareas
 import software.ulpgc.code.application.ui.widgets.rememberUserKpi
 
 @OptIn(ExperimentalMaterial3Api::class)

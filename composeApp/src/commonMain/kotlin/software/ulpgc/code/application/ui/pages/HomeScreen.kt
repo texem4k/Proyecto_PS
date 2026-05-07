@@ -50,7 +50,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.application.ui.widgets.menuTareas
+import software.ulpgc.code.application.ui.widgets.MenuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -237,7 +237,6 @@ fun HomeScreen(
     if (selectedTask != null) {
         TaskInformationDialog(
             selectedTask = selectedTask!!,
-            showActions = false,
             store = store,
             onDismiss = { selectedTask = null }
         )
@@ -356,6 +355,6 @@ fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier){
         modifier = modifier
             .fillMaxWidth()
     ) {
-        menuTareas(store)
+        MenuTareas(store)
     }
 }

@@ -36,6 +36,13 @@ import kotlin.onFailure
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
+fun Modifier.selected(selected: Boolean): Modifier {
+    return this.background(
+        if (selected) Color.LightGray else Color.Transparent,
+        shape = RoundedCornerShape(50)
+    )
+}
+
 
 data class FormState(
     var taskName: String = "",
@@ -156,7 +163,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
             value = form.taskName,
             label = "* Nombre tarea",
             onValueChange = { form = form.copy(taskName = it) },
-            keyboardOptions = KeyboardOptions.Default
+            keyboardOptions = KeyboardOptions.Default,
         )
 
         TextFieldCustom(
@@ -221,21 +228,6 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     shape = RoundedCornerShape(50)
                 )
 
-            @Composable
-            fun ModeButton(onClick: () -> Unit, selected: Boolean, icon: ImageVector, label: String) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .selected(selected)
-                        .clickable { onClick() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Icon(icon, contentDescription = label, modifier = Modifier.size(32.dp))
-                    Text(text = label, fontSize = 9.sp, textAlign = TextAlign.Center, lineHeight = 11.sp)
-                }
-            }
-
             ModeButton(
                 onClick = { mode = CreateMode.DATES },
                 selected = mode == CreateMode.DATES,
@@ -273,7 +265,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     TimePickerField(
                         value = form.taskStartHour,
                         onValueChange = { form = form.copy(taskStartHour = it) },
-                        type = "* Inicio",
+                        type = "Inicio",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -292,7 +284,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     TimePickerField(
                         value = form.taskFinalHour,
                         onValueChange = { form = form.copy(taskFinalHour = it) },
-                        type = "* Final",
+                        type = "Final",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -307,7 +299,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     hour = form.taskStartHour,
                     onHourChange = { form = form.copy(taskStartHour = it) },
                     labelDate = "* Fecha inicio",
-                    labelTime = "* Inicio"
+                    labelTime = "Inicio"
                 )
                 Duracion()
             }
@@ -321,7 +313,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     hour = form.taskStartHour,
                     onHourChange = { form = form.copy(taskStartHour = it) },
                     labelDate = "* Fecha final",
-                    labelTime = "* Final"
+                    labelTime = "Final"
                 )
                 Duracion()
             }
@@ -383,6 +375,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     if (error != null) {
                         messageError = error
                         formError = true
+                        return@Button
                     }
 
                     val time = try {
@@ -390,6 +383,7 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                     } catch (e: Exception) {
                         messageError = validateDateErrorMessage(e, "")
                         formError = true
+                        return@Button
                     }
 
                     val builder = CommandBuilder(store)
@@ -449,6 +443,36 @@ fun DateTimeRow(
             onValueChange = onHourChange,
             type = labelTime,
             modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun ModeButton(
+    onClick: () -> Unit,
+    selected: Boolean,
+    icon: ImageVector,
+    label: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .selected(selected)
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = label,
+            modifier = Modifier.size(32.dp)
+        )
+
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            textAlign = TextAlign.Center,
+            lineHeight = 11.sp
         )
     }
 }
