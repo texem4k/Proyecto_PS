@@ -13,15 +13,22 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ColorWheelPicker
-import software.ulpgc.code.application.toRgbString
+import software.ulpgc.code.application.ui.ColorWheelPicker
 import software.ulpgc.code.application.ui.TextFieldCustom
-import software.ulpgc.code.application.ui.modifingForm
+import software.ulpgc.code.application.ui.toRgbString
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Storage
+import kotlin.uuid.Uuid
 
+
+data class ModifingForm(
+    var name: String = "",
+    var id: Uuid? = null,
+    var isEditing: Boolean = false,
+    var error: String? = null
+)
 @Composable
 fun CreateTopicDialog(
     store: Storage,
@@ -85,7 +92,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted
     var chosenColor by remember { mutableStateOf<Color?>(Color(currentTopic?.color!!)) }
 
     var topicData by remember(topicName) {
-        mutableStateOf(modifingForm().copy(name = topicName))
+        mutableStateOf(ModifingForm().copy(name = topicName))
     }
 
     AlertDialog(
@@ -131,7 +138,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted
                         command
                             .onSuccess { CommandLauncher.launch(it) }
                             .onFailure { println("error: ${it.message}") }
-                        topicData = modifingForm()
+                        topicData = ModifingForm()
                         onDismiss()
                         onDeleted()
                     }

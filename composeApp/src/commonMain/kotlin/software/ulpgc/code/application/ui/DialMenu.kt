@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui
 
-import Screen
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -17,11 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,7 +42,6 @@ import kotlin.math.sin
 
 @Composable
 fun DialMenu(
-    onNavigate: ((Screen) -> Unit)? = null,
     onCreateTask: () -> Unit,
     onCreateTopic: () -> Unit,
     onCreateTag: () -> Unit
@@ -64,7 +61,7 @@ fun DialMenu(
             onClick = onCreateTopic
         ),
         DialMenuItem(
-            icon = Icons.Default.Label,
+            icon = Icons.Default.LocalOffer,
             label = "Nuevo tag",
             color = Color(0xFFD85A30),
             onClick = onCreateTag
@@ -90,8 +87,6 @@ fun DialMenu(
             DialChildButton(
                 item = item,
                 index = index,
-                total = items.size,
-                radiusDp = 70f,
                 visible = expanded,
                 onDismiss = { expanded = false }
             )
@@ -121,8 +116,6 @@ fun DialMenu(
 private fun DialChildButton(
     item: DialMenuItem,
     index: Int,
-    total: Int,
-    radiusDp: Float,
     visible: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -133,8 +126,8 @@ private fun DialChildButton(
     }
     val angleRad = angleDeg * PI / 180.0
 
-    val offsetX = (radiusDp * cos(angleRad)).toFloat().dp
-    val offsetY = (radiusDp * sin(angleRad)).toFloat().dp
+    val offsetX = (70f * cos(angleRad)).toFloat().dp
+    val offsetY = (70f * sin(angleRad)).toFloat().dp
 
     val scale by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,

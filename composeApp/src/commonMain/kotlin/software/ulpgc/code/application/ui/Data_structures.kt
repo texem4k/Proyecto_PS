@@ -61,7 +61,6 @@ fun PickerField(
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 fun DatePickerField(
     value: String,
@@ -126,7 +125,7 @@ fun TimePickerField(
 
     PickerField(
         value = value,
-        label = "Hora de $type",
+        label = "* Hora de $type",
         placeholder = "hh:mm",
         icon = Icons.Default.Schedule,
         onClick = { showPicker = true },
@@ -250,9 +249,6 @@ fun <T> DropdownCustom(
         }
     }
 }
-
-
-
 sealed class DropdownSelection {
     data class Single(val id: Uuid?) : DropdownSelection()
     data class Multiple(val ids: List<Uuid>) : DropdownSelection()
