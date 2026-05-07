@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.CRUDs
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.pages.TextFieldCustom
+import software.ulpgc.code.application.ui.TextFieldCustom
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -191,7 +191,6 @@ fun EditTag(store: Storage,
     var selectedTag by remember { mutableStateOf("Ninguno") }
     var selectedTagName by remember { mutableStateOf("Ninguno") }
     var selectedTagUuid by remember { mutableStateOf("") }
-    val tags = store.tags().filter { x -> x.topicId== currentTopic?.id }
 
     AlertDialog(
         onDismissRequest = { onClose() },

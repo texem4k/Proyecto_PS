@@ -1,7 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
 import Screen
-import software.ulpgc.code.application.ui.UpcomingTasksPanel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -16,19 +15,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,20 +50,21 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.application.ui.menuTareas
+import software.ulpgc.code.application.ui.widgets.menuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import software.ulpgc.code.architecture.control.commands.CommandBuilder
-import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.toFormattedDateDisplay
+import software.ulpgc.code.application.ui.toFormattedHour
 import kotlin.sequences.forEach
 
 data class DialMenuItem(
@@ -98,67 +94,16 @@ fun HomeScreen(
         focusRequester.requestFocus()
     }
 
-    // Dentro de HomeScreen, antes del Box:
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
 
     val sampleEntries = remember(version) {
-        val topicsById = store.topics().associateBy { it.id }
-
-        val tasks = store.tasks()
-
-        // Construimos el mapa manualmente: día → lista de entries
-        val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
-
-        tasks.forEach { task ->
-            val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-            // Iteramos todos los días desde startDate hasta endDate (inclusive)
-            var current = startDate
-            while (current <= endDate) {
-                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
-                val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-                val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
-
-                val entry = SampleEntry(
-                    title = task.name,
-                    time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
-                            "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                    color = Color(topicColor),
-                    task  = task
-                )
-
-                map.getOrPut(current) { mutableListOf() }.add(entry)
-                current = current.plus(1, DateTimeUnit.DAY)
-            }
-        }
-
-        map
+        getSamplesEntries(store)
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when {
-                    event.isCtrlPressed && event.key == Key.Z -> {
-                        CommandLauncher.undo()
-                        onDeleted()
-                        true
-                    }
-                    event.isCtrlPressed && event.key == Key.Y -> {
-                        CommandLauncher.redo()
-                        onDeleted()
-                        true
-                    }
-                    else -> false
-                }
-            }
+        modifier = setUndoRedo(onDeleted, focusRequester)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
@@ -225,29 +170,7 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
 
-                                IconButton(
-                                    onClick = {
-                                        val command = CommandBuilder(store)
-                                            .set("id", task.id.toString())
-                                            .build(CommandType.MARK_COMPLETE)
-
-                                        command
-                                            .onSuccess { CommandLauncher.launch(it) }
-                                            .onFailure { println("error: ${it.message}") }
-
-                                        onDeleted()
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.CheckCircle,
-                                        contentDescription = "Completar tarea",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-
-                                Spacer(Modifier.width(8.dp))
-
+                                MarkTaskIcon(store, task, onDeleted = { onDeleted() })
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = task.name,
@@ -269,25 +192,11 @@ fun HomeScreen(
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.1f)
-                        .padding(bottom = 16.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(300.dp)
-                    ) {
-                        DialMenu(
-                            onCreateTask = { onNavigate(Screen.TASKS_CREATE) },
-                            onCreateTopic = { onNavigate(Screen.TOPIC_CREATE) },
-                            onCreateTag = { onNavigate(Screen.TAG_CREATE) }
-                        )
-                    }
-                }
+                ShowDialMenu(
+                    { onNavigate(Screen.TASKS_CREATE) },
+                    { onNavigate(Screen.TOPIC_CREATE) },
+                    { onNavigate(Screen.TAG_CREATE) },
+                    modifier=Modifier.fillMaxWidth().weight(0.1f))
 
             }
 
@@ -321,13 +230,7 @@ fun HomeScreen(
                     }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    menuTareas(store)
-                }
+                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -363,3 +266,96 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     }
 }
 
+fun getSamplesEntries(store: Storage): MutableMap<LocalDate, MutableList<SampleEntry>> {
+    val topicsById = store.topics().associateBy { it.id }
+    val tasks = store.tasks()
+    val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
+
+    tasks.forEach { task ->
+        val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        var current = startDate
+        while (current <= endDate) {
+            val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+            val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+
+            val entry = SampleEntry(
+                title = task.name,
+                time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                        "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
+                color = Color(topicColor),
+                task  = task
+            )
+
+            map.getOrPut(current) { mutableListOf() }.add(entry)
+            current = current.plus(1, DateTimeUnit.DAY)
+        }
+    }
+    return map
+}
+
+
+
+fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
+    return Modifier
+        .fillMaxSize()
+        .focusRequester(focusRequest)
+        .focusable()
+        .onPreviewKeyEvent { event ->
+            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            when {
+                event.isCtrlPressed && event.key == Key.Z -> {
+                    CommandLauncher.undo()
+                    onDeleted()
+                    true
+                }
+                event.isCtrlPressed && event.key == Key.Y -> {
+                    CommandLauncher.redo()
+                    onDeleted()
+                    true
+                }
+                else -> false
+            }
+        }
+}
+
+
+
+@Composable
+fun ShowDialMenu(
+    onCreateTask: () -> Unit,
+    onCreateTopic: () -> Unit,
+    onCreateTag: () -> Unit,
+    modifier: Modifier
+) {
+    Row(
+        modifier = modifier.padding(bottom = 16.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(300.dp)
+        ) {
+            DialMenu(
+                onCreateTask = onCreateTask,
+                onCreateTopic = onCreateTopic,
+                onCreateTag = onCreateTag
+            )
+        }
+    }
+}
+
+
+
+@Composable
+fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier){
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        menuTareas(store)
+    }
+}

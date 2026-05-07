@@ -37,10 +37,11 @@ import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.tasks.Task
 
+
+
 @Composable
 fun SearchResultsDialog(
     onDismiss: () -> Unit,
-    onNavigate: (Screen) -> Unit,
     store: Storage,
     value: String,
     onSearchTextChange: (String) -> Unit,
@@ -76,9 +77,8 @@ fun SearchResultsDialog(
             filters.tags.forEach { t ->
                 tagsList.add(t)
                 val tagId = store.tags().first { it.name == t }.id
-                val tagIdStr = tagId.toString()
                 accumulated += store.tasks().filter { task ->
-                    task.tags.any { it.toString() == tagIdStr }
+                    task.tags.any { it.toString() == tagId.toString() }
                 }
             }
 
@@ -206,39 +206,39 @@ fun SearchResultsDialog(
     }
 }
 
-    @Composable
-    private fun FilterChipRow(
-        label: String,
-        items: List<String>,
-        surface: Color,
-        border: Color,
-        textPrimary: Color,
-        textSecondary: Color
+@Composable
+private fun FilterChipRow(
+    label: String,
+    items: List<String>,
+    surface: Color,
+    border: Color,
+    textPrimary: Color,
+    textSecondary: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "$label:",
-                style = MaterialTheme.typography.labelSmall,
-                color = textSecondary,
-                fontWeight = FontWeight.SemiBold
-            )
-            items.forEach { item ->
-                Box(
-                    modifier = Modifier
-                        .background(surface, RoundedCornerShape(50))
-                        .border(1.dp, border, RoundedCornerShape(50))
-                        .padding(horizontal = 10.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = item,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = textPrimary
-                    )
-                }
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.labelSmall,
+            color = textSecondary,
+            fontWeight = FontWeight.SemiBold
+        )
+        items.forEach { item ->
+            Box(
+                modifier = Modifier
+                    .background(surface, RoundedCornerShape(50))
+                    .border(1.dp, border, RoundedCornerShape(50))
+                    .padding(horizontal = 10.dp, vertical = 3.dp)
+            ) {
+                Text(
+                    text = item,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textPrimary
+                )
             }
         }
     }
+}

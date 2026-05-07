@@ -1,4 +1,3 @@
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,21 +8,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
-import software.ulpgc.code.application.ui.CreateTagDialog
-import software.ulpgc.code.application.ui.CreateTopicDialog
+import software.ulpgc.code.application.ui.CRUDs.CreateTagDialog
+import software.ulpgc.code.application.ui.CRUDs.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.application.ui.pages.CreateTask
+import software.ulpgc.code.application.ui.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
-import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.application.ui.pages.ShowDialMenu
+import software.ulpgc.code.application.ui.pages.setUndoRedo
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
@@ -73,26 +71,7 @@ fun TasksScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when {
-                    event.isCtrlPressed && event.key == Key.Z -> {
-                        CommandLauncher.undo()
-                        onDeleted()
-                        true
-                    }
-                    event.isCtrlPressed && event.key == Key.Y -> {
-                        CommandLauncher.redo()
-                        onDeleted()
-                        true
-                    }
-                    else -> false
-                }
-            }
+        modifier = setUndoRedo(onDeleted, focusRequester)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
@@ -194,25 +173,12 @@ fun TasksScreen(
                     }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.1f)
-                        .padding(bottom = 16.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(300.dp)
-                    ) {
-                        DialMenu(
-                            onCreateTask = { showCreateTaskcopy = true },
-                            onCreateTopic = { showCreateTopic = true },
-                            onCreateTag = { showCreateTag = true }
-                        )
-                    }
-                }
+                ShowDialMenu(
+                    onCreateTask = { showCreateTaskcopy = true },
+                    onCreateTopic = { showCreateTopic = true },
+                    onCreateTag = { showCreateTag = true },
+                    modifier=Modifier.fillMaxWidth().weight(0.1f)
+                )
             }
         }
     }

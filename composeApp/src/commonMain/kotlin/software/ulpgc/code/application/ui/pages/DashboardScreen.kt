@@ -2,8 +2,6 @@ package software.ulpgc.code.application.ui.pages
 
 import Screen
 import androidx.compose.foundation.background
-import software.ulpgc.code.application.ui.UpcomingTasksPanel
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -27,23 +24,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import software.ulpgc.code.application.ui.KpiDashboard
+import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
-import software.ulpgc.code.application.ui.menuTareas
-import software.ulpgc.code.application.ui.rememberUserKpi
-import kotlin.uuid.Uuid
+import software.ulpgc.code.application.ui.widgets.menuTareas
+import software.ulpgc.code.application.ui.widgets.rememberUserKpi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigate: (Screen) -> Unit,
     store: Storage,
-    searchText: String,
-    onSearchTextChange: (String) -> Unit,
-    onDeleted: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
     Row(
@@ -92,18 +84,7 @@ fun DashboardScreen(
                         KpiDashboard(kpi = kpi)
                     }
                 }
-
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    menuTareas(store)
-                }
+                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f))
             }
 
             Card(

@@ -94,7 +94,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.foundation.focusable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -105,6 +104,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import kotlinx.datetime.DateTimeUnit
+import software.ulpgc.code.application.ui.CreateTask
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -132,34 +132,7 @@ fun CalendarScreen(
     }
 
     val sampleEntries = remember(version) {
-        val topicsById = store.topics().associateBy { it.id }
-        val tasks = store.tasks()
-        val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
-
-        tasks.forEach { task ->
-            val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            val endDate = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-            var current = startDate
-            while (current <= endDate) {
-                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
-                val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-                val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
-
-                val entry = SampleEntry(
-                    title = task.name,
-                    time = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
-                            "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                    color = Color(topicColor),
-                    task = task
-                )
-
-                map.getOrPut(current) { mutableListOf() }.add(entry)
-                current = current.plus(1, DateTimeUnit.DAY)
-            }
-        }
-
-        map
+        getSamplesEntries(store)
     }
 
     val onTaskCreated: () -> Unit = { version++ }

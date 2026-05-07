@@ -163,8 +163,6 @@ fun App(
                         Screen.DASHBOARD -> DashboardScreen(
                             onNavigate = { screen = it },
                             store!!,
-                            searchText,
-                            onSearchTextChange = { searchText = it },
                             onSettingsClick = { showThemeDialog = true }
                         )
 
@@ -186,7 +184,6 @@ fun App(
                     showResults = false
                     filters.hasFilter = false
                 },
-                onNavigate = { screen = it },
                 store = store!!,
                 value = searchText,
                 onSearchTextChange = { searchText = it },

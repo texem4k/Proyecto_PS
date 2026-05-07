@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.widgets
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,12 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.TaskInformationDialog
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.model.times.BoundedTime
-import software.ulpgc.code.architecture.model.times.EndBasedTime
-import software.ulpgc.code.architecture.model.times.StartBasedTime
-import kotlin.time.Clock
 
 @Composable
 fun menuTareas(store: Storage) {

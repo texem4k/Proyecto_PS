@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -15,17 +14,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
-import software.ulpgc.code.application.ColorWheelPicker
-import software.ulpgc.code.application.toRgbString
-import software.ulpgc.code.application.ui.pages.TextFieldCustom
-import software.ulpgc.code.application.ui.pages.toFormattedDateDisplay
-import software.ulpgc.code.application.ui.pages.toFormattedHour
+import software.ulpgc.code.application.ui.CRUDs.CreateTagDialog
+import software.ulpgc.code.application.ui.CRUDs.DeleteTopic
+import software.ulpgc.code.application.ui.CRUDs.EditTag
+import software.ulpgc.code.application.ui.CRUDs.EditTopic
+import software.ulpgc.code.application.ui.CRUDs.RemoveTag
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -37,7 +34,6 @@ import kotlin.uuid.Uuid
 fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String, refreshKey: Int = 0, onDelete: (Task) -> Unit = {}, onEdit: (Task) -> Unit = {}, onDeleted: () -> Unit = {}, screen: Screen, onRequestEditNavigation: (() -> Unit)? = null) {
     val tasks = tareas ?: store.tasks().toList()
     val topic = store.topics().find { x-> x.name==title }
-    val topicColor = topic?.color?.let { Color(it) } ?: MaterialTheme.colorScheme.surface
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf(-1) }
@@ -106,11 +102,11 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
 
                         if(showDialog) {
                             when(selectedOption){
-                                0 -> EditTopic(store, title, onDismiss={showDialog=false}, { onDeleted() })
-                                1 -> DeleteTopic(store, title, onDismiss={showDialog=false}, { onDeleted() })
-                                2 -> CreateTagDialog(store, onClose = {showDialog=false}, title)
-                                3 -> RemoveTag(store, onClose = {showDialog=false}, title)
-                                4 -> EditTag(store, onClose = {showDialog=false}, title)
+                                0 -> EditTopic(store, title, onDismiss = { showDialog = false }, { onDeleted() })
+                                1 -> DeleteTopic(store, title, onDismiss = { showDialog = false }, { onDeleted() })
+                                2 -> CreateTagDialog(store, onClose = { showDialog = false }, title)
+                                3 -> RemoveTag(store, onClose = { showDialog = false }, title)
+                                4 -> EditTag(store, onClose = { showDialog = false }, title)
                             }
                         }
                     }
@@ -134,26 +130,8 @@ fun UpcomingTasksPanel(store: Storage, tareas: List<Task>? = null, title: String
                                 .padding(horizontal = 8.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(
-                                onClick = {
-                                    val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.MARK_COMPLETE)
 
-                                    command
-                                        .onSuccess { CommandLauncher.launch(it) }
-                                        .onFailure { println("error: ${it.message}") }
-                                    onDeleted()
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.CheckCircle,
-                                    contentDescription = "Completar tarea",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-
-                            Spacer(Modifier.width(8.dp))
-
+                            MarkTaskIcon(store, task, onDeleted = { onDeleted() })
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = task.name,
@@ -247,6 +225,34 @@ fun TaskInformationDialog(
 }
 
 
+
+@Composable
+fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit){
+    IconButton(
+        onClick = {
+            val command = CommandBuilder(store)
+                .set("id", task.id.toString())
+                .build(CommandType.MARK_COMPLETE)
+
+            command
+                .onSuccess {
+                    CommandLauncher.launch(it)
+                    onDeleted()}
+                .onFailure { println("error: ${it.message}") }
+
+            onDeleted()
+        },
+        modifier = Modifier.size(32.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CheckCircle,
+            contentDescription = "Completar tarea",
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+
+    Spacer(Modifier.width(8.dp))
+}
 
 
 data class modifingForm(
