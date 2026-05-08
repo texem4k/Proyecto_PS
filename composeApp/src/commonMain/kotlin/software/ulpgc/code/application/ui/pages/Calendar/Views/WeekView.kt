@@ -126,7 +126,6 @@ fun WeekView(
                 }
             }
 
-            val dayLetters = listOf("L", "M", "X", "J", "V", "S", "D")
             var urgencyColor: Color?;
 
             weekDates.forEachIndexed { index, date ->
@@ -135,7 +134,7 @@ fun WeekView(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = dayLetters[index],
+                        text = CalendarConstants.DAY_LETTERS[index],
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray

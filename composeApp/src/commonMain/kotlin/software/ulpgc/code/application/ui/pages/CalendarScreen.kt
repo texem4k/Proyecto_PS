@@ -66,6 +66,7 @@ import software.ulpgc.code.application.ui.pages.Calendar.Views.YearView
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.model.tasks.MAX
+import kotlin.collections.mapValues
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +91,7 @@ fun CalendarScreen(
     var selectedDate by remember { mutableStateOf(today) }
     var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
     var showFilters by remember { mutableStateOf(false) }
-    var filters by remember { mutableStateOf(TaskFilters()) }
+    var filters by remember { mutableStateOf(TaskFilters(true, setOf("No completadas"))) }
 
     val filteredEntries = remember(version, filters) {
         getFilteredEntries(store, filters)

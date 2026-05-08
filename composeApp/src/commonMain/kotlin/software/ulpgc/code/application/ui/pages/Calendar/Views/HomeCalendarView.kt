@@ -54,6 +54,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.yearMonth
+import software.ulpgc.code.application.ui.pages.Calendar.CalendarConstants
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
@@ -217,11 +218,6 @@ fun miniCalendarHeader(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
 ) {
-    val monthNames = listOf(
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    )
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,7 +230,7 @@ fun miniCalendarHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                text = "${CalendarConstants.MONTH_NAMES_ES[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
@@ -248,7 +244,7 @@ fun miniCalendarHeader(
         }
     }
     Row(modifier = Modifier.fillMaxWidth()) {
-        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+        CalendarConstants.DAY_LETTERS.forEach { day ->
             Text(
                 text = day,
                 modifier = Modifier.weight(1f),

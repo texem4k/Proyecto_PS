@@ -233,6 +233,13 @@ fun getFilteredEntries(store: Storage, filters: TaskFilters): Map<LocalDate, Lis
             val task = entry.task ?: return@filter false
             val topicName = store.topics().find { it.id == task.topicId }?.name.orEmpty()
             val tagNames = task.tags.mapNotNull { id -> store.tags().find { it.id == id }?.name }.toSet()
+            val statusOk = filters.status.isEmpty() || filters.status.any { selected ->
+                when (selected) {
+                        "Completadas" -> task.isCompleted
+                    "No completadas" -> !task.isCompleted
+                    else -> true
+                }
+            }
 
             val priorityOk = filters.priority.isEmpty() || filters.priority.any { selectedText ->
                 Priority.entries.firstOrNull { it.text == selectedText }?.values?.contains(task.priority) == true
@@ -240,7 +247,7 @@ fun getFilteredEntries(store: Storage, filters: TaskFilters): Map<LocalDate, Lis
             val topicOk = filters.topics.isEmpty() || filters.topics.contains(topicName)
             val tagsOk = filters.tags.isEmpty() || filters.tags.any { selected -> tagNames.contains(selected) }
 
-            priorityOk && topicOk && tagsOk
+            statusOk && priorityOk && topicOk && tagsOk
         }
     }.filterValues { it.isNotEmpty() }
 
