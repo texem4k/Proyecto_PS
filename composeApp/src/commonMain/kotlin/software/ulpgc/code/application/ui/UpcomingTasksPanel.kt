@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -191,6 +192,29 @@ fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Outlined.CheckCircle,
+            contentDescription = "Completar tarea",
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+    Spacer(Modifier.width(8.dp))
+}
+
+@Composable
+fun UncompleteTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit){
+    IconButton(
+        onClick = {
+            val command = CommandBuilder(store)
+                .set("id", task.id.toString())
+                .build(CommandType.UNMARK_COMPLETE)
+            command
+                .onSuccess { CommandLauncher.launch(it); onDeleted() }
+                .onFailure { println("error: ${it.message}") }
+            onDeleted()
+        },
+        modifier = Modifier.size(32.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Delete,
             contentDescription = "Completar tarea",
             tint = MaterialTheme.colorScheme.primary
         )

@@ -2,9 +2,15 @@ package software.ulpgc.code.application.ui
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -27,6 +33,8 @@ fun TaskInformationDialog(
         selectedTask.time.mostrar().split(",")
     }
 
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(selectedTask.name) },
@@ -47,20 +55,58 @@ fun TaskInformationDialog(
                 }) {
                     Text("Editar tarea")
                 }
-                Button(onClick = {
-                    val command = CommandBuilder(store)
-                        .set("id", selectedTask.id.toString())
-                        .build(CommandType.DELETE_TASK)
-                    command
-                        .onSuccess { CommandLauncher.launch(it) }
-                        .onFailure { println("error: ${it.message}") }
-                    onDeleted()
-                    onDismiss()
-                }) {
+
+                Button(onClick = { showDeleteConfirmation = true }) {
                     Text("Eliminar tarea")
+                    if (showDeleteConfirmation) {
+                        ConfirmDeleteDialog(
+                            taskName = selectedTask.name,
+                            onConfirm = {
+                                val command = CommandBuilder(store)
+                                    .set("id", selectedTask.id.toString())
+                                    .build(CommandType.DELETE_TASK)
+                                command
+                                    .onSuccess { CommandLauncher.launch(it) }
+                                    .onFailure { println("error: ${it.message}") }
+                                showDeleteConfirmation = false
+                                onDeleted()
+                                onDismiss()
+                            },
+                            onDismiss = { showDeleteConfirmation = false }
+                        )
+                    }
                 }
             Button(onClick = onDismiss) {
                 Text("Cerrar")
+            }
+        }
+    )
+}
+
+
+@Composable
+fun ConfirmDeleteDialog(
+    taskName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar tarea") },
+        text = { Text("¿Estás seguro de que deseas eliminar \"$taskName\"? Esta acción no se puede deshacer.") },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Eliminar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancelar")
             }
         }
     )

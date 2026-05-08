@@ -100,6 +100,9 @@ fun HomeScreen(
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
+    val priorityTasks = remember(version) { TaskOptimizer.sortedTasks.toList() }
+
+
 
     val sampleEntries = remember(version) {
         getSamplesEntries(store)
@@ -145,7 +148,7 @@ fun HomeScreen(
                     Text("Tareas Prioritarias", fontSize = 24.sp)
                     Divider(
                         modifier = Modifier
-                            .fillMaxWidth(0.4f)
+                            .fillMaxWidth(0.5f)
                             .padding(top = 4.dp, bottom = 16.dp),
                         thickness = 5.dp
                     )
@@ -154,12 +157,11 @@ fun HomeScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.65f),
+                        .weight(0.5f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(TaskOptimizer.sortedTasks.toList().slice(0..minOf(3, TaskOptimizer.sortedTasks.toList().lastIndex))) { task ->
-
+                    items(priorityTasks) { task ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -173,7 +175,10 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
 
-                                MarkTaskIcon(store, task, onDeleted = { onDeleted() })
+                                MarkTaskIcon(store, task, onDeleted = {
+                                    onDeleted()
+                                    version++
+                                })
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = task.name,
@@ -233,7 +238,9 @@ fun HomeScreen(
                     }
                 }
 
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f))
+                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {
+                    onDeleted()
+                    version++})
             }
         }
     }
@@ -241,7 +248,12 @@ fun HomeScreen(
         TaskInformationDialog(
             selectedTask = selectedTask!!,
             store = store,
-            onDismiss = { selectedTask = null }
+            onDismiss = { selectedTask = null },
+            onDeleted = {
+                version++
+                selectedTask = null
+            }
+
         )
     }
 
@@ -353,11 +365,11 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier){
+fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit){
     Row(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        MenuTareas(store)
+        MenuTareas(store, onDeleted = onDeleted)
     }
 }

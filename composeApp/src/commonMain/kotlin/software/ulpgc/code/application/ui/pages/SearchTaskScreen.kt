@@ -84,9 +84,11 @@ fun SearchResultsDialog(
 
             accumulated.toList()
         } else {
-            store.tasks()
-                .filter { it.name.contains(value, ignoreCase = true) }
-                .toList()
+            store.tasks().toList()
+                .filter {
+                    it.name.normalizeAccents()
+                        .contains(value.normalizeAccents(), ignoreCase = true)
+                }
         }
     }
 
@@ -241,4 +243,15 @@ private fun FilterChipRow(
             }
         }
     }
+}
+
+fun String.normalizeAccents(): String {
+    return this
+        .replace('á', 'a').replace('Á', 'A')
+        .replace('é', 'e').replace('É', 'E')
+        .replace('í', 'i').replace('Í', 'I')
+        .replace('ó', 'o').replace('Ó', 'O')
+        .replace('ú', 'u').replace('Ú', 'U')
+        .replace('ü', 'u').replace('Ü', 'U')
+        .replace('ñ', 'n').replace('Ñ', 'N')
 }
