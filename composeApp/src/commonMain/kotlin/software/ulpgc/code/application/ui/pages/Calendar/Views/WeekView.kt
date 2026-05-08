@@ -95,6 +95,11 @@ fun WeekView(
     }
     val startDate = weekDates.first()
     val endDate = weekDates.last()
+    val dayUrgencyColor = remember(weekOffset, sampleEntries.values.flatten().map { entry -> entry.title to entry.task?.priority }) {
+        weekDates.associateWith { date ->
+            urgencyColorFromEntries(sampleEntries[date] ?: emptyList())
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         CalendarHeader(
@@ -120,14 +125,6 @@ fun WeekView(
                 .padding(start = TIME_COL_W)
         ) {
 
-            val dayUrgencyColor = remember(weekOffset, sampleEntries.values.flatten().map { entry -> entry.title to entry.task?.priority }) {
-                weekDates.associateWith { date ->
-                    urgencyColorFromEntries(sampleEntries[date] ?: emptyList())
-                }
-            }
-
-            var urgencyColor: Color?;
-
             weekDates.forEachIndexed { index, date ->
                 Column(
                     modifier = Modifier.weight(1f),
@@ -141,10 +138,9 @@ fun WeekView(
                     )
 
                     Box(
-                        modifier = Modifier.size(28.dp),  // tamaño fijo igual para todos los días
+                        modifier = Modifier.size(28.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Círculo azul de fondo solo si es hoy
                         if (date == currentDate) {
                             Box(
                                 modifier = Modifier
@@ -166,16 +162,6 @@ fun WeekView(
                                 date == selectedDate -> Color(0xFF4F6EF7)
                                 else -> Color.Black
                             }
-                        )
-                    }
-
-                    urgencyColor = dayUrgencyColor[date]
-                    if (urgencyColor != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(5.dp)
-                                .background(dayUrgencyColor[date]!!)
                         )
                     }
                 }
@@ -231,7 +217,8 @@ fun WeekView(
                             onEntryClick = { entry ->
                                 onDateSelected(date)
                                 selectedEntry = entry
-                            }
+                            },
+                            urgencyColor = dayUrgencyColor[date]
                         )
                     }
                 }

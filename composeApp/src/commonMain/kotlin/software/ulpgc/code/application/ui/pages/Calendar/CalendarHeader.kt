@@ -58,20 +58,26 @@ fun CalendarHeader(
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendDropdown(scrollState = scrollState)
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            LegendDropdown(scrollState = scrollState)
+        }
 
-        NavigationSection(
-            title = title,
-            onPreviousClick = onPreviousClick,
-            onNextClick = onNextClick
-        )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            NavigationSection(
+                title = title,
+                onPreviousClick = onPreviousClick,
+                onNextClick = onNextClick
+            )
+        }
 
-        FilterAndViewMode(
-            viewMode = viewMode,
-            onViewModeChange = onViewModeChange,
-            onFilterClick = onFilterClick,
-            scrollState = scrollState
-        )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            FilterAndViewMode(
+                viewMode = viewMode,
+                onViewModeChange = onViewModeChange,
+                onFilterClick = onFilterClick,
+                scrollState = scrollState
+            )
+        }
     }
 }
 

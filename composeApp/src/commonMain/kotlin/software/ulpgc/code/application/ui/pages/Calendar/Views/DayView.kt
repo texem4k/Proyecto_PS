@@ -56,12 +56,14 @@ import software.ulpgc.code.application.ui.pages.Calendar.START_HOUR
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.Calendar.TIME_COL_W
 import software.ulpgc.code.application.ui.pages.Calendar.WeekDayColumn
+import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries // 🔹 NUEVO: para barra de prioridad
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
+import kotlin.collections.map
 
 import kotlin.time.Clock
 
@@ -88,6 +90,13 @@ fun DayView(
     var dayOffset by remember { mutableStateOf(0) }
     val currentDay = remember(dayOffset) {
         today.plus(DatePeriod(days = dayOffset))
+    }
+
+    val urgencyColor = remember(
+        currentDay,
+        sampleEntries[currentDay]?.map {it.title to it.task?.priority}
+    ) {
+        urgencyColorFromEntries(sampleEntries[currentDay] ?: emptyList())
     }
 
     LaunchedEffect(Unit) {
@@ -157,7 +166,8 @@ fun DayView(
                     isToday = currentDay == today,
                     isSelected = true,
                     hourHeight = HOUR_HEIGHT,
-                    onEntryClick = { entry -> selectedEntry = entry }
+                    onEntryClick = { entry -> selectedEntry = entry },
+                    urgencyColor = urgencyColor
                 )
             }
         }

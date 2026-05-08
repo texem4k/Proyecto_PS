@@ -47,7 +47,8 @@ fun WeekDayColumn(
     isToday: Boolean,
     isSelected: Boolean,
     hourHeight: Dp,
-    onEntryClick: (SampleEntry) -> Unit
+    onEntryClick: (SampleEntry) -> Unit,
+    urgencyColor: Color? = null // 🔹 NUEVO: barra de prioridad en la parte superior
 ) {
     val totalHours = END_HOUR - START_HOUR
 
@@ -130,6 +131,16 @@ fun WeekDayColumn(
                     )
                 }
             }
+        }
+
+        // 🔹 NUEVO: barra de color de prioridad en la parte superior
+        if (urgencyColor != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .background(urgencyColor)
+            )
         }
     }
 }
