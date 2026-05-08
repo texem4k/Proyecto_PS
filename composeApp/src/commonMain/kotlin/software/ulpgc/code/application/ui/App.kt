@@ -113,7 +113,6 @@ fun App(
                                 startEditMode = false
                                 taskToEdit = null
                             },
-                            showResults = showResults,
                             onShowResults = { showResults = it },
                             onSettingsClick = { showThemeDialog = true }
                         )
@@ -129,7 +128,6 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TASK,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
@@ -144,7 +142,6 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TOPIC,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
@@ -159,7 +156,6 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TAG,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
