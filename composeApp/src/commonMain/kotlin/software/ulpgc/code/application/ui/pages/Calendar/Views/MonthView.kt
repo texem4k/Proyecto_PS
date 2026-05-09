@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -185,7 +186,7 @@ fun DayCell(
 
     val urgencyColor: Color = urgencyColorFromEntries(entries)
 
-    Box(
+    BoxWithConstraints (
         modifier = Modifier
             .fillMaxWidth()
             .height(cellHeight)
@@ -195,6 +196,7 @@ fun DayCell(
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
         contentAlignment = Alignment.TopStart
     ) {
+        val maxTask = if (maxHeight < 110.dp) 2 else 3
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(24.dp)) {
                 Box(
@@ -233,7 +235,7 @@ fun DayCell(
                         .padding(horizontal = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    entries.take(3).forEach { entry ->
+                    entries.take(maxTask).forEach { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -256,6 +258,13 @@ fun DayCell(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
+                    }
+                    if (entries.size > 3) {
+                        Text(
+                            text = "...",
+                            fontSize = 30.sp,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

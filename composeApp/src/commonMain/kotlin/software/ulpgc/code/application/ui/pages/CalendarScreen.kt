@@ -306,8 +306,9 @@ fun DayEntriesPanel(
             store = store,
             onDismiss = { selectedEntry = null },
             onEdit = { editedTask ->
+                taskToEdit = editedTask
+                showCreateTask = true
                 selectedEntry = null
-                onEdit()
             },
             onDeleted = {
                 selectedEntry = null

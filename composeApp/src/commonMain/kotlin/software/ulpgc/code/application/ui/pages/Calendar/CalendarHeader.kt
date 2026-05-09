@@ -195,81 +195,45 @@ fun YearHeader(
     onViewModeChange: (CalendarViewMode) -> Unit,
     onPreviousYear: () -> Unit,
     onNextYear: () -> Unit,
-    onFilterClick: () -> Unit
+    onFilterClick: () -> Unit,
+    scrollState: androidx.compose.foundation.ScrollState
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(yearState.isScrollInProgress) {
-        if (yearState.isScrollInProgress) expanded = false
-    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onPreviousYear) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
-            }
-            Text(
-                text = year.year.value.toString(),
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            IconButton(onClick = onNextYear) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
-            }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            LegendDropdown(scrollState = scrollState)
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onFilterClick) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = "Filtrar tareas",
-                    tint = Color.Gray
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPreviousYear) {
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
+                }
+                Text(
+                    text = year.year.value.toString(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 26.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
-            }
-
-            Box(contentAlignment = Alignment.CenterEnd) {
-                Button(onClick = { expanded = true }) {
-                    Text(text = viewMode.name)
-                }
-                if (expanded) {
-                    Popup(
-                        alignment = Alignment.TopEnd,
-                        offset = IntOffset(10, 60),
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(150.dp)
-                                .wrapContentHeight()
-                                .background(Color.White, RoundedCornerShape(8.dp))
-                                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                                .padding(4.dp)
-                        ) {
-                            CalendarViewMode.entries.forEach { mode ->
-                                Text(
-                                    text = mode.name,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onViewModeChange(mode)
-                                            expanded = false
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                                )
-                            }
-                        }
-                    }
+                IconButton(onClick = onNextYear) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
                 }
             }
         }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            FilterAndViewMode(
+                viewMode = viewMode,
+                onViewModeChange = onViewModeChange,
+                onFilterClick = onFilterClick,
+                scrollState = scrollState
+            )
+        }
+
     }
 }

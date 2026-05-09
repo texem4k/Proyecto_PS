@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -82,6 +83,7 @@ fun YearView(
 
     var showDialog by remember { mutableStateOf(false) }
     var dialogDate by remember { mutableStateOf(selectedDate) }
+    val scrollState = rememberScrollState()
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val monthColumns = when {
@@ -102,7 +104,8 @@ fun YearView(
                     onViewModeChange = onViewModeChange,
                     onPreviousYear = { visibleYear = visibleYear.minusYears(1) },
                     onNextYear = { visibleYear = visibleYear.plusYears(1) },
-                    onFilterClick = onFilterClick
+                    onFilterClick = onFilterClick,
+                    scrollState = scrollState
                 )
             },
             monthHeader = { month ->

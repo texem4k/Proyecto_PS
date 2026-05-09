@@ -95,6 +95,7 @@ fun WeekView(
     }
     val startDate = weekDates.first()
     val endDate = weekDates.last()
+
     val dayUrgencyColor = remember(weekOffset, sampleEntries.values.flatten().map { entry -> entry.title to entry.task?.priority }) {
         weekDates.associateWith { date ->
             urgencyColorFromEntries(sampleEntries[date] ?: emptyList())
