@@ -25,13 +25,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.UncompleteTaskIcon
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
-fun MenuTareas(store: Storage, version: Int = 0) {
-    var taskList by remember(version) { mutableStateOf(store.tasks().toList()) }
+fun MenuTareas(store: Storage, onDeleted: () -> Unit) {
+    var taskList by remember { mutableStateOf(store.tasks().toList()) }
     var showCompleted by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -106,6 +108,9 @@ fun MenuTareas(store: Storage, version: Int = 0) {
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if(showCompleted) UncompleteTaskIcon(store, task, onDeleted = {
+                            onDeleted()
+                        })
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = task.name,

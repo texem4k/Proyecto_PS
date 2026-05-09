@@ -11,6 +11,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.SideBar
@@ -22,6 +23,7 @@ import software.ulpgc.code.application.ui.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.application.ui.pages.ShowDialMenu
 import software.ulpgc.code.application.ui.pages.setUndoRedo
+import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 
@@ -140,36 +142,43 @@ fun TasksScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    var taskList by remember { mutableStateOf(store.tasks().toList()) }
-                    val group = taskList.filter {it.isCompleted == false}.groupBy { it.topicId }
+                    if (!store.tasks().any{t -> !t.isCompleted}) {
+                        Text(
+                            "No tienes ninguna tarea ahora mismo, ¡Puedes descansar un poco \uD83D\uDE09!",
+                            fontSize = 18.sp
+                        )
+                    } else {
+                        var taskList by remember { mutableStateOf(store.tasks().toList()) }
+                        val group = taskList.filter { !it.isCompleted }.groupBy { it.topicId }
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxWidth(0.5f),
+                            contentPadding = PaddingValues(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(32.dp),
+                            verticalArrangement = Arrangement.spacedBy(64.dp)
+                        ) {
+                            items(group.entries.toList()) { (titulo, tareasGrupo) ->
+                                val topicName =
+                                    store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
 
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxWidth(0.5f),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(32.dp),
-                        verticalArrangement = Arrangement.spacedBy(64.dp)
-                    ) {
-                        items(group.entries.toList()) { (titulo, tareasGrupo) ->
-                            val topicName =
-                                store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
-
-                            _root_ide_package_.software.ulpgc.code.application.ui.UpcomingTasksPanel(
-                                store,
-                                tareasGrupo,
-                                topicName,
-                                onEdit = { task ->
-                                    onEdit(task)
-                                    showEditTask = true
-                                },
-                                onDeleted = {
-                                    taskList = store.tasks().toList()
-                                    onDeleted()
-                                },
-                                screen = Screen.TASKS
-                            )
+                                _root_ide_package_.software.ulpgc.code.application.ui.UpcomingTasksPanel(
+                                    store,
+                                    tareasGrupo,
+                                    topicName,
+                                    onEdit = { task ->
+                                        onEdit(task)
+                                        showEditTask = true
+                                    },
+                                    onDeleted = {
+                                        taskList = store.tasks().toList()
+                                        onDeleted()
+                                    },
+                                    screen = Screen.TASKS
+                                )
+                            }
                         }
                     }
+
                 }
 
                 ShowDialMenu(

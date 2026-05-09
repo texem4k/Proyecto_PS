@@ -83,7 +83,7 @@ fun DashboardScreen(
                         KpiDashboard(kpi = kpi)
                     }
                 }
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f))
+                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {})
             }
 
             Card(

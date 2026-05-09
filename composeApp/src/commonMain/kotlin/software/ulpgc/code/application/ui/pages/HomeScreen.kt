@@ -63,11 +63,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
-import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
-import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import kotlin.sequences.forEach
@@ -94,7 +92,6 @@ fun HomeScreen(
 ) {
     val focusRequester = remember { FocusRequester() }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
-    var filters by remember { mutableStateOf(TaskFilters(true, setOf("No completadas"))) }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -103,12 +100,12 @@ fun HomeScreen(
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
-    val priorityTasks = remember(version) { TaskOptimizer.sortedTasks.toList() }
+    //val priorityTasks = remember(version) { TaskOptimizer.sortedTasks.toList() }
 
 
 
     val sampleEntries = remember(version) {
-        getFilteredEntries(store, filters)
+        getSamplesEntries(store)
     }
 
     Box(
@@ -147,7 +144,7 @@ fun HomeScreen(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.Top,
 
-                ) {
+                    ) {
                     Text("Tareas Prioritarias", fontSize = 24.sp)
                     Divider(
                         modifier = Modifier
@@ -164,45 +161,57 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(priorityTasks) { task ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedTask = task } ,
-                            shape = RoundedCornerShape(8.dp),
-                        ) {
-                            Row(
+                    if (TaskOptimizer.sortedTasks.toList().isEmpty()) {
+                        item {
+                            Text(
+                                "No hay tareas prioritarias asignadas, ¡Disfruta del día \uD83D\uDE09!",
+                                fontSize = 18.sp
+                            )
+                        }
+                    } else {
+                        items(TaskOptimizer.sortedTasks.toList()) { task ->
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .clickable { selectedTask = task },
+                                shape = RoundedCornerShape(8.dp),
                             ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
 
-                                MarkTaskIcon(store, task, onDeleted = {
-                                    onDeleted()
-                                    version++
-                                })
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = task.name,
-                                        style = MaterialTheme.typography.titleSmall,
-                                    )
+                                    MarkTaskIcon(store, task, onDeleted = {
+                                        onDeleted()
+                                        version++
+                                    })
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = task.name,
+                                            style = MaterialTheme.typography.titleSmall,
+                                        )
 
-                                    Spacer(Modifier.height(4.dp))
-                                    val tz = TimeZone.currentSystemDefault()
-                                    val endDate = task.time.end.toFormattedDateDisplay(tz)
-                                    val endHour = task.time.end.toFormattedHour(tz)
+                                        Spacer(Modifier.height(4.dp))
+                                        val tz = TimeZone.currentSystemDefault()
+                                        val endDate = task.time.end.toFormattedDateDisplay(tz)
+                                        val endHour = task.time.end.toFormattedHour(tz)
 
-                                    Text(
-                                        text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
+                                        Text(
+                                            text = "${
+                                                store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                                            } $endDate $endHour",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
                 ShowDialMenu(
                     { onNavigate(Screen.TASKS_CREATE) },
                     { onNavigate(Screen.TOPIC_CREATE) },
@@ -241,7 +250,9 @@ fun HomeScreen(
                     }
                 }
 
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f))
+                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {
+                    onDeleted()
+                    version++})
             }
         }
     }
@@ -279,6 +290,36 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
             keyboardActions = KeyboardActions(onSearch = { onSearch() })
         )
     }
+}
+
+fun getSamplesEntries(store: Storage): MutableMap<LocalDate, MutableList<SampleEntry>> {
+    val topicsById = store.topics().associateBy { it.id }
+    val tasks = store.tasks()
+    val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
+
+    tasks.forEach { task ->
+        val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        var current = startDate
+        while (current <= endDate) {
+            val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+            val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+
+            val entry = SampleEntry(
+                title = task.name,
+                time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                        "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
+                color = Color(topicColor),
+                task  = task
+            )
+
+            map.getOrPut(current) { mutableListOf() }.add(entry)
+            current = current.plus(1, DateTimeUnit.DAY)
+        }
+    }
+    return map
 }
 
 
@@ -336,11 +377,11 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, version: Int = 0) {
+fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit){
     Row(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        MenuTareas(store, version)
+        MenuTareas(store, onDeleted = onDeleted)
     }
 }

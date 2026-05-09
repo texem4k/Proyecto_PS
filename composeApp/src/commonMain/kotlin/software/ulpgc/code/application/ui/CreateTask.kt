@@ -74,10 +74,12 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
     var formError by remember { mutableStateOf(false) }
     var messageError: String? by remember { mutableStateOf("") }
     val checkedState = remember { mutableStateOf(false) }
-    var expand by remember { mutableStateOf(false) }
-    var selectedPeriod by remember { mutableStateOf("Periodo") }
+    var expand by remember { mutableStateOf(form.taskInterval) }
+    var selectedPeriod by remember { mutableStateOf<TaskInterval?>(null) }
     var mode by remember { mutableStateOf(CreateMode.DATES) }
     val action = if (task != null) "Editar" else "Crear"
+    val periods = listOf("Ninguno", "Diario", "Semanal", "Mensual", "Anual")
+
 
     @Composable
     fun Duracion(){
@@ -222,12 +224,6 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
                 .fillMaxWidth(0.50f),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            fun Modifier.selected(selected: Boolean) =
-                this.background(
-                    if (selected) Color.LightGray else Color.Transparent,
-                    shape = RoundedCornerShape(50)
-                )
-
             ModeButton(
                 onClick = { mode = CreateMode.DATES },
                 selected = mode == CreateMode.DATES,
@@ -250,44 +246,25 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
 
         when (mode) {
             CreateMode.DATES -> {
-                Row(
-                    modifier = Modifier.fillMaxWidth(0.50f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    DatePickerField(
-                        value = form.taskStartDateString,
-                        onValueChange = { str, instant ->
-                            form = form.copy(taskStartDateString = str, taskStartDate = instant)
-                        },
-                        label = "* Fecha de inicio",
-                        modifier = Modifier.weight(1f)
-                    )
-                    TimePickerField(
-                        value = form.taskStartHour,
-                        onValueChange = { form = form.copy(taskStartHour = it) },
-                        type = "Inicio",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(0.50f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    DatePickerField(
-                        value = form.taskFinalDateString,
-                        onValueChange = { str, instant ->
-                            form = form.copy(taskFinalDateString = str, taskFinalDate = instant)
-                        },
-                        label = "* Fecha de fin",
-                        modifier = Modifier.weight(1f)
-                    )
-                    TimePickerField(
-                        value = form.taskFinalHour,
-                        onValueChange = { form = form.copy(taskFinalHour = it) },
-                        type = "Final",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                DateTimeRow(date = form.taskStartDateString,
+                    onDateChange = { str, instant ->
+                        form = form.copy(taskStartDateString = str, taskStartDate = instant)
+                    },
+                    labelDate = "* Fecha de inicio",
+                    hour = form.taskStartHour,
+                    onHourChange = { form = form.copy(taskStartHour = it) },
+                    labelTime = "Inicio"
+                )
+
+                DateTimeRow(date = form.taskFinalDateString,
+                    onDateChange = { str, instant ->
+                        form = form.copy(taskFinalDateString = str, taskFinalDate = instant)
+                    },
+                    labelDate = "* Fecha de fin",
+                    hour = form.taskFinalHour,
+                    onHourChange = { form = form.copy(taskFinalHour = it) },
+                    labelTime = "Final"
+                )
             }
 
             CreateMode.START_DURATION -> {
@@ -328,27 +305,18 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
         }
 
         if (checkedState.value) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box {
-                    Button(onClick = { expand = true }) { Text(selectedPeriod) }
-                    DropdownMenu(
-                        expanded = expand,
-                        onDismissRequest = { expand = false },
-                        modifier = Modifier.fillMaxWidth(0.15f)
-                    ) {
-                        val periods = listOf("Ninguno", "Diario", "Semanal", "Mensual", "Anual")
-                        for (i in 0..4) {
-                            DropdownMenuItem(
-                                text = { Text(periods[i]) },
-                                onClick = {
-                                    selectedPeriod = "Periodo seleccionado: ${periods[i]}"
-                                    expand = false
-                                    form.taskInterval = TaskInterval.entries[i]
-                                }
-                            )
-                        }
-                    }
-                }
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier=Modifier.fillMaxWidth(0.5f)) {
+                DropdownCustom(
+                    section = "Período",
+                    items = TaskInterval.entries.filter { it != TaskInterval.NONE }, // ← excluye NONE
+                    selection = DropdownSelection.Single(selectedPeriod),
+                    onItemSelected = { interval ->
+                        selectedPeriod = interval
+                        form.taskInterval = interval
+                    },
+                    itemId = { it },
+                    itemName = { it.label }
+                )
             }
         }
 
@@ -418,6 +386,8 @@ fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialD
         }
     }
 }
+
+
 
 @Composable
 fun DateTimeRow(

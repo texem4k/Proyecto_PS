@@ -180,6 +180,7 @@ fun TextFieldCustom(
     )
 }
 
+/*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> DropdownCustom(
@@ -252,4 +253,75 @@ fun <T> DropdownCustom(
 sealed class DropdownSelection {
     data class Single(val id: Uuid?) : DropdownSelection()
     data class Multiple(val ids: List<Uuid>) : DropdownSelection()
+}
+*/
+
+
+sealed class DropdownSelection<out K> {
+    data class Single<K>(val id: K?) : DropdownSelection<K>()
+    data class Multiple<K>(val ids: List<K>) : DropdownSelection<K>()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T, K> DropdownCustom(
+    section: String,
+    items: List<T>,
+    selection: DropdownSelection<K>,
+    onItemSelected: (K) -> Unit,
+    itemId: (T) -> K,
+    itemName: (T) -> String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val displayText = when (selection) {
+        is DropdownSelection.Single ->
+            items.find { itemId(it) == selection.id }?.let { itemName(it) } ?: "Seleccionar..."
+        is DropdownSelection.Multiple ->
+            if (selection.ids.isEmpty()) "Seleccionar..."
+            else items
+                .filter { itemId(it) in selection.ids }
+                .joinToString(", ") { itemName(it) }
+    }
+
+    // ... el resto del composable igual, solo cambia K por el tipo correcto
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(section) },
+            modifier = Modifier.menuAnchor().fillMaxWidth(0.5f),
+            shape = RoundedCornerShape(32.dp),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = outlinedTextFieldColors()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            items.forEach { item ->
+                val id = itemId(item)
+                val isSelected = when (selection) {
+                    is DropdownSelection.Single -> id == selection.id
+                    is DropdownSelection.Multiple -> id in selection.ids
+                }
+                DropdownMenuItem(
+                    text = { Text(itemName(item)) },
+                    onClick = {
+                        onItemSelected(id)
+                        if (selection is DropdownSelection.Single) expanded = false
+                    },
+                    trailingIcon = {
+                        if (isSelected) Icon(Icons.Default.Check, contentDescription = null)
+                    }
+                )
+            }
+        }
+    }
 }
