@@ -9,4 +9,8 @@ data class Topic (
     var color: Int,
     var id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
-) : DBObject
+) : DBObject {
+    override fun toString(): String {
+        return "Topic(id=$id, name='$name', color=$color)"
+    }
+}

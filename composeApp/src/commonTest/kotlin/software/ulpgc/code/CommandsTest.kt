@@ -1,7 +1,7 @@
 package software.ulpgc.code
 
-import software.ulpgc.code.architecture.control.CommandBuilder
-import software.ulpgc.code.architecture.control.CommandType
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.io.Store
@@ -30,7 +30,7 @@ private fun makeTask(store: Storage) = Task(
     topicId = Uuid.random(),
     time = makeTime(),
     interval = TaskInterval.NONE,
-    tags = mutableListOf()
+    tags = mutableSetOf()
 ).also { store.addTasks(listOf(it)) }
 
 private fun makeTopic(store: Storage) =

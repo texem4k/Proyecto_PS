@@ -1,8 +1,18 @@
-package software.ulpgc.code.application.ui
-
 enum class Screen {
     HOME,
-    CREATE_TASK,
     RESULTS,
-    DELETE_TASK,
+    TASKS,
+    TASKS_CREATE,
+    TOPIC_CREATE,
+    TAG_CREATE,
+    PROFILE,
+    CALENDAR,
+    SETTINGS,
+    DASHBOARD,
+}
+
+enum class AutoOpen {
+    TASK,
+    TOPIC,
+    TAG
 }

@@ -1,9 +1,9 @@
 package software.ulpgc.code
 
-import software.ulpgc.code.architecture.control.Command
+import software.ulpgc.code.architecture.control.commands.Command
 
 class MockCommandLauncher {
-    private val commands: MutableList<Command> = mutableListOf()
+    private val commands: MutableList<List<Command>> = mutableListOf()
     private var pivot: Int = 0
 
     fun launch(command: Command) {
@@ -15,14 +15,14 @@ class MockCommandLauncher {
     }
 
     fun undo() {
-        if ( pivot < 1 ) { TODO("TIRAR ERROR") }
+        if ( pivot < 1 ) { return }
         pivot--
-        commands[pivot] = commands[pivot].execute()
+        commands[pivot] = commands[pivot].flatMap { command -> command.execute() }.subList(0, 1)
     }
 
     fun redo() {
-        if (pivot >= commands.size) { TODO("TIRAR ERROR") }
-        commands[pivot] = commands[pivot].execute()
+        if (pivot >= commands.size) { return }
+        commands[pivot] = commands[pivot].flatMap { command -> command.execute() }
         pivot++
     }
 }

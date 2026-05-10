@@ -9,4 +9,8 @@ data class Tag(
     var topicId: Uuid,
     val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
-) : DBObject
+) : DBObject {
+    override fun toString(): String {
+        return "Tag(id=$id, name='$name', topicId=$topicId)"
+    }
+}

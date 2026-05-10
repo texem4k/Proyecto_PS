@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kotlinSerialization)
+    id("com.google.gms.google-services") version "4.4.0"
 }
 
 kotlin {
@@ -86,7 +87,13 @@ kotlin {
             implementation(libs.kotlinx.coroutines)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation(compose.materialIconsExtended)
-            //implementation("androidx.compose.material:material-icons-extended") // Para más iconos como Close
+            implementation("com.kizitonwose.calendar:compose-multiplatform:2.10.1")
+            implementation(libs.compose.runtime)
+            implementation(libs.foundation.v1103)
+            implementation(libs.jetbrains.material3.v190)
+            implementation(libs.ui.v1103)
+            api("io.github.mirzemehdi:kmpnotifier:1.6.1")
+            implementation("com.patrykandpatrick.vico:multiplatform:2.4.4")
         }
 
 
@@ -141,9 +148,11 @@ compose.desktop {
         mainClass = "software.ulpgc.code.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "software.ulpgc.code"
+            targetFormats(TargetFormat.Exe, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Ordo"
             packageVersion = "1.0.0"
+            modules("java.instrument", "java.sql", "jdk.unsupported")
+            windows { menuGroup = "Ordo" }
         }
     }
 }

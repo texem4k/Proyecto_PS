@@ -1,0 +1,2168 @@
+package software.ulpgc.code.application.ui.pages
+
+import Screen
+import androidx.compose.foundation.ScrollState
+import com.kizitonwose.calendar.core.OutDateStyle
+import com.kizitonwose.calendar.compose.rememberCalendarState
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import com.kizitonwose.calendar.compose.HorizontalCalendar
+import com.kizitonwose.calendar.compose.VerticalYearCalendar
+import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
+import com.kizitonwose.calendar.compose.yearcalendar.rememberYearCalendarState
+import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.CalendarMonth
+import com.kizitonwose.calendar.core.CalendarYear
+import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.Year
+import com.kizitonwose.calendar.core.minusMonths
+import com.kizitonwose.calendar.core.minusYears
+import com.kizitonwose.calendar.core.plusMonths
+import com.kizitonwose.calendar.core.plusYears
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.yearMonth
+import kotlin.time.Clock
+import kotlinx.coroutines.launch
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
+import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.filters.FilterContent
+import software.ulpgc.code.application.ui.filters.TaskFilters
+import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.model.tasks.Task
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.focusable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import kotlinx.datetime.DateTimeUnit
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
+import software.ulpgc.code.architecture.model.tasks.MAX
+import software.ulpgc.code.architecture.model.Priority
+import kotlin.collections.component1
+import kotlin.collections.component2
+
+enum class CalendarViewMode { DIA, SEMANA, MES, AÑO }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalendarScreen(
+    onNavigate: (Screen) -> Unit,
+    store: Storage,
+    onSettingsClick: () -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    var version by remember { mutableStateOf(0) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    val sampleEntries = remember(version) {
+        val topicsById = store.topics().associateBy { it.id }
+        val tasks = store.tasks()
+        val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
+
+        tasks.forEach { task ->
+            val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val endDate = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+            var current = startDate
+            while (current <= endDate) {
+                val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
+                val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
+                val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+
+                val entry = SampleEntry(
+                    title = task.name,
+                    time = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
+                            "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
+                    color = Color(topicColor),
+                    task = task
+                )
+
+                map.getOrPut(current) { mutableListOf() }.add(entry)
+                current = current.plus(1, DateTimeUnit.DAY)
+            }
+        }
+
+        map
+    }
+
+    val onTaskCreated: () -> Unit = { version++ }
+    val onDeleted: () -> Unit = { version++ }
+    val onEdit: () -> Unit = { version++ }
+
+    var selectedDate by remember { mutableStateOf(today) }
+    var viewMode by remember { mutableStateOf(CalendarViewMode.MES) }
+    var showFilters by remember { mutableStateOf(false) }
+    var filters by remember { mutableStateOf(TaskFilters()) }
+
+    val filteredEntries = remember(version, filters) {
+        if (!filters.hasFilter) sampleEntries
+        else sampleEntries.mapValues { (_, entries) ->
+            entries.filter { entry ->
+                val task = entry.task ?: return@filter false
+                val topicName = store.topics().find { it.id == task.topicId }?.name.orEmpty()
+                val tagNames = task.tags.mapNotNull { id -> store.tags().find { it.id == id }?.name }.toSet()
+
+                val priorityOk = filters.priority.isEmpty() || filters.priority.any { selectedText ->
+                    Priority.entries.firstOrNull { it.text == selectedText }?.values?.contains(task.priority) == true
+                }
+                val topicOk = filters.topics.isEmpty() || filters.topics.contains(topicName)
+                val tagsOk = filters.tags.isEmpty() || filters.tags.any { selected -> tagNames.contains(selected) }
+
+                priorityOk && topicOk && tagsOk
+            }
+        }.filterValues { it.isNotEmpty() }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when {
+                    event.isCtrlPressed && event.key == Key.Z -> {
+                        CommandLauncher.undo()
+                        version++
+                        true
+                    }
+                    event.isCtrlPressed && event.key == Key.Y -> {
+                        CommandLauncher.redo()
+                        version++
+                        true
+                    }
+                    else -> false
+                }
+            }
+    ) {
+        SideBar(
+            selectedScreen = Screen.CALENDAR,
+            onNavigate = onNavigate,
+            onSettingsClick = onSettingsClick
+        )
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (viewMode) {
+                CalendarViewMode.MES -> MonthView(
+                    sampleEntries = filteredEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store,
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted,
+                    onEdit = onEdit,
+                    onFilterClick = { showFilters = true }
+                )
+
+                CalendarViewMode.DIA -> DayView(
+                    sampleEntries = filteredEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store,
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted,
+                    onEdit = onEdit,
+                    onFilterClick = { showFilters = true }
+                )
+
+                CalendarViewMode.SEMANA -> WeekView(
+                    sampleEntries = filteredEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store,
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted,
+                    onEdit = onEdit,
+                    onFilterClick = { showFilters = true }
+                )
+
+                CalendarViewMode.AÑO -> YearView(
+                    sampleEntries = filteredEntries,
+                    selectedDate = selectedDate,
+                    onDateSelected = { selectedDate = it },
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    store = store,
+                    onNavigate = onNavigate,
+                    onTaskCreated = onTaskCreated,
+                    onDeleted = onDeleted,
+                    onEdit = onEdit,
+                    onFilterClick = { showFilters = true }
+                )
+            }
+
+            if (showFilters) {
+                ModalBottomSheet(
+                    onDismissRequest = { showFilters = false },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ) {
+                    FilterContent(
+                        onApply = { newFilters ->
+                            filters = newFilters.copy(
+                                hasFilter = newFilters.priority.isNotEmpty() ||
+                                        newFilters.topics.isNotEmpty() ||
+                                        newFilters.tags.isNotEmpty()
+                            )
+                            showFilters = false
+                        },
+                        store = store,
+                        onDismiss = { showFilters = false }
+                    )
+                }
+            }
+        }
+    }
+}
+
+data class SampleEntry(val title: String, val time: String, val color: Color, val task: Task? = null)
+
+@Composable
+fun DayCell(
+    day: CalendarDay,
+    entries: List<SampleEntry>,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    cellHeight: Dp
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val tasks = entries.mapNotNull { it.task }
+    val priorities = tasks.map { it.priority }
+
+    val urgencyColor: Color = urgencyColorFromEntries(entries)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(cellHeight)
+            .padding(2.dp)
+            .border(1.dp, Color.Black)
+            .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
+            .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
+        contentAlignment = Alignment.TopStart
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(24.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(25.dp)
+                        .fillMaxHeight()
+                        .padding(bottom = 2.dp, start = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = day.date.dayOfMonth.toString(),
+                        color = when {
+                            isSelected -> Color.White
+                            day.date == today -> Color(0xFF4F6EF7)
+                            day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                            else -> Color.Unspecified
+                        },
+                        fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 15.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+                Box(
+                    Modifier
+                        .padding(start = 4.dp)
+                        .weight(1f)
+                        .height(20.dp)
+                        .background(urgencyColor)
+                        .fillMaxHeight()
+                )
+            }
+            if (entries.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    entries.take(3).forEach { entry ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(entry.color.copy(alpha = if (isSelected) 0.3f else 0.15f))
+                                .padding(horizontal = 4.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(entry.color, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = entry.title,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                                color = if (isSelected) Color.White else Color.Black.copy(alpha = 0.7f),
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthHeader(
+    month: CalendarMonth,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState,
+    onFilterClick: () -> Unit
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        var expandLegend by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            Button(onClick = { expandLegend = true }) {
+                Text(text = "Leyenda")
+            }
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Sin tareas" to Color.Transparent,
+                    "Baja prioridad" to Color(red = 0f, green = 1f, blue = 0f, alpha = 0.8f),
+                    "Prioridad media" to Color(red = 0.5f, green = 0.5f, blue = 0f, alpha = 0.8f),
+                    "Alta prioridad" to Color(red = 1f, green = 0f, blue = 0f, alpha = 0.8f)
+                )
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(16.dp).background(color))
+                                Spacer(Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        },
+                        onClick = {}
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+
+        var expanded by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onFilterClick) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtrar tareas",
+                        tint = Color.Gray
+                    )
+                }
+                Box {
+                    Button(onClick = { expanded = true }) {
+                        Text(text = viewMode.name)
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            DropdownMenuItem(
+                                text = { Text(mode.name) },
+                                onClick = {
+                                    onViewModeChange(mode)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+            Text(
+                text = day,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                color = Color.Black
+            )
+        }
+    }
+}
+
+@Composable
+fun DayEntriesPanel(
+    date: LocalDate,
+    entries: List<SampleEntry>,
+    store: Storage,
+    modifier: Modifier = Modifier,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit
+) {
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+    var showCreateTask by remember { mutableStateOf(false) }
+    var taskToEdit by remember { mutableStateOf<Task?>(null) }
+
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(text = "Entradas para $date")
+
+        if (entries.isEmpty()) {
+            Text(text = "No hay eventos para este día")
+        } else {
+            entries.forEach { entry ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { selectedEntry = entry }
+                        .background(
+                            color = Color(0xFFF5F5F5),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(7.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(text = entry.title)
+                        Text(text = entry.time, color = Color.Gray)
+                    }
+                }
+            }
+        }
+    }
+
+    selectedEntry?.let { entry ->
+        val task = entry.task
+        if (task != null) {
+            val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+            val tagNames = task.tags.mapNotNull { id ->
+                store.tags().associateBy { it.id }[id]?.name
+            }
+            AlertDialog(
+                onDismissRequest = { selectedEntry = null },
+                title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Descripción: ${task.description}\n" +
+                                "Tema: $topicName\n" +
+                                "Tags: ${tagNames.joinToString(", ")}\n" +
+                                "Fecha de comienzo: ${task.time.start}\n" +
+                                "Fecha de final: ${task.time.end}\n" +
+                                "Prioridad: ${task.priority}"
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                    Button(onClick = {
+                        val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
+                        command
+                            .onSuccess { CommandLauncher.launch(it) }
+                            .onFailure { println("error: ${it.message}") }
+                        selectedEntry = null
+                        onDeleted()
+                    }) { Text("Eliminar tarea") }
+                    Button(onClick = {
+                        taskToEdit = task
+                        showCreateTask = true
+                        selectedEntry = null
+                    }) { Text("Editar tarea") }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+    }
+
+    if (showCreateTask) {
+        Dialog(
+            onDismissRequest = { showCreateTask = false },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .fillMaxHeight(0.7f)
+            ) {
+                CreateTask(
+                    store = store,
+                    onClose = {
+                        showCreateTask = false
+                        taskToEdit = null
+                        onEdit()
+                    },
+                    task = taskToEdit
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DayDetailDialog(
+    date: LocalDate,
+    entries: List<SampleEntry>,
+    store: Storage,
+    onTaskCreated: () -> Unit,
+    onDismiss: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit
+) {
+    var showCreateTask by remember { mutableStateOf(false) }
+
+    if (!showCreateTask) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            },
+            text = {
+                DayEntriesPanel(date = date, entries = entries, store = store, onDeleted = onDeleted, onEdit = onEdit)
+            },
+            confirmButton = {
+                Row {
+                    Button(onClick = { showCreateTask = true }) { Text("Crear Tarea") }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onDismiss) { Text("Cerrar", color = Color(0xFF4F6EF7)) }
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    if (showCreateTask) {
+        Dialog(
+            onDismissRequest = { showCreateTask = false },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .fillMaxHeight(0.7f)
+            ) {
+                CreateTask(
+                    store = store,
+                    onClose = {
+                        showCreateTask = false
+                        onTaskCreated()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onNavigate: (Screen) -> Unit,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage,
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = today.yearMonth
+    val coroutineScope = rememberCoroutineScope()
+
+    val startMonth = remember { currentMonth.minusMonths(12) }
+    val endMonth = remember { currentMonth.plusMonths(12) }
+
+    val calendarState = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfRow
+    )
+
+    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
+    LaunchedEffect(calendarState) {
+        snapshotFlow { calendarState.firstVisibleMonth }
+            .collect { month -> weeks = month.weekDays.size }
+    }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        val headerHeight = 100.dp
+        val cellSize = (maxHeight - headerHeight) / weeks
+        val calendarHeight = (cellSize * weeks) + headerHeight
+        val scrollState = rememberScrollState()
+
+        Column(modifier = Modifier.fillMaxWidth().padding(15.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(calendarHeight)) {
+                HorizontalCalendar(
+                    modifier = Modifier.fillMaxSize(),
+                    state = calendarState,
+                    monthHeader = { month ->
+                        MonthHeader(
+                            month = month,
+                            onPreviousClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
+                                }
+                            },
+                            onNextClick = {
+                                coroutineScope.launch {
+                                    calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
+                                }
+                            },
+                            viewMode = viewMode,
+                            onViewModeChange = onViewModeChange,
+                            scrollState = scrollState,
+                            onFilterClick = onFilterClick
+                        )
+                    },
+                    monthBody = { _, content ->
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFF5F7FB))
+                                .padding(horizontal = 2.dp)
+                        ) { content() }
+                    },
+                    dayContent = { day ->
+                        val entries = sampleEntries[day.date] ?: emptyList()
+                        DayCell(
+                            day = day,
+                            entries = entries,
+                            isSelected = day.date == selectedDate,
+                            onClick = {
+                                onDateSelected(day.date)
+                                showDialog = true
+                            },
+                            cellHeight = cellSize,
+                        )
+                    }
+                )
+            }
+            if (showDialog) {
+                val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+                DayDetailDialog(
+                    date = selectedDate,
+                    entries = entriesForDay,
+                    store = store,
+                    onTaskCreated = onTaskCreated,
+                    onDismiss = { showDialog = false },
+                    onDeleted = onDeleted,
+                    onEdit = onEdit
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WeekHeader(
+    startDate: LocalDate,
+    endDate: LocalDate,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState,
+    onFilterClick: () -> Unit
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    val title = if (startDate.month == endDate.month) {
+        "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${monthNames[startDate.month.ordinal]} ${startDate.year}"
+    } else {
+        "${startDate.dayOfMonth} ${monthNames[startDate.month.ordinal]} - " +
+                "${endDate.dayOfMonth} ${monthNames[endDate.month.ordinal]} ${endDate.year}"
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        var expandLegend by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            Button(onClick = { expandLegend = true }) {
+                Text(text = "Leyenda")
+            }
+            LaunchedEffect(scrollState.value) {
+                if (expandLegend) expandLegend = false
+            }
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Importante" to Color.Red,
+                    "Info" to Color.Blue,
+                    "OK" to Color.Green
+                )
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(16.dp).background(color))
+                                Spacer(Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        },
+                        onClick = {}
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Semana anterior")
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Semana siguiente")
+            }
+        }
+
+        var expanded by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onFilterClick) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtrar tareas",
+                        tint = Color.Gray
+                    )
+                }
+                Box {
+                    Button(onClick = { expanded = true }) {
+                        Text(text = viewMode.name)
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            DropdownMenuItem(
+                                text = { Text(mode.name) },
+                                onClick = {
+                                    onViewModeChange(mode)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YearView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onNavigate: (Screen) -> Unit,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage,
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentYear = remember { Year.now() }
+    var visibleYear by remember { mutableStateOf(currentYear) }
+    val startYear = remember(visibleYear) { visibleYear }
+    val endYear = remember(visibleYear) { visibleYear }
+
+    val yearState = rememberYearCalendarState(
+        startYear = startYear,
+        endYear = endYear,
+        firstVisibleYear = visibleYear,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfGrid
+    )
+
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogDate by remember { mutableStateOf(selectedDate) }
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val monthColumns = when {
+            maxWidth >= 900.dp -> 4
+            maxWidth >= 600.dp -> 3
+            else -> 2
+        }
+
+        VerticalYearCalendar(
+            modifier = Modifier.fillMaxSize(),
+            state = yearState,
+            monthColumns = monthColumns,
+            yearHeader = { year ->
+                YearHeader(
+                    year = year,
+                    yearState = yearState,
+                    viewMode = viewMode,
+                    onViewModeChange = onViewModeChange,
+                    onPreviousYear = { visibleYear = visibleYear.minusYears(1) },
+                    onNextYear = { visibleYear = visibleYear.plusYears(1) },
+                    onFilterClick = onFilterClick
+                )
+            },
+            monthHeader = { month ->
+                YearMonthHeader(month = month)
+            },
+            monthBody = { _, content ->
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, Color.Black)
+                        .background(Color(0xFFF5F7FB))
+                        .padding(horizontal = 1.dp)
+                ) { content() }
+            },
+            dayContent = { day ->
+                val entries = sampleEntries[day.date] ?: emptyList()
+                YearDayCell(
+                    day = day,
+                    entries = entries,
+                    isSelected = day.date == selectedDate,
+                    today = today,
+                    onClick = {
+                        onDateSelected(day.date)
+                        dialogDate = day.date
+                        showDialog = true
+                    }
+                )
+            }
+        )
+
+        if (showDialog) {
+            val entriesForDay = sampleEntries[dialogDate] ?: emptyList()
+            DayDetailDialog(
+                date = dialogDate,
+                entries = entriesForDay,
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { showDialog = false },
+                onDeleted = onDeleted,
+                onEdit = onEdit
+            )
+        }
+    }
+}
+
+@Composable
+fun YearHeader(
+    year: CalendarYear,
+    yearState: YearCalendarState,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    onPreviousYear: () -> Unit,
+    onNextYear: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(yearState.isScrollInProgress) {
+        if (yearState.isScrollInProgress) expanded = false
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onPreviousYear) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
+            }
+            Text(
+                text = year.year.value.toString(),
+                fontWeight = FontWeight.Bold,
+                fontSize = 26.sp,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            IconButton(onClick = onNextYear) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onFilterClick) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "Filtrar tareas",
+                    tint = Color.Gray
+                )
+            }
+
+            Box(contentAlignment = Alignment.CenterEnd) {
+                Button(onClick = { expanded = true }) {
+                    Text(text = viewMode.name)
+                }
+                if (expanded) {
+                    Popup(
+                        alignment = Alignment.TopEnd,
+                        offset = IntOffset(10, 60),
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(150.dp)
+                                .wrapContentHeight()
+                                .background(Color.White, RoundedCornerShape(8.dp))
+                                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                                .padding(4.dp)
+                        ) {
+                            CalendarViewMode.entries.forEach { mode ->
+                                Text(
+                                    text = mode.name,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onViewModeChange(mode)
+                                            expanded = false
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YearMonthHeader(month: CalendarMonth) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        Text(
+            text = monthNames[month.yearMonth.month.ordinal],
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
+        )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+                Text(
+                    text = day,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 10.sp,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun YearDayCell(
+    day: CalendarDay,
+    entries: List<SampleEntry>,
+    isSelected: Boolean,
+    today: LocalDate,
+    onClick: () -> Unit
+) {
+    val dayUrgencyColor by remember {
+        derivedStateOf {
+                urgencyColorFromEntries(entries)
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .padding(1.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
+            .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                text = day.date.dayOfMonth.toString(),
+                color = when {
+                    isSelected -> Color.White
+                    day.date == today -> Color(0xFF4F6EF7)
+                    day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                    else -> Color.Unspecified
+                },
+                fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 12.sp,
+                lineHeight = 10.sp
+            )
+            if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
+                Box(
+                    modifier = Modifier
+                        .size(25.dp)
+                        .background(
+                            color = dayUrgencyColor,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = entries.size.toString(),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val HOUR_HEIGHT = 64.dp
+private val TIME_COL_W = 52.dp
+private val START_HOUR = 0
+private val END_HOUR = 24
+
+@Composable
+fun WeekEventChip(
+    entry: SampleEntry,
+    startHour: Float,
+    endHour: Float,
+    hourHeight: Dp,
+    onClick: () -> Unit = {}
+) {
+    val topDp = ((startHour - START_HOUR) * hourHeight.value).dp
+    val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
+    val timeData = entry.task!!.time!!.mostrar().split(",")
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+            .offset(y = topDp)
+            .height(heightDp)
+            .clip(RoundedCornerShape(5.dp))
+            .background(entry.color.copy(alpha = 0.13f))
+            .border(
+                width = 2.5.dp,
+                color = entry.color,
+                shape = RoundedCornerShape(topStart = 5.dp, bottomStart = 5.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 5.dp, vertical = 3.dp)
+    ) {
+        Column {
+            Text(
+                text = entry.title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = entry.color,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Desde: ${timeData[0]} - ${timeData[1]}\n" +
+                        "Hasta: ${timeData[2]} - ${timeData[3]}",
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                color = entry.color.copy(alpha = 0.8f),
+                maxLines = 8
+            )
+        }
+    }
+}
+
+@Composable
+fun WeekDayColumn(
+    date: LocalDate,
+    entries: List<SampleEntry>,
+    isToday: Boolean,
+    isSelected: Boolean,
+    hourHeight: Dp,
+    onEntryClick: (SampleEntry) -> Unit
+) {
+    val totalHours = END_HOUR - START_HOUR
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+            .background(Color.White)
+    ) {
+        for (h in 0 until totalHours) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.65.dp)
+                    .offset(y = (h * hourHeight.value).dp)
+                    .background(Color.Black.copy(alpha = 0.2f))
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .offset(y = (h * hourHeight.value + hourHeight.value / 2).dp)
+                    .background(Color.Black.copy(alpha = 0.1f))
+            )
+        }
+
+        entries.forEach { entry ->
+            val task = entry.task
+            if (task != null) {
+                val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val endDate = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+                var (startH, endH) = parseEntryTime(entry.time)
+
+                when (date) {
+                    startDate -> {
+                        endH = END_HOUR.toFloat()
+                    }
+
+                    endDate -> {
+                        startH = START_HOUR.toFloat()
+                    }
+
+                    else -> {
+                        startH = START_HOUR.toFloat()
+                        endH = END_HOUR.toFloat()
+                    }
+                }
+                WeekEventChip(
+                    entry = entry,
+                    startHour = startH,
+                    endHour = endH,
+                    hourHeight = hourHeight,
+                    onClick = { onEntryClick(entry) }
+                )
+            }
+        }
+
+        if (isToday) {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val nowFraction = now.hour + now.minute / 60f
+            if (nowFraction in START_HOUR.toFloat()..END_HOUR.toFloat()) {
+                val topDp = ((nowFraction - START_HOUR) * hourHeight.value).dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = topDp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .offset(x = (-4).dp, y = (-4).dp)
+                            .background(Color(0xFF4F6EF7), CircleShape)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(Color(0xFF4F6EF7))
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun parseEntryTime(time: String): Pair<Float, Float> {
+    return try {
+        val parts = time.split("·").map { it.trim() }
+        val start = parts[0].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
+        val end = if (parts.size > 1) parts[1].split(":").let { it[0].toFloat() + it[1].toFloat() / 60f }
+        else start + 0.5f
+        start to end
+    } catch (_: Exception) {
+        9f to 9.5f
+    }
+}
+
+@Composable
+fun WeekView(
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    store: Storage,
+    onNavigate: (Screen) -> Unit,
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    val currentDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val scrollState = rememberScrollState()
+    val totalHours = END_HOUR - START_HOUR
+    val totalHeightDp = HOUR_HEIGHT * totalHours
+    var weekOffset by remember { mutableStateOf(0) }
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+    var clickedDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    val weekStart = remember(weekOffset) {
+        val daysSinceMonday = currentDate.dayOfWeek.ordinal
+        currentDate
+            .minus(DatePeriod(days = daysSinceMonday))
+            .plus(DatePeriod(days = weekOffset * 7))
+    }
+    val weekDates = remember(weekStart) {
+        (0..6).map { weekStart.plus(DatePeriod(days = it)) }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        WeekHeader(
+            startDate = weekDates.first(),
+            endDate = weekDates.last(),
+            onPreviousClick = { weekOffset-- },
+            onNextClick = { weekOffset++ },
+            viewMode = viewMode,
+            onViewModeChange = onViewModeChange,
+            scrollState = scrollState,
+            onFilterClick = onFilterClick
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(start = TIME_COL_W)
+        ) {
+
+            val dayUrgencyColor = remember(weekOffset, sampleEntries.values.flatten().map { entry -> entry.title to entry.task?.priority }) {
+                weekDates.associateWith { date ->
+                    urgencyColorFromEntries(sampleEntries[date] ?: emptyList())
+                }
+            }
+
+            val dayLetters = listOf("L", "M", "X", "J", "V", "S", "D")
+            var urgencyColor: Color?;
+
+            weekDates.forEachIndexed { index, date ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = dayLetters[index],
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray
+                    )
+
+                    Box(
+                        modifier = Modifier.size(28.dp),  // tamaño fijo igual para todos los días
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Círculo azul de fondo solo si es hoy
+                        if (date == currentDate) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(Color(0xFF4F6EF7), CircleShape)
+                            )
+                        }
+
+                        Text(
+                            text = date.dayOfMonth.toString(),
+                            fontSize = 13.sp,
+                            fontWeight = when {
+                                date == currentDate -> FontWeight.Bold
+                                date == selectedDate -> FontWeight.Bold
+                                else -> FontWeight.Normal
+                            },
+                            color = when {
+                                date == currentDate -> Color.White
+                                date == selectedDate -> Color(0xFF4F6EF7)
+                                else -> Color.Black
+                            }
+                        )
+                    }
+
+                    urgencyColor = dayUrgencyColor[date]
+                    if (urgencyColor != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .background(dayUrgencyColor[date]!!)
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(TIME_COL_W)
+                    .height(totalHeightDp)
+                    .background(Color.White)
+            ) {
+                for (h in START_HOUR..END_HOUR) {
+                    val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
+                    Text(
+                        text = if (h < 10) "0$h:00" else "$h:00",
+                        fontSize = 9.sp,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .offset(y = topDp - 7.dp)
+                            .fillMaxWidth()
+                            .padding(end = 6.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(totalHeightDp)
+            ) {
+                weekDates.forEach { date ->
+                    val entries = sampleEntries[date] ?: emptyList()
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .border(0.5.dp, Color.Black.copy(alpha = 0.15f))
+                            .clickable { clickedDate = date }
+                    ) {
+                        WeekDayColumn(
+                            date = date,
+                            entries = entries,
+                            isToday = date == currentDate,
+                            isSelected = date == selectedDate,
+                            hourHeight = HOUR_HEIGHT,
+                            onEntryClick = { entry ->
+                                onDateSelected(date)
+                                selectedEntry = entry
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        var showCreateTask by remember { mutableStateOf(false) }
+        var taskToEdit by remember { mutableStateOf<Task?>(null) }
+
+        selectedEntry?.let { entry ->
+            val task = entry.task
+            if (task != null) {
+                val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                val tagNames = task.tags.mapNotNull { id ->
+                    store.tags().associateBy { it.id }[id]?.name
+                }
+                AlertDialog(
+                    onDismissRequest = { selectedEntry = null },
+                    title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "Descripción: ${task.description}\n" +
+                                    "Tema: $topicName\n" +
+                                    "Tags: ${tagNames.joinToString(", ")}\n" +
+                                    "Fecha de comienzo: ${task.time.start}\n" +
+                                    "Fecha de final: ${task.time.end}\n" +
+                                    "Prioridad: ${task.priority}"
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                        Button(onClick = {
+                            val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
+                            selectedEntry = null
+                            onDeleted()
+                        }) { Text("Eliminar tarea") }
+                        Button(onClick = {
+                            taskToEdit = task
+                            showCreateTask = true
+                            selectedEntry = null
+                        }) { Text("Editar tarea") }
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
+        }
+
+        if (showCreateTask) {
+            Dialog(
+                onDismissRequest = { showCreateTask = false },
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = false,
+                    usePlatformDefaultWidth = false
+                )
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .fillMaxHeight(0.7f)
+                ) {
+                    CreateTask(
+                        store = store,
+                        onClose = {
+                            showCreateTask = false
+                            taskToEdit = null
+                            onEdit()
+                        },
+                        task = taskToEdit
+                    )
+                }
+            }
+        }
+
+        clickedDate?.let { date ->
+            val entriesForDay = sampleEntries[date] ?: emptyList()
+            DayDetailDialog(
+                date = date,
+                entries = entriesForDay,
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { clickedDate = null },
+                onDeleted = onDeleted,
+                onEdit = onEdit
+            )
+        }
+    }
+}
+
+@Composable
+fun DayView(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    store: Storage,
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit,
+    onFilterClick: () -> Unit
+) {
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val scrollState = rememberScrollState()
+    val totalHours = END_HOUR - START_HOUR
+    val totalHeightDp = HOUR_HEIGHT * totalHours
+    var selectedEntry by remember { mutableStateOf<SampleEntry?>(null) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+
+    var dayOffset by remember { mutableStateOf(0) }
+    val currentDay = remember(dayOffset) {
+        today.plus(DatePeriod(days = dayOffset))
+    }
+
+    LaunchedEffect(Unit) {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val nowFraction = (now.hour - START_HOUR).coerceAtLeast(0)
+        scrollState.animateScrollTo((nowFraction * HOUR_HEIGHT.value - 100).toInt().coerceAtLeast(0))
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        DayHeader(
+            date = currentDay,
+            onPreviousClick = { dayOffset-- },
+            onNextClick = { dayOffset++ },
+            viewMode = viewMode,
+            onViewModeChange = onViewModeChange,
+            scrollState = scrollState,
+            onFilterClick = onFilterClick
+        )
+
+        val allDayEntries = (sampleEntries[currentDay] ?: emptyList())
+            .filter { it.time == "Vence hoy" || it.time == "Sin hora" }
+
+        if (allDayEntries.isNotEmpty()) {
+            AllDayStrip(entries = allDayEntries)
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(TIME_COL_W)
+                    .height(totalHeightDp)
+            ) {
+                for (h in START_HOUR..END_HOUR) {
+                    val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
+                    Text(
+                        text = if (h < 10) "0$h:00" else "$h:00",
+                        fontSize = 9.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .offset(y = topDp - 7.dp)
+                            .fillMaxWidth()
+                            .padding(end = 6.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+
+            val timedEntries = (sampleEntries[currentDay] ?: emptyList())
+                .filter { it.time != "Vence hoy" && it.time != "Sin hora" }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(totalHeightDp)
+                    .border(0.5.dp, Color.Gray.copy(alpha = 0.15f))
+                    .clickable { showCreateDialog = true }
+            ) {
+                WeekDayColumn(
+                    date = currentDay,
+                    entries = timedEntries,
+                    isToday = currentDay == today,
+                    isSelected = true,
+                    hourHeight = HOUR_HEIGHT,
+                    onEntryClick = { entry -> selectedEntry = entry }
+                )
+            }
+        }
+
+        var showCreateTask by remember { mutableStateOf(false) }
+        var taskToEdit by remember { mutableStateOf<Task?>(null) }
+
+        selectedEntry?.let { entry ->
+            val task = entry.task
+            if (task != null) {
+                val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                val tagNames = task.tags.mapNotNull { id ->
+                    store.tags().associateBy { it.id }[id]?.name
+                }
+                AlertDialog(
+                    onDismissRequest = { selectedEntry = null },
+                    title = { Text(task.name, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "Descripción: ${task.description}\n" +
+                                    "Tema: $topicName\n" +
+                                    "Tags: ${tagNames.joinToString(", ")}\n" +
+                                    "Fecha de comienzo: ${task.time.start}\n" +
+                                    "Fecha de final: ${task.time.end}\n" +
+                                    "Prioridad: ${task.priority}"
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
+                        Button(onClick = {
+                            val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
+                            selectedEntry = null
+                            onDeleted()
+                        }) { Text("Eliminar tarea") }
+                        Button(onClick = {
+                            taskToEdit = task
+                            showCreateTask = true
+                            selectedEntry = null
+                        }) { Text("Editar tarea") }
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
+        }
+
+        if (showCreateTask) {
+            Dialog(
+                onDismissRequest = { showCreateTask = false },
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = false,
+                    usePlatformDefaultWidth = false
+                )
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .fillMaxHeight(0.7f)
+                ) {
+                    CreateTask(
+                        store = store,
+                        onClose = {
+                            showCreateTask = false
+                            taskToEdit = null
+                            onEdit()
+                        },
+                        task = taskToEdit
+                    )
+                }
+            }
+        }
+
+        if (showCreateDialog) {
+            DayDetailDialog(
+                date = currentDay,
+                entries = sampleEntries[currentDay] ?: emptyList(),
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { showCreateDialog = false },
+                onDeleted = onDeleted,
+                onEdit = onEdit
+            )
+        }
+    }
+}
+
+@Composable
+fun AllDayStrip(entries: List<SampleEntry>) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF5F7FB))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Todo el día",
+            fontSize = 10.sp,
+            color = Color.Gray,
+            modifier = Modifier.width(TIME_COL_W - 8.dp),
+            textAlign = TextAlign.End
+        )
+        entries.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(entry.color.copy(alpha = 0.15f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(entry.color, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = entry.title, fontSize = 11.sp, color = entry.color)
+            }
+        }
+    }
+}
+
+@Composable
+fun DayHeader(
+    date: LocalDate,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    viewMode: CalendarViewMode,
+    onViewModeChange: (CalendarViewMode) -> Unit,
+    scrollState: ScrollState,
+    onFilterClick: () -> Unit
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+    val dayNames = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+    val title = "${dayNames[date.dayOfWeek.ordinal]} ${date.dayOfMonth} de ${monthNames[date.month.ordinal]} ${date.year}"
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        var expandLegend by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f)) {
+            Button(onClick = { expandLegend = true }) {
+                Text(text = "Leyenda")
+            }
+            LaunchedEffect(scrollState.value) {
+                if (expandLegend) expandLegend = false
+            }
+            DropdownMenu(
+                expanded = expandLegend,
+                onDismissRequest = { expandLegend = false },
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                val legendItems = listOf(
+                    "Importante" to Color.Red,
+                    "Info" to Color.Blue,
+                    "OK" to Color.Green
+                )
+                legendItems.forEach { (text, color) ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(16.dp).background(color))
+                                Spacer(Modifier.width(8.dp))
+                                Text(text)
+                            }
+                        },
+                        onClick = {}
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Día anterior")
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Día siguiente")
+            }
+        }
+
+        var expanded by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopEnd) {
+            LaunchedEffect(scrollState.value) {
+                if (expanded) expanded = false
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onFilterClick) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtrar tareas",
+                        tint = Color.Gray
+                    )
+                }
+                Box {
+                    Button(onClick = { expanded = true }) {
+                        Text(text = viewMode.name)
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
+                    ) {
+                        CalendarViewMode.entries.forEach { mode ->
+                            DropdownMenuItem(
+                                text = { Text(mode.name) },
+                                onClick = {
+                                    onViewModeChange(mode)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── HomeCalendar ──────────────────────────────────────────────────────────────
+
+@Composable
+fun HomeCalendar(
+    sampleEntries: Map<LocalDate, List<SampleEntry>>,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onNavigate: (Screen) -> Unit,
+    store: Storage,
+    onTaskCreated: () -> Unit,
+    onDeleted: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = today.yearMonth
+
+    val coroutineScope = rememberCoroutineScope()
+    val startMonth = remember { currentMonth.minusMonths(12) }
+    val endMonth = remember { currentMonth.plusMonths(12) }
+
+    val calendarState = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfRow
+    )
+
+    var weeks by remember { mutableStateOf(calendarState.firstVisibleMonth.weekDays.size) }
+
+    LaunchedEffect(calendarState) {
+        snapshotFlow { calendarState.firstVisibleMonth }
+            .collect { month -> weeks = month.weekDays.size }
+    }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    val dayUrgencyColor by remember {
+        derivedStateOf {
+            sampleEntries.mapValues { (_, entries) ->
+                urgencyColorFromEntries(entries)
+            }
+        }
+    }
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(8.dp)
+    ) {
+        val headerHeight = 80.dp
+        val cellHeight = (maxHeight - headerHeight) / weeks
+        Column {
+            HorizontalCalendar(
+                modifier = Modifier.fillMaxSize(),
+                state = calendarState,
+                monthHeader = { month ->
+                    miniCalendarHeader(
+                        month = month,
+                        onPreviousClick = {
+                            coroutineScope.launch {
+                                calendarState.animateScrollToMonth(month.yearMonth.minusMonths(1))
+                            }
+                        },
+                        onNextClick = {
+                            coroutineScope.launch {
+                                calendarState.animateScrollToMonth(month.yearMonth.plusMonths(1))
+                            }
+                        }
+                    )
+                },
+                dayContent = { day ->
+                    val isSelected = day.date == selectedDate
+                    val entries = sampleEntries[day.date] ?: emptyList()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(cellHeight)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                when {
+                                    day.date == selectedDate -> Color(0xFF4F6EF7)
+                                    day.date == today -> Color(0xFF4F6EF7).copy(alpha = 0.15f)
+                                    else -> Color.Transparent
+                                }
+                            )
+                            .clickable(enabled = day.position == DayPosition.MonthDate) {
+                                onDateSelected(day.date)
+                                showDialog = true
+                            },
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = day.date.dayOfMonth.toString(),
+                                fontSize = 10.sp,
+                                color = when {
+                                    day.date == selectedDate -> Color.White
+                                    day.date == today -> Color(0xFF4F6EF7)
+                                    day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                                    else -> Color.Unspecified
+                                },
+                                fontWeight = if (day.date == today || day.date == selectedDate) FontWeight.Bold else FontWeight.Normal
+                            )
+                            if (entries.isNotEmpty() && day.position == DayPosition.MonthDate) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .background(
+                                            color = dayUrgencyColor[day.date]!!,
+                                            shape = CircleShape
+                                            ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = entries.size.toString(),
+                                        modifier = Modifier.offset(y = -2.dp),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        if (showDialog) {
+            val entriesForDay = sampleEntries[selectedDate] ?: emptyList()
+            DayDetailDialog(
+                date = selectedDate,
+                entries = entriesForDay,
+                store = store,
+                onTaskCreated = onTaskCreated,
+                onDismiss = { showDialog = false },
+                onDeleted = onDeleted,
+                onEdit = onEdit
+            )
+        }
+    }
+}
+
+// ── miniCalendarHeader ────────────────────────────────────────────────────────
+
+@Composable
+fun miniCalendarHeader(
+    month: CalendarMonth,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+) {
+    val monthNames = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "${monthNames[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = onPreviousClick) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            }
+            IconButton(onClick = onNextClick) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+            Text(
+                text = day,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = Color.Black
+            )
+        }
+    }
+}
+
+fun urgencyColorFromEntries(entries: List<SampleEntry>): Color {
+    val priorities = entries.mapNotNull { it.task?.priority }
+    if (priorities.isEmpty()) return Color.Transparent
+    val t = (priorities.average() / MAX).coerceIn(0.0, 1.0).toFloat()
+    return Color(red = t, green = 1f - t, blue = 0f, alpha = 0.6f)
+}

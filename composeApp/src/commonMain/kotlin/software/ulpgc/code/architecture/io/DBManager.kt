@@ -5,11 +5,11 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.Topic
 
 interface DBManager {
-    fun insert(objects: Sequence<DBObject>)
-    fun update(objects: Sequence<DBObject>)
-    fun delete(objects: Sequence<DBObject>)
+    fun insert(objects: Sequence<DBObject>): Result<Unit>
+    fun update(objects: Sequence<DBObject>): Result<Unit>
+    fun delete(objects: Sequence<DBObject>): Result<Unit>
 
-    fun topics(): List<Topic>
-    fun tags(): List<Tag>
-    fun tasks(): List<Task>
+    fun topics(): Result<List<Topic>>
+    fun tags(): Result<List<Tag>>
+    fun tasks(): Result<List<Task>>
 }
