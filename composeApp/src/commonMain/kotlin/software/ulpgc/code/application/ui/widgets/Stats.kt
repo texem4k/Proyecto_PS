@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.widgets
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,15 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.MarkTaskIcon
+import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.UncompleteTaskIcon
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.model.times.BoundedTime
-import software.ulpgc.code.architecture.model.times.EndBasedTime
-import software.ulpgc.code.architecture.model.times.StartBasedTime
-import kotlin.time.Clock
 
 @Composable
-fun menuTareas(store: Storage) {
+fun MenuTareas(store: Storage, onDeleted: () -> Unit) {
     var taskList by remember { mutableStateOf(store.tasks().toList()) }
     var showCompleted by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
@@ -110,6 +108,9 @@ fun menuTareas(store: Storage) {
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if(showCompleted) UncompleteTaskIcon(store, task, onDeleted = {
+                            onDeleted()
+                        })
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = task.name,
@@ -131,7 +132,6 @@ fun menuTareas(store: Storage) {
         if (selectedTask != null) {
             TaskInformationDialog(
                 selectedTask = selectedTask!!,
-                showActions = false,
                 store = store,
                 onDismiss = { selectedTask = null }
             )

@@ -10,6 +10,14 @@ import kotlinx.datetime.Instant as DatetimeInstant
 enum class TaskInterval {
     NONE, DAY, WEEK, MONTH, YEAR;
 
+    val label: String get() = when (this) {
+        NONE -> "Sin repetición"
+        DAY -> "Diario"
+        WEEK -> "Semanal"
+        MONTH -> "Mensual"
+        YEAR -> "Anual"
+    }
+
     operator fun plus(instant: Instant): Instant {
         val timezone = TimeZone.currentSystemDefault()
         return when (this) {

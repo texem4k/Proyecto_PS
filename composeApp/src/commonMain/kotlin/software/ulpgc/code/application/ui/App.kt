@@ -4,7 +4,10 @@ import TasksScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -110,7 +113,6 @@ fun App(
                                 startEditMode = false
                                 taskToEdit = null
                             },
-                            showResults = showResults,
                             onShowResults = { showResults = it },
                             onSettingsClick = { showThemeDialog = true }
                         )
@@ -126,7 +128,6 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TASK,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
@@ -141,7 +142,6 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TOPIC,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
@@ -156,15 +156,12 @@ fun App(
                             },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TAG,
-                            showResults = showResults,
                             onShowResults = { showResults = it }
                         )
 
                         Screen.DASHBOARD -> DashboardScreen(
                             onNavigate = { screen = it },
                             store!!,
-                            searchText,
-                            onSearchTextChange = { searchText = it },
                             onSettingsClick = { showThemeDialog = true }
                         )
 
@@ -186,7 +183,6 @@ fun App(
                     showResults = false
                     filters.hasFilter = false
                 },
-                onNavigate = { screen = it },
                 store = store!!,
                 value = searchText,
                 onSearchTextChange = { searchText = it },
@@ -198,5 +194,20 @@ fun App(
 
 @Composable
 fun StoreErrorDisplay(exception: AppException) {
-
+    AlertDialog(
+        onDismissRequest = {},
+        title = {
+            Text("Error")
+        },
+        text = {
+            Text(
+                exception.message ?: "Ha ocurrido un error inesperado"
+            )
+        },
+        confirmButton = {
+            Button(onClick = {}) {
+                Text("Aceptar")
+            }
+        }
+    )
 }

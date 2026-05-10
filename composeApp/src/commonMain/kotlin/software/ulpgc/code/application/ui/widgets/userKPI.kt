@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.widgets
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -83,7 +83,7 @@ fun rememberUserKpi(
 
 fun computeUserKpi(
     tasks: List<Task>,
-    now: Instant = kotlin.time.Clock.System.now(),
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): UserKpiState {
 

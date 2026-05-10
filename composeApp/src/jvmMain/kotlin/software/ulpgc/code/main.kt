@@ -8,6 +8,7 @@ import software.ulpgc.code.application.ui.App
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.logs.LogMaster
 
+
 fun main() = application {
     LogMaster.startLogger(JavaLogStorer())
     NotifierManager.initialize(
