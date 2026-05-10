@@ -31,13 +31,13 @@ private fun makeTask(store: Storage) = Task(
     time = makeTime(),
     interval = TaskInterval.NONE,
     tags = mutableSetOf()
-).also { store.addTasks(listOf(it)) }
+).also { store.addTask(listOf(it)) }
 
 private fun makeTopic(store: Storage) =
-    Topic("Original Topic", 123456).also { store.addTopics(listOf(it)) }
+    Topic("Original Topic", 123456).also { store.addTopic(listOf(it)) }
 
 private fun makeTag(store: Storage, topicId: Uuid = Uuid.random()) =
-    Tag("Original Tag", topicId).also { store.addTags(listOf(it)) }
+    Tag("Original Tag", topicId).also { store.addTag(listOf(it)) }
 
 class CreateTopicCommandTest {
 

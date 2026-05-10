@@ -7,6 +7,7 @@ import software.ulpgc.code.architecture.io.DBState
 data class Topic (
     var name: String,
     var color: Int,
+    var groupId: Uuid,
     var id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
 ) : DBObject {

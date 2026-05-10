@@ -49,7 +49,7 @@ fun App(
         store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
             TaskNotifier.setUpWith(store)
             TaskMonitor(store)
-            TaskOptimizer.setUp(store)
+            TaskOptimizer.setUpWith(store)
         })
     }
 

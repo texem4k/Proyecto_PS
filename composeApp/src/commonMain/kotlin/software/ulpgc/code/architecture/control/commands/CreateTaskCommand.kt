@@ -17,7 +17,7 @@ class CreateTaskCommand internal constructor (private val store: Storage, privat
     override fun execute(): List<Command> {
         LogMaster.log("CreateTaskCommand {$task}")
         task.dbState = DBState.NEW
-        store.addTasks(listOf(task))
+        store.addTask(task)
         return listOf(DeleteTaskCommand(store, task))
     }
 }

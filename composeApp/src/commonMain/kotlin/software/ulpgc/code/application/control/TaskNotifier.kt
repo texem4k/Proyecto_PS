@@ -7,6 +7,7 @@ import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
@@ -15,12 +16,12 @@ object TaskNotifier : Coroutinable {
     private enum class NotificationState {
         REMINDED, IMPORTANT, FINISHED
     }
-    private var store: Storage? = null
+    private var store: Store? = null
     private val notifier = NotifierManager.getLocalNotifier()
     private val notificationStates: MutableMap<Uuid, NotificationState> = mutableMapOf()
     private const val REMINDING_FACTOR = 3
 
-    fun setUpWith(store: Storage) {
+    fun setUpWith(store: Store) {
         this.store = store
         CoroutineManager.add(this)
     }
