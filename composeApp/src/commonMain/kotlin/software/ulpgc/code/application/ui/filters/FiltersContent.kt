@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.Priority
+import kotlin.collections.emptySet
 
 @Composable
 fun FilterContent(
@@ -31,10 +32,12 @@ fun FilterContent(
 
         Text("Filtros", style = MaterialTheme.typography.titleLarge)
 
-        Spacer(Modifier.height(16.dp))
+        /*
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Tópicos", modifier = Modifier.weight(1f))
+        }
 
         FilterChipGroup(
-            title = "Prioridad",
             options = Priority.entries.map { it.text },
             selectedOptions = tempFilters.priority,
             onSelectionChange = {
@@ -42,14 +45,23 @@ fun FilterContent(
             }
         )
 
+         */
+        FilterPanel(
+            type = "Prioridad",
+            filters = tempFilters,
+            options = Priority.entries.map { it.text },
+            selected = tempFilters.priority,
+            onFilterChange = { tempFilters = it }
+        )
+
         Spacer(Modifier.height(16.dp))
 
+        /*
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Tópicos", modifier = Modifier.weight(1f))
         }
 
         FilterChipGroup(
-            title = "",
             options = store.topics().toList().map { it.name },
             selectedOptions = tempFilters.topics,
             onSelectionChange = {
@@ -57,20 +69,39 @@ fun FilterContent(
             }
         )
 
+         */
+
+        FilterPanel(
+            type = "Tópicos",
+            filters = tempFilters,
+            options = store.topics().toList().map { it.name },
+            selected = tempFilters.topics,
+            onFilterChange = { tempFilters = it }
+        )
+
         Spacer(Modifier.height(16.dp))
 
+        FilterPanel(
+            type = "Tags",
+            filters = tempFilters,
+            options = store.tags().toList().map { it.name },
+            selected = tempFilters.tags,
+            onFilterChange = { tempFilters = it }
+        )
+        /*
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Tags", modifier = Modifier.weight(1f))
         }
 
         FilterChipGroup(
-            title = "",
             options = store.tags().toList().map { it.name },
             selectedOptions = tempFilters.tags,
             onSelectionChange = {
                 tempFilters = tempFilters.copy(tags = it)
             }
         )
+
+*/
 
         Spacer(Modifier.height(24.dp))
 
@@ -88,4 +119,32 @@ fun FilterContent(
             Text("Aplicar filtros")
         }
     }
+}
+
+
+@Composable
+fun FilterPanel(
+    type: String,
+    filters: TaskFilters,
+    options: List<String>,
+    selected: Set<String>,
+    onFilterChange: (TaskFilters) -> Unit  // ← callback al padre
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(type, modifier = Modifier.weight(1f))
+    }
+
+    FilterChipGroup(
+        options = options,
+        selectedOptions = selected,
+        onSelectionChange = { newSelection ->
+            val updated = when (type) {
+                "Prioridad" -> filters.copy(priority = newSelection)
+                "Tópicos"   -> filters.copy(topics = newSelection)
+                "Tags"      -> filters.copy(tags = newSelection)
+                else        -> filters
+            }
+            onFilterChange(updated)
+        }
+    )
 }

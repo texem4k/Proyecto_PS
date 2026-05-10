@@ -14,12 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 data class SideBarItem(
-    val label: String,
     val icon: ImageVector,
     val screen: Screen,
+)
+
+private val topItems = listOf(
+    SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
+    SideBarItem(Icons.Default.Ballot, Screen.TASKS),
+    SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
 )
 
 @Composable
@@ -28,11 +32,6 @@ fun SideBar(
     selectedScreen: Screen,
     onSettingsClick: () -> Unit
 ) {
-    val topItems = listOf(
-        SideBarItem("", Icons.Default.CalendarToday, Screen.CALENDAR),
-        SideBarItem("", Icons.Default.Ballot, Screen.TASKS),
-        SideBarItem("", Icons.Default.BarChart, Screen.DASHBOARD),
-    )
 
     Column(
         modifier = Modifier
@@ -43,7 +42,7 @@ fun SideBar(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        val home = SideBarItem("", Icons.Default.Home, Screen.HOME)
+        val home = SideBarItem(Icons.Default.Home, Screen.HOME)
 
         SideBarNavItem(
             item = home,
@@ -65,7 +64,7 @@ fun SideBar(
         Spacer(modifier = Modifier.weight(1f))
 
         SideBarNavItem(
-            item = SideBarItem("", Icons.Default.Settings, Screen.SETTINGS),
+            item = SideBarItem(Icons.Default.Settings, Screen.SETTINGS),
             isSelected = false,
             onClick = onSettingsClick
         )
@@ -81,25 +80,19 @@ private fun SideBarNavItem(
     val bgColor = if (isSelected) Color(0xFF313244) else Color.Transparent
     val contentColor = if (isSelected) Color(0xFF89B4FA) else Color(0xFFCDD6F4)
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(bgColor, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = item.icon,
-            contentDescription = item.label,
+            contentDescription = item.screen.name,
             tint = contentColor,
             modifier = Modifier.size(48.dp)
-        )
-        Text(
-            text = item.label,
-            color = contentColor,
-            fontSize = 14.sp
         )
     }
 }

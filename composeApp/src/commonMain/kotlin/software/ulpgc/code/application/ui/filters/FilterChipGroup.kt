@@ -16,20 +16,11 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun FilterChipGroup(
-    title: String,
     options: List<String>,
     selectedOptions: Set<String>,
     onSelectionChange: (Set<String>) -> Unit
 ) {
     Column {
-
-        if (title.isNotEmpty()) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 100.dp),
