@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.FloatingActionButton
@@ -64,6 +65,12 @@ fun DialMenu(
             icon = Icons.Default.LocalOffer,
             label = "Nuevo tag",
             color = Color(0xFFD85A30),
+            onClick = onCreateTag
+        ),
+        DialMenuItem(
+            icon = Icons.Default.Group,
+            label = "Nuevo grupo",
+            color = Color(0xFFC8C804),
             onClick = onCreateTag
         ),
     )
@@ -121,7 +128,9 @@ private fun DialChildButton(
 ) {
     val angleDeg = when (index) {
         0 -> -180.0
-        1 -> -90.0
+        1 -> -45.0
+        2 -> 0.0
+        3 -> -135.0
         else -> 0.0
     }
     val angleRad = angleDeg * PI / 180.0

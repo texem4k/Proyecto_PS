@@ -14,6 +14,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -38,7 +43,7 @@ fun PickerField(
             value = value,
             onValueChange = {},
             readOnly = true,
-            enabled = false, // importante
+            enabled = false,
             label = { Text(label) },
             placeholder = { Text(placeholder) },
             trailingIcon = { Icon(icon, contentDescription = null) },
@@ -159,13 +164,15 @@ fun TimePickerField(
     }
 }
 
+/*
 @Composable
 fun TextFieldCustom(
     value: String,
     label: String,
     onValueChange: (String) -> Unit,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    placeholder: String? = null
+    placeholder: String? = null,
+    isPassword: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -180,6 +187,84 @@ fun TextFieldCustom(
     )
 }
 
+ */
+@Composable
+fun TextFieldCustom(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    placeholder: String? = null,
+    isPassword: Boolean = false,
+) {
+
+    var passwordVisible by remember {
+        mutableStateOf(false)
+    }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+
+        label = {
+            Text(label)
+        },
+
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+            .padding(bottom = 16.dp),
+
+        keyboardOptions =
+            if (isPassword) {
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Password
+                )
+            } else {
+                keyboardOptions
+            },
+
+        placeholder = placeholder?.let {
+            { Text(it) }
+        },
+
+        shape = RoundedCornerShape(32.dp),
+
+        visualTransformation =
+            if (isPassword && !passwordVisible) {
+                PasswordVisualTransformation()
+            } else {
+                VisualTransformation.None
+            },
+
+        trailingIcon = {
+
+            if (isPassword) {
+
+                IconButton(
+                    onClick = {
+                        passwordVisible = !passwordVisible
+                    }
+                ) {
+
+                    Icon(
+                        imageVector =
+                            if (passwordVisible) {
+                                Icons.Default.Visibility
+                            } else {
+                                Icons.Default.VisibilityOff
+                            },
+                        contentDescription =
+                            if (passwordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
+                    )
+                }
+            }
+        }
+    )
+}
 /*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -284,7 +369,6 @@ fun <T, K> DropdownCustom(
                 .joinToString(", ") { itemName(it) }
     }
 
-    // ... el resto del composable igual, solo cambia K por el tipo correcto
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
