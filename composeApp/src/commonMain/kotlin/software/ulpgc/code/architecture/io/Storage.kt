@@ -8,7 +8,6 @@ import software.ulpgc.code.architecture.model.User
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 
 interface Storage {
-
     fun currentGroup(): Group
     fun changeGroupTo(group: Group)
 

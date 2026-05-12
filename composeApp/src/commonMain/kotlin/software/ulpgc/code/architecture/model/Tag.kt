@@ -6,7 +6,7 @@ import kotlin.uuid.Uuid
 
 data class Tag(
     var name: String,
-    var topicId: Uuid,
+    val topicId: Uuid,
     val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
 ) : DBObject {
