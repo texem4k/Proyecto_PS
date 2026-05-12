@@ -66,7 +66,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.Views.YearView
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.model.tasks.MAX
-import kotlin.collections.mapValues
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,28 +97,7 @@ fun CalendarScreen(
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                //TODO PREGUNTAR SI ESTO YA ESTA RECOGIDO EN ALGUNA FUNCION
-                //setUndoRedo()
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when {
-                    event.isCtrlPressed && event.key == Key.Z -> {
-                        CommandLauncher.undo()
-                        version++
-                        true
-                    }
-                    event.isCtrlPressed && event.key == Key.Y -> {
-                        CommandLauncher.redo()
-                        version++
-                        true
-                    }
-                    else -> false
-                }
-            }
+        modifier = setUndoRedo(onDeleted, focusRequester)
     ) {
         SideBar(
             selectedScreen = Screen.CALENDAR,
@@ -206,56 +184,6 @@ fun CalendarScreen(
         }
     }
 }
-
-//TODO PREGUNTAR A TEXE Y ENRIQUE SI ESTO EXISTE
-//EXISTE CUANDO SE PUEDA CAMBIARLO POR TASK INFORMATION DIALOG
-/*@Composable
-fun TaskDetailDialog(
-    entry: SampleEntry,
-    store: Storage,
-    onDismiss: () -> Unit,
-    onDeleted: () -> Unit,
-    onEdit: (Task) -> Unit
-) {
-    val task = entry.task
-    if (task != null) {
-        val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
-        val tagNames = task.tags.mapNotNull { id ->
-            store.tags().associateBy { it.id }[id]?.name
-        }
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(task.name, fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    "Descripción: ${task.description}\n" +
-                            "Tema: $topicName\n" +
-                            "Tags: ${tagNames.joinToString(", ")}\n" +
-                            "Fecha de comienzo: ${task.time.start}\n" +
-                            "Fecha de final: ${task.time.end}\n" +
-                            "Prioridad: ${task.priority}"
-                )
-            },
-            confirmButton = {
-                Button(onClick = onDismiss) { Text("Cerrar") }
-                Button(onClick = {
-                    val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
-                    command
-                        .onSuccess { CommandLauncher.launch(it) }
-                        .onFailure { println("error: ${it.message}") }
-                    onDismiss()
-                    onDeleted()
-                }) { Text("Eliminar tarea") }
-                Button(onClick = {
-                    onEdit(task)
-                    onDismiss()
-                }) { Text("Editar tarea") }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-}*/
-
 @Composable
 fun DayEntriesPanel(
     date: LocalDate,
