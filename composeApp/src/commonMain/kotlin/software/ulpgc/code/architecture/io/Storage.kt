@@ -10,6 +10,7 @@ import software.ulpgc.code.architecture.model.tasks.CompletionStat
 interface Storage {
     fun currentGroup(): Group
     fun changeGroupTo(group: Group)
+    fun currentUser(): User
 
     fun topics(): Sequence<Topic>
     fun tags(): Sequence<Tag>

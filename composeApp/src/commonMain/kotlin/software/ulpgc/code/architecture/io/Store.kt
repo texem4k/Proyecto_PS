@@ -8,16 +8,22 @@ import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.uuid.Uuid
 
 class Store (private val manager: DBManager, private val onFailLoad: (AppException) -> Unit, private val afterLoad: (Store) -> Unit): Storage,
     Coroutinable {
 
-    private var currentGroup: Uuid = Uuid.parse("ROOTID") //Se le debe asignar la variable global del grupo que se esta viendo
+    private var currentGroup: Uuid = Uuid.parse("00000000-0000-0000-0000-000000000000")
+    private var currentUser: Uuid = Uuid.parse("00000000-0000-0000-0000-000000000000")
+
     private val topics: MutableSet<Topic> = mutableSetOf()
     private val tags: MutableSet<Tag> = mutableSetOf()
     private val tasks: MutableSet<Task> = mutableSetOf()
+    private val groups: MutableSet<Group> = mutableSetOf()
+    private val users: MutableSet<User> = mutableSetOf()
+    private val stats: MutableSet<CompletionStat> = mutableSetOf()
 
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
@@ -47,11 +53,29 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
         tasks.removeAll { it.isDeleted() }
     }
 
+    override fun currentGroup(): Group {
+        return this.groups().first { it.id == this.currentGroup}
+    }
+
+    override fun changeGroupTo(group: Group) {
+        this.currentGroup = group.id
+    }
+
+    override fun currentUser(): User {
+        return this.users.first { it.id == this.currentUser }
+    }
+
     override fun topics(): Sequence<Topic> = this.topics.asSequence().filterNot { it.isDeleted() }.filter { it.groupId == currentGroup }
 
     override fun tags(): Sequence<Tag> = this.tags.asSequence().filterNot { it.isDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
 
     override fun tasks(): Sequence<Task> = this.tasks.asSequence().filterNot { it.isDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
+
+    override fun groups(): Sequence<Group> = this.groups.asSequence().filterNot { it.isDeleted() }
+
+    override fun users(): Sequence<User> = this.users.asSequence().filterNot { it.isDeleted() }
+
+    override fun completions(): Sequence<CompletionStat> = this.stats.asSequence().filterNot { it.isDeleted() }
 
     override fun addTopic(topic: Topic) {
         this.topics.add(topic)
@@ -63,6 +87,18 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
 
     override fun addTask(task: Task) {
         this.tasks.add(task)
+    }
+
+    override fun addGroup(group: Group) {
+        this.groups.add(group)
+    }
+
+    override fun addUser(user: User) {
+        this.users.add(user)
+    }
+
+    override fun addCompletionStat(completionStat: CompletionStat) {
+        this.stats.add(completionStat)
     }
 
     override val delayMilis: Long = 60_000L
@@ -91,7 +127,7 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
         insertRequired(dbObjects().filter { it.isNew() })
     }
 
-    private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence()
+    private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence() + groups.asSequence() + users.asSequence() + stats.asSequence()
 
     override suspend fun onDispose() {
         execute()
