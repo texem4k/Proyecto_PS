@@ -93,13 +93,13 @@ CREATE TABLE TaskCompletion (
 
 -- Inserciones
 insertUser:
-INSERT OR IGNORE INTO User(id, name) VALUES ?;
+INSERT OR IGNORE INTO User VALUES (id = ?, name = ?);
 
 insertGroup:
-INSERT OR IGNORE INTO WorkGroup(id, name, description) VALUES ?;
+INSERT OR IGNORE INTO WorkGroup VALUES (id = ?, name = ?, description = ?);
 
 insertUserIntoGroup:
-INSERT OR IGNORE INTO WorkGroupUser(userId, groupId, privilege) VALUES ?;
+INSERT OR IGNORE INTO WorkGroupUser VALUES (userId = ?, groupId = ?, privilege = ?);
 
 insertUserForTask:
 INSERT OR IGNORE INTO AssignUserTask(taskId, userId, groupId)
@@ -108,10 +108,10 @@ INSERT OR IGNORE INTO AssignUserTask(taskId, userId, groupId)
     WHERE Task.id = :taskId;
 
 insertTopic:
-INSERT OR IGNORE INTO Topic(id, groupId, name, color) VALUES ?;
+INSERT OR IGNORE INTO Topic VALUES (id = ?, groupId = ?, name = ?, color = ?);
 
 insertTag:
-INSERT OR IGNORE INTO Tag(id, topicId, name) VALUES ?;
+INSERT OR IGNORE INTO Tag VALUES (id = ?, topicId = ?, name = ?);
 
 insertTask:
 INSERT OR IGNORE INTO Task(id, topicId, groupId, name, description, time, interval, priority, isCompleted)
@@ -126,7 +126,7 @@ INSERT OR IGNORE INTO TaskTag(taskId, tagId, topicId)
     WHERE Task.id = :taskId;
 
 insertTaskCompletion:
-INSERT OR IGNORE INTO TaskCompletion(taskId, date, completed) VALUES ?;
+INSERT OR IGNORE INTO TaskCompletion VALUES (taskId = ?, date = ?, completed = ?);
 
 -- Actualizaciones
 updateUser:

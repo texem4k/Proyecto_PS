@@ -1,20 +1,86 @@
 package software.ulpgc.code.application.io
 
+import software.ulpgc.code.application.io.adapters.EnumColumnAdapter
+import software.ulpgc.code.application.io.adapters.InstantColumnAdapter
+import software.ulpgc.code.application.io.adapters.StringColumnAdapter
+import software.ulpgc.code.application.io.adapters.TimeColumnAdapter
+import software.ulpgc.code.application.io.adapters.UuidColumnAdapter
 import software.ulpgc.code.architecture.control.exceptions.DBException
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
+import software.ulpgc.code.architecture.model.Group
+import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.tasks.Task
-import software.ulpgc.code.architecture.model.times.TimeFactory
 import software.ulpgc.code.architecture.model.Topic
-import software.ulpgc.code.architecture.model.tasks.TaskInterval
+import software.ulpgc.code.architecture.model.User
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.db.AppDatabase
-import kotlin.time.Instant
+import software.ulpgc.db.TaskCompletion
+import software.ulpgc.db.AssignUserTask as DBAssignUserTask
+import software.ulpgc.db.Tag as DBTag
+import software.ulpgc.db.Task as DBTask
+import software.ulpgc.db.TaskCompletion as DBTaskCompletion
+import software.ulpgc.db.TaskTag as DBTaskTag
+import software.ulpgc.db.Topic as DBTopic
+import software.ulpgc.db.User as DBUser
+import software.ulpgc.db.WorkGroup as DBWorkGroup
+import software.ulpgc.db.WorkGroupUser as DBWorkGroupUser
 import kotlin.uuid.Uuid
 
 class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val seedData: DBData) : DBManager {
-    private val database = AppDatabase(databaseDriverFactory.createDriver())
+    private val database = AppDatabase(
+        databaseDriverFactory.createDriver(),
+        AssignUserTaskAdapter = DBAssignUserTask.Adapter(
+            taskIdAdapter = UuidColumnAdapter,
+            userIdAdapter = UuidColumnAdapter,
+            groupIdAdapter = UuidColumnAdapter
+        ),
+        TagAdapter = DBTag.Adapter(
+            idAdapter = UuidColumnAdapter,
+            topicIdAdapter = UuidColumnAdapter,
+            nameAdapter = StringColumnAdapter
+        ),
+        TaskAdapter = DBTask.Adapter(
+            idAdapter = UuidColumnAdapter,
+            topicIdAdapter = UuidColumnAdapter,
+            groupIdAdapter = UuidColumnAdapter,
+            nameAdapter = StringColumnAdapter,
+            descriptionAdapter = StringColumnAdapter,
+            timeAdapter = TimeColumnAdapter,
+            intervalAdapter = EnumColumnAdapter(),
+            priorityAdapter = EnumColumnAdapter()
+        ),
+        TaskCompletionAdapter = DBTaskCompletion.Adapter(
+            taskIdAdapter = UuidColumnAdapter,
+            dateAdapter = InstantColumnAdapter
+        ),
+        TaskTagAdapter = DBTaskTag.Adapter(
+            taskIdAdapter = UuidColumnAdapter,
+            tagIdAdapter = UuidColumnAdapter,
+            topicIdAdapter = UuidColumnAdapter
+        ),
+        TopicAdapter = DBTopic.Adapter(
+            idAdapter = UuidColumnAdapter,
+            groupIdAdapter = UuidColumnAdapter,
+            nameAdapter = StringColumnAdapter
+        ),
+        UserAdapter = DBUser.Adapter(
+            idAdapter = UuidColumnAdapter,
+            nameAdapter = StringColumnAdapter
+        ),
+        WorkGroupAdapter = DBWorkGroup.Adapter(
+            idAdapter = UuidColumnAdapter,
+            nameAdapter = StringColumnAdapter,
+            descriptionAdapter = StringColumnAdapter
+        ),
+        WorkGroupUserAdapter = DBWorkGroupUser.Adapter(
+            userIdAdapter = UuidColumnAdapter,
+            groupIdAdapter = UuidColumnAdapter,
+            privilegeAdapter = EnumColumnAdapter()
+        )
+    )
     private val dbQuery = database.appDatabaseQueries
 
     init {
@@ -22,56 +88,76 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
     }
 
     fun fillTablesIfEmpty() {
-        if (dbQuery.countUsers().executeAsOne() != 0L) return
-        seedData.users.forEach { dbQuery.insertUser(it.id.toString(), it.name) }
+        if (dbQuery.getUsers().executeAsList().count() != 0) return
         insert(seedData.dbObjects()).getOrThrow()
     }
 
     override fun topics(): Result<List<Topic>> = runCatching {
-        dbQuery.getTopics { id, name, color ->
-            Topic(name, color.toInt(), Uuid.parse(id), DBState.DEFAULT)
+        dbQuery.getTopics { id: Uuid, groupId: Uuid, name: String, color: Long ->
+            Topic(name, color.toInt(), groupId, id, DBState.DEFAULT)
         }.executeAsList()
     }.mapDBException("Failed to fetch topics")
 
     override fun tags(): Result<List<Tag>> = runCatching {
-        dbQuery.getTags { id, name, topicId ->
-            Tag(name, Uuid.parse(topicId), Uuid.parse(id), DBState.DEFAULT)
+        dbQuery.getTags { id, topicId, name ->
+            Tag(name, topicId, id, DBState.DEFAULT)
         }.executeAsList()
     }.mapDBException("Failed to fetch tags")
 
     override fun tasks(): Result<List<Task>> = runCatching {
         val raws = dbQuery.getTasks().executeAsList()
         raws.map { raw ->
-            val time = dbQuery.getTimeFor(
-                raw.id
-            ) { id, _, type, start, end ->
-                TimeFactory().createTime(
-                    Instant.parse(start),
-                    Instant.parse(end),
-                    type.toInt(),
-                    Uuid.parse(id)
-                )
-            }.executeAsOne()
+            val tags = dbQuery.getTagsFor(raw.id) { _, tagId, _ ->
+                tagId
+            }.executeAsList().toMutableSet()
 
-            val tagList = dbQuery.getTagsFor(raw.id) { _, tagId ->
-                Uuid.parse(tagId)
-            }.executeAsList().toMutableList()
+            val users = dbQuery.getUsersFor(raw.id) { _, userId, _ ->
+                userId
+            }.executeAsList().toMutableSet()
 
             Task(
-                raw.priority.toInt(),
+                raw.topicId,
                 raw.name,
-                Uuid.parse(raw.userId),
                 raw.description,
-                Uuid.parse(raw.topicId),
-                time,
-                TaskInterval.entries[raw.interval.toInt()],
-                tagList.toMutableSet(),
+                raw.time,
+                raw.interval,
+                raw.priority,
+                tags,
+                users,
                 raw.isCompleted,
-                Uuid.parse(raw.id),
+                raw.id,
                 DBState.DEFAULT
             )
         }
     }.mapDBException("Failed to fetch tasks")
+
+    override fun groups(): Result<List<Group>> = runCatching {
+        val raws = dbQuery.getGroups().executeAsList()
+        raws.map { raw ->
+            val users = dbQuery.getUsersInGroups().executeAsList()
+                .asSequence().filter { it.groupId == raw.id }.associate{ it.userId to it.privilege }.toMutableMap()
+
+            Group(
+                raw.name,
+                raw.description,
+                users,
+                raw.id,
+                DBState.DEFAULT
+            )
+        }
+    }.mapDBException("Failed to fetch groups")
+
+    override fun users(): Result<List<User>> = runCatching {
+        dbQuery.getUsers { id, name ->
+            User(name, id, DBState.DEFAULT)
+        }.executeAsList()
+    }.mapDBException("Failed to fetch users")
+
+    override fun completionStats(): Result<List<CompletionStat>> = runCatching {
+        dbQuery.getTaskCompletions { taskId, date, completed ->
+            CompletionStat(taskId, completed, date, DBState.DEFAULT)
+        }.executeAsList()
+    }.mapDBException("Failed to fetch completion stats")
 
     override fun insert(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
@@ -81,11 +167,13 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
 
     private fun insertDBObject(obj: DBObject) {
         when (obj) {
+            is User -> TODO()
+            is Group -> TODO()
             is Topic -> dbQuery.insertTopic(obj.id.toString(), obj.name, obj.color.toLong())
             is Tag -> dbQuery.insertTag(obj.id.toString(), obj.name, obj.topicId.toString())
             is Task -> {
                 dbQuery.insertTask(
-                    obj.id.toString(), obj.name, obj.priority.toLong(), obj.userId.toString(),
+                    obj.id.toString(), obj.name, obj.priority.value , obj.users.forEach { it.toString() },
                     obj.description, obj.interval.ordinal.toLong(), obj.topicId.toString(),
                     obj.isCompleted
                 )
@@ -98,6 +186,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 )
                 obj.tags.forEach { tag -> dbQuery.insertTaskTag(obj.id.toString(), tag.toString()) }
             }
+            is CompletionStat -> TODO()
         }
     }
 
@@ -109,6 +198,8 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
 
     private fun updateDBObject(obj: DBObject) {
         when (obj) {
+            is User -> TODO()
+            is Group -> TODO()
             is Topic -> dbQuery.updateTopic(obj.name, obj.color.toLong(), obj.id.toString())
             is Tag -> dbQuery.updateTag(obj.name, obj.topicId.toString(), obj.id.toString())
             is Task -> {
@@ -131,6 +222,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 dbQuery.deleteTaskTagsForTask(obj.id.toString())
                 obj.tags.forEach { tag -> dbQuery.insertTaskTag(obj.id.toString(), tag.toString()) }
             }
+            is CompletionStat -> TODO()
         }
     }
 
@@ -142,9 +234,12 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
 
     private fun deleteDBObject(obj: DBObject) {
         when (obj) {
+            is User -> TODO()
+            is Group -> TODO()
             is Topic -> dbQuery.deleteTopic(obj.id.toString())
             is Tag -> dbQuery.deleteTag(obj.id.toString())
             is Task -> dbQuery.deleteTask(obj.id.toString())
+            is CompletionStat -> TODO()
         }
     }
 

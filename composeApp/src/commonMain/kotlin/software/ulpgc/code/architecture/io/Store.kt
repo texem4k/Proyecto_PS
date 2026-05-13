@@ -113,9 +113,12 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
 
     private fun loadDBData() {
         try {
+            manager.users().getOrThrow().forEach { addUser(it) }
+            manager.groups().getOrThrow().forEach { addGroup(it) }
             manager.topics().getOrThrow().forEach{ addTopic(it) }
             manager.tags().getOrThrow().forEach { addTag(it) }
             manager.tasks().getOrThrow().forEach { addTask(it) }
+            manager.completionStats().getOrThrow().forEach { addCompletionStat(it)}
         } catch (e: AppException) {
             onFailLoad(e)
         }
@@ -127,7 +130,7 @@ class Store (private val manager: DBManager, private val onFailLoad: (AppExcepti
         insertRequired(dbObjects().filter { it.isNew() })
     }
 
-    private fun dbObjects(): Sequence<DBObject> = topics.asSequence() + tags.asSequence() + tasks.asSequence() + groups.asSequence() + users.asSequence() + stats.asSequence()
+    private fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
     override suspend fun onDispose() {
         execute()
