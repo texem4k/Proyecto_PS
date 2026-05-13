@@ -10,7 +10,8 @@ enum class AppThemeType {
     GRAY,
     LAVANDA,
     BLUE,
-    TERRACOTA
+    TERRACOTA,
+    DARK
 }
 
 private val GreenColorScheme = lightColorScheme(
@@ -113,6 +114,40 @@ private val TerracotaColorScheme = lightColorScheme(
     onError = Color(0xFFFFFFFF),
 )
 
+private val DarkColorScheme = lightColorScheme(
+    primary = Color(0xFF1E1E1E),
+    onPrimary = Color(0xFFFFFFFF),
+
+    primaryContainer = Color(0xFF2C2C2C),
+    onPrimaryContainer = Color(0xFFEAEAEA),
+
+    secondary = Color(0xFF3A3A3A),
+    onSecondary = Color(0xFFFFFFFF),
+
+    secondaryContainer = Color(0xFF444444),
+    onSecondaryContainer = Color(0xFFEAEAEA),
+
+    tertiary = Color(0xFF5A5A5A),
+    onTertiary = Color(0xFFFFFFFF),
+
+    background = Color(0xFF121212),
+    onBackground = Color(0xFFEAEAEA),
+
+    surface = Color(0xFF1C1C1C),
+    onSurface = Color(0xFFEAEAEA),
+
+    surfaceVariant = Color(0xFF2A2A2A),
+    onSurfaceVariant = Color(0xFFBDBDBD),
+
+    inverseSurface = Color(0xFFEAEAEA),
+    inverseOnSurface = Color(0xFF121212),
+
+    outline = Color(0xFF666666),
+
+    error = Color(0xFFCF6679),
+    onError = Color(0xFF000000),
+)
+
 @Composable
 fun AppTheme(
     theme: AppThemeType,
@@ -124,6 +159,8 @@ fun AppTheme(
         AppThemeType.LAVANDA -> LavandaColorScheme
         AppThemeType.BLUE -> BlueColorScheme
         AppThemeType.TERRACOTA -> TerracotaColorScheme
+        AppThemeType.DARK -> DarkColorScheme
+
     }
 
     MaterialTheme(

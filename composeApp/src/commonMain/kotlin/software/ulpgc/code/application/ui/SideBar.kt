@@ -90,7 +90,7 @@ fun SideBar(
 
     }
     if(loginPushed) {
-        key(loginPushed) {  // 👈 Fuerza reinicialización del estado interno cada vez
+        key(loginPushed) {
             AuthFlow(
                 onDismiss  = { loginPushed = false }
             )
@@ -132,6 +132,7 @@ fun AppThemeType.previewColor(): Color {
         AppThemeType.LAVANDA -> Color(0xFF7C5CBF)
         AppThemeType.BLUE -> Color(0xFF1A6B8A)
         AppThemeType.TERRACOTA -> Color(0xFF8B4A2E)
+        AppThemeType.DARK -> Color(0xFF313244)
     }
 }
 
@@ -152,6 +153,8 @@ fun ThemeDialog(
                 ThemeButton(AppThemeType.LAVANDA, "Lavanda", current, onThemeSelected)
                 ThemeButton(AppThemeType.BLUE, "Azul", current, onThemeSelected)
                 ThemeButton(AppThemeType.TERRACOTA, "Terracota", current, onThemeSelected)
+                ThemeButton(AppThemeType.DARK, "Negro", current, onThemeSelected)
+
             }
         },
         confirmButton = {},

@@ -128,9 +128,9 @@ private fun DialChildButton(
 ) {
     val angleDeg = when (index) {
         0 -> -180.0
-        1 -> -45.0
+        1 -> -65.0
         2 -> 0.0
-        3 -> -135.0
+        3 -> -115.0
         else -> 0.0
     }
     val angleRad = angleDeg * PI / 180.0
