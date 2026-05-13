@@ -100,7 +100,6 @@ fun HomeScreen(
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
-    //val priorityTasks = remember(version) { TaskOptimizer.sortedTasks.toList() }
 
 
 
@@ -145,8 +144,12 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.Top,
 
                     ) {
-                    Text("Tareas Prioritarias", fontSize = 24.sp)
+                    Text(
+                        "Tareas Prioritarias",
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.onBackground)
                     Divider(
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .padding(top = 4.dp, bottom = 16.dp),

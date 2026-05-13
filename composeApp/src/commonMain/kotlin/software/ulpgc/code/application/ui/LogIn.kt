@@ -3,7 +3,9 @@ package software.ulpgc.code.application.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -16,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // Estados posibles de los diálogos
@@ -63,6 +66,9 @@ fun LoginDialog(
 ) {
     var email by remember { mutableStateOf("") }
     var pass  by remember { mutableStateOf("") }
+    var validEmail by remember { mutableStateOf(false) }
+    var validPass by remember { mutableStateOf(false) }
+    var touch by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -80,6 +86,10 @@ fun LoginDialog(
                     keyboardOptions = KeyboardOptions.Default,
                     isPassword    = false
                 )
+
+                if(!validEmail&&touch){
+                    Text("El formato del email no es válido", color = Color.Red)
+                }
                 TextFieldCustom(
                     value         = pass,
                     label         = "Contraseña",
@@ -87,16 +97,32 @@ fun LoginDialog(
                     keyboardOptions = KeyboardOptions.Default,
                     isPassword    = true
                 )
+                if(!validPass&&touch){
+                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red)
+                }
+                Spacer(Modifier.height(20.dp))
                 Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.")
             }
         },
         confirmButton = {
-            Button(onClick = { onLoginSuccess(email, pass) }) {
+            Button(onClick = {
+                touch=true
+                if(validateEmail(email)) {
+                    validEmail = true
+                }
+                if(validatePassword(pass)) {
+                    validPass = true
+                }
+                if(validEmail && validPass) {
+                    onLoginSuccess(email, pass)
+                }
+             })
+            {
                 Text("Iniciar sesión")
             }
         },
         dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.SpaceBetween) {
                 Button(onClick = onCreateAccount) { Text("Crear cuenta") }
                 Button(onClick = onDismiss)       { Text("Cancelar")     }
             }
@@ -113,7 +139,10 @@ fun RegisterDialog(
     var email by remember { mutableStateOf("") }
     var name  by remember { mutableStateOf("") }
     var pass  by remember { mutableStateOf("") }
-
+    var validEmail by remember { mutableStateOf(false) }
+    var validPass by remember { mutableStateOf(false) }
+    var validUser by remember { mutableStateOf(false) }
+    var touch by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title   = { Text("Crear cuenta") },
@@ -147,7 +176,23 @@ fun RegisterDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onRegisterSuccess(email, pass, name) }) {
+            Button(onClick = {
+                touch=true
+                if(validateEmail(email)) {
+                    validEmail = true
+                }
+                if(validatePassword(pass)) {
+                    validPass = true
+                }
+
+                if(validateUsername(name)) {
+                    validUser = true
+                }
+
+                if(validEmail&& validPass&&validUser) {
+                    onRegisterSuccess(email, pass, name) }
+                }
+            ){
                 Text("Crear cuenta")
             }
         },
@@ -159,4 +204,13 @@ fun RegisterDialog(
 
 fun validateEmail(email: String): Boolean {
     return "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex().matches(email)
+}
+
+fun validatePassword(pass: String): Boolean {
+    return "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}\$".toRegex().matches(pass)
+}
+
+fun validateUsername(user: String): Boolean {
+    //Logica de buscar nombres de usuario en base de datos
+    return !user.isEmpty()
 }

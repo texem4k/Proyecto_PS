@@ -23,6 +23,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -128,14 +129,15 @@ private fun NavigationSection(
         Text(
             text = title,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onPrimary,
             fontSize = 20.sp
         )
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(onClick = onPreviousClick) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = null)
+            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
         }
         IconButton(onClick = onNextClick) {
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
         }
     }
 }
@@ -159,8 +161,7 @@ private fun FilterAndViewMode(
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filtrar tareas",
-                    tint = Color.Gray
-                )
+                    tint = MaterialTheme.colorScheme.onPrimary)
             }
             Box {
                 Button(onClick = { expanded = true }) {
@@ -213,16 +214,17 @@ fun YearHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onPreviousYear) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior")
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior", tint = MaterialTheme.colorScheme.onPrimary)
                 }
                 Text(
                     text = year.year.value.toString(),
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 26.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
                 IconButton(onClick = onNextYear) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente")
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente", tint = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
