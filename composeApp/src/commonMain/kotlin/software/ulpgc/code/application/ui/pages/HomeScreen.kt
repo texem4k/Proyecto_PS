@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -56,15 +57,20 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.focus.onFocusChanged
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
+import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
+import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
+import kotlin.sequences.forEach
 
 data class DialMenuItem(
     val icon: ImageVector,

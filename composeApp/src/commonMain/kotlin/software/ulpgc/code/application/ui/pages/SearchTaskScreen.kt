@@ -71,7 +71,7 @@ fun SearchResultsDialog(
             filters.priority.forEach { f ->
                 priorityList.add(f)
                 val priority = Priority.entries.first { p -> p.text == f }
-                accumulated += store.tasks().filter { task -> priority.values.contains(task.priority) }
+                accumulated += store.tasks().filter { task -> priority.value == task.priority.value }
             }
 
             filters.tags.forEach { t ->

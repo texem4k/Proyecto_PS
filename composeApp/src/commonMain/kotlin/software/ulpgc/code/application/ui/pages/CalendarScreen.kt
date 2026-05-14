@@ -342,6 +342,6 @@ fun DayDetailDialog(
 fun urgencyColorFromEntries(entries: List<SampleEntry>): Color {
     val priorities = entries.mapNotNull { it.task?.priority }
     if (priorities.isEmpty()) return Color.Transparent
-    val t = (priorities.average() / MAX).coerceIn(0.0, 1.0).toFloat()
+    val t = (priorities.map{it.value}.average() / MAX).coerceIn(0.0, 1.0).toFloat()
     return Color(red = t, green = 1f - t, blue = 0f, alpha = 0.6f)
 }

@@ -88,7 +88,7 @@ fun CreateTopicDialog(
 fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
 
     val currentTopic = store.topics().find { it.name == topicName }
-    var chosenColor by remember { mutableStateOf<Color?>(Color(currentTopic?.color!!)) }
+    var chosenColor by remember { mutableStateOf(currentTopic?.color) }
 
     var topicData by remember(topicName) {
         mutableStateOf(ModifingForm().copy(name = topicName))

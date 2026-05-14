@@ -80,7 +80,7 @@ fun CreateTask(
     var mode by remember { mutableStateOf(CreateMode.DATES) }
 
     val action = if (task != null) "Editar" else "Crear"
-    val totalSteps = 3
+    val totalSteps = 4
 
     LaunchedEffect(task) {
         if (task != null) {

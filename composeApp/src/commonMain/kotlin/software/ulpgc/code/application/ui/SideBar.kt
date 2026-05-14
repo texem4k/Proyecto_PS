@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -44,10 +45,9 @@ fun SideBar(
     selectedScreen: Screen,
     onSettingsClick: () -> Unit
 ) {
-    var showPopup by remember {mutableStateOf(false)}
+    var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
-    val density = LocalDensity.current
-    var cardHeightPx = with(density) { 280.dp.toPx() }.toInt()
+    var cardHeight by remember { mutableStateOf(0) }
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -65,17 +65,17 @@ fun SideBar(
             onClick = { onNavigate(home.screen) }
         )
 
-        HorizontalDivider(modifier=Modifier.fillMaxWidth())
+        HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(32.dp))
 
         topItems.forEach { item ->
-            if(item.screen == Screen.SETTINGS) {
+            if (item.screen == Screen.SETTINGS) {
                 SideBarNavItem(
                     item = item,
                     isSelected = selectedScreen == item.screen,
                     onClick = onSettingsClick
                 )
-            } else{
+            } else {
                 SideBarNavItem(
                     item = item,
                     isSelected = selectedScreen == item.screen,
@@ -88,30 +88,60 @@ fun SideBar(
         Spacer(modifier = Modifier.weight(1f))
 
 
-        HorizontalDivider(modifier=Modifier.fillMaxWidth())
+        HorizontalDivider(modifier = Modifier.fillMaxWidth())
 
         SideBarNavItem(
             item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
             isSelected = selectedScreen == Screen.PROFILE,
-            onClick = {showPopup=true}
+            onClick = { showPopup = true }
         )
 
     }
-    if(showPopup) {
-        Popup(
-            alignment = Alignment.TopStart,
-            offset = IntOffset(
-                x = buttonBounds.size.width.toInt() + 8,
-                y = calculatePopupY(buttonBounds, cardHeightPx)  // 👈 dinámico
-            ),
-            onDismissRequest = { showPopup = false },
-            properties = PopupProperties(focusable = true)
-        ) {
-            UserMenuCard(
-                name = "Enrique Sosa",
-                role = "Invitado",
-                onDismiss = { showPopup = false },
+    Box(
+        modifier = Modifier.onGloballyPositioned { coordinates ->
+            val pos = coordinates.positionInWindow()
+            buttonBounds = Rect(
+                left = pos.x,
+                top = pos.y,
+                right = pos.x + coordinates.size.width,
+                bottom = pos.y + coordinates.size.height
             )
+        }
+    ) {
+        SideBarNavItem(
+            item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
+            isSelected = selectedScreen == Screen.PROFILE,
+            onClick = { showPopup = true }
+        )
+
+        if (showPopup) {
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(
+                    x = buttonBounds.right.toInt() + 8,
+                    y = if (cardHeight == 0) {
+                        // Primer frame: coloca arriba del botón como fallback
+                        buttonBounds.top.toInt()
+                    } else if (buttonBounds.top - cardHeight >= 0) {
+                        // Hay espacio arriba → sube el popup
+                        (buttonBounds.bottom - cardHeight).toInt()
+                    } else {
+                        // No hay espacio arriba → baja el popup
+                        buttonBounds.top.toInt()
+                    }
+                ),
+                onDismissRequest = { showPopup = false },
+                properties = PopupProperties(focusable = true)
+            ) {
+                UserMenuCard(
+                    modifier = Modifier.onGloballyPositioned {
+                        cardHeight = it.size.height
+                    },
+                    name = "Enrique Sosa",
+                    role = "Invitado",
+                    onDismiss = { showPopup = false }
+                )
+            }
         }
     }
 }
@@ -203,22 +233,5 @@ private fun ThemeButton(
         )
     ) {
         Text(text)
-    }
-}
-
-
-
-fun calculatePopupY(buttonBounds: Rect, cardHeightPx: Int): Int {
-    if (cardHeightPx == 0) return 0  // primer frame, aún no se ha medido
-
-    val spaceAbove = buttonBounds.top.toInt()
-    val screenHeight = (buttonBounds.top + buttonBounds.bottom).toInt() // aproximación
-
-    return if (spaceAbove >= cardHeightPx) {
-        // Hay espacio arriba → el popup sube
-        (buttonBounds.top - cardHeightPx).toInt()
-    } else {
-        // No hay espacio arriba → el popup baja
-        buttonBounds.bottom.toInt()
     }
 }

@@ -56,7 +56,7 @@ fun UpcomingTasksPanel(
     var selectedOption by remember { mutableStateOf<TopicOption?>(null) }
     var showDialog by remember { mutableStateOf(false) }
 
-    val cardColor = topic?.color?.let { Color(it).copy(alpha = 0.25f) } ?: MaterialTheme.colorScheme.surface
+    val cardColor = topic?.color?.copy(alpha = 0.25f) ?: MaterialTheme.colorScheme.surface
 
     Card(
         modifier = Modifier

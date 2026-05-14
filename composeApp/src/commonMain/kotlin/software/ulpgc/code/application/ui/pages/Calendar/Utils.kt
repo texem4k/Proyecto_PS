@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -220,7 +221,7 @@ fun getFilteredEntries(store: Storage, filters: TaskFilters): Map<LocalDate, Lis
         while (current <= endDate) {
             val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
             val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+            val topicColor = (topicsById[task.topicId]?.color?.toArgb() ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
 
             val entry = SampleEntry(
                 title = task.name,
@@ -252,7 +253,7 @@ fun getFilteredEntries(store: Storage, filters: TaskFilters): Map<LocalDate, Lis
             }
 
             val priorityOk = filters.priority.isEmpty() || filters.priority.any { selectedText ->
-                Priority.entries.firstOrNull { it.text == selectedText }?.values?.contains(task.priority) == true
+                Priority.entries.firstOrNull { it.text == selectedText }?.value == task.priority.value
             }
             val topicOk = filters.topics.isEmpty() || filters.topics.contains(topicName)
             val tagsOk = filters.tags.isEmpty() || filters.tags.any { selected -> tagNames.contains(selected) }
