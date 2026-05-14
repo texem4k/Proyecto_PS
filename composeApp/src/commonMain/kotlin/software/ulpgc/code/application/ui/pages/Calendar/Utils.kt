@@ -208,9 +208,9 @@ fun parseEntryTime(time: String): Pair<Float, Float> {
     }
 }
 
-fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
-    val topicsById = store.topics().associateBy { it.id }
-    val tasks = store.tasks()
+fun getFilteredEntries(filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
+    val topicsById = Store.topics().associateBy { it.id }
+    val tasks = Store.tasks()
     val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
 
     tasks.forEach { task ->
@@ -242,8 +242,8 @@ fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<
     return map.mapValues { (_, entries) ->
         entries.filter { entry ->
             val task = entry.task ?: return@filter false
-            val topicName = store.topics().find { it.id == task.topicId }?.name.orEmpty()
-            val tagNames = task.tags.mapNotNull { id -> store.tags().find { it.id == id }?.name }.toSet()
+            val topicName = Store.topics().find { it.id == task.topicId }?.name.orEmpty()
+            val tagNames = task.tags.mapNotNull { id -> Store.tags().find { it.id == id }?.name }.toSet()
             val statusOk = filters.status.isEmpty() || filters.status.any { selected ->
                 when (selected) {
                         "Completadas" -> task.isCompleted

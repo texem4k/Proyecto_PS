@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -52,25 +51,19 @@ import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.widgets.MenuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
-import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
-import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
-import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
-import kotlin.sequences.forEach
+import software.ulpgc.code.architecture.io.Store
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -84,7 +77,6 @@ data class DialMenuItem(
 @Composable
 fun HomeScreen(
     onNavigate: (Screen) -> Unit,
-    store: Storage,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onEdit: (Task) -> Unit = {},
@@ -106,7 +98,7 @@ fun HomeScreen(
 
 
     val sampleEntries = remember(version) {
-        getFilteredEntries(store, TaskFilters(true, setOf("No completadas")))
+        getFilteredEntries(TaskFilters(true, setOf("No completadas")))
     }
 
     val priorityTask = remember (version) { TaskOptimizer.sortedTasks.toList() }
@@ -190,7 +182,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
 
-                                    MarkTaskIcon(store, task, onDeleted = {
+                                    MarkTaskIcon(task, onDeleted = {
                                         onDeleted()
                                         version++
                                         focusRequester.requestFocus()
@@ -208,7 +200,7 @@ fun HomeScreen(
 
                                         Text(
                                             text = "${
-                                                store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                                                Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
                                             } $endDate $endHour",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -249,7 +241,6 @@ fun HomeScreen(
                             sampleEntries = sampleEntries,
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
-                            store = store,
                             onNavigate = onNavigate,
                             onTaskCreated = { version++ },
                             onDeleted = { version-- },
@@ -259,7 +250,6 @@ fun HomeScreen(
                 }
 
                 ShowNearAndCompleteTasks(
-                    store,
                     modifier = Modifier.weight(1f),
                     onDeleted = {
                         version++
@@ -274,7 +264,6 @@ fun HomeScreen(
     if (selectedTask != null) {
         TaskInformationDialog(
             selectedTask = selectedTask!!,
-            store = store,
             onDismiss = { selectedTask = null },
             onDeleted = {
                 version++
@@ -361,11 +350,11 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit, refreshFlag: Int = 0){
+fun ShowNearAndCompleteTasks(modifier: Modifier, onDeleted: () -> Unit, refreshFlag: Int = 0){
     Row(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        MenuTareas(store, onDeleted = onDeleted, refreshFlag)
+        MenuTareas(onDeleted = onDeleted, refreshFlag)
     }
 }

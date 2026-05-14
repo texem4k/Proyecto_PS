@@ -22,7 +22,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
-import kotlin.uuid.Uuid
 
 
 @Composable
@@ -164,30 +163,6 @@ fun TimePickerField(
     }
 }
 
-/*
-@Composable
-fun TextFieldCustom(
-    value: String,
-    label: String,
-    onValueChange: (String) -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    placeholder: String? = null,
-    isPassword: Boolean = false,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier
-            .fillMaxWidth(0.5f)
-            .padding(bottom = 16.dp),
-        keyboardOptions = keyboardOptions,
-        placeholder = placeholder?.let { { Text(it) } },
-        shape = RoundedCornerShape(32.dp)
-    )
-}
-
- */
 @Composable
 fun TextFieldCustom(
     value: String,

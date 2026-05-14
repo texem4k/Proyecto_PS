@@ -34,7 +34,6 @@ import software.ulpgc.code.application.ui.widgets.rememberUserKpi
 @Composable
 fun DashboardScreen(
     onNavigate: (Screen) -> Unit,
-    store: Store,
     onSettingsClick: () -> Unit = {}
 ) {
     Row(
@@ -79,11 +78,11 @@ fun DashboardScreen(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val kpi by rememberUserKpi(store = store)
+                        val kpi by rememberUserKpi()
                         KpiDashboard(kpi = kpi)
                     }
                 }
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {})
+                ShowNearAndCompleteTasks(modifier = Modifier.weight(1f), onDeleted = {})
             }
 
             Card(
@@ -96,7 +95,7 @@ fun DashboardScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                val tasks = remember(store) { store.tasks().toList() }
+                val tasks = remember() { Store.tasks().toList() }
 
                 Column(
                     modifier = Modifier

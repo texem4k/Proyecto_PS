@@ -40,7 +40,6 @@ enum class TopicOption(val label: String) {
 
 @Composable
 fun UpcomingTasksPanel(
-    store: Store,
     tareas: List<Task>? = null,
     title: String,
     onEdit: (Task) -> Unit = {},
@@ -48,8 +47,8 @@ fun UpcomingTasksPanel(
     screen: Screen,
     onRequestEditNavigation: (() -> Unit)? = null
 ) {
-    val tasks = tareas ?: store.tasks().toList()
-    val topic = store.topics().find { it.name == title }
+    val tasks = tareas ?: Store.tasks().toList()
+    val topic = Store.topics().find { it.name == title }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var expandDropdown by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf<TopicOption?>(null) }
@@ -111,11 +110,11 @@ fun UpcomingTasksPanel(
 
                     if (showDialog) {
                         when (selectedOption) {
-                            TopicOption.EDIT_TOPIC -> EditTopic(store, title, onDismiss = { showDialog = false }) { onDeleted() }
-                            TopicOption.DELETE_TOPIC -> DeleteTopic(store, title, onDismiss = { showDialog = false }) { onDeleted() }
-                            TopicOption.ADD_TAG -> CreateTagDialog(store, onClose = { showDialog = false }, title)
-                            TopicOption.REMOVE_TAG -> RemoveTag(store, onClose = { showDialog = false }, title)
-                            TopicOption.EDIT_TAG -> EditTag(store, onClose = { showDialog = false }, title)
+                            TopicOption.EDIT_TOPIC -> EditTopic(title, onDismiss = { showDialog = false }) { onDeleted() }
+                            TopicOption.DELETE_TOPIC -> DeleteTopic(title, onDismiss = { showDialog = false }) { onDeleted() }
+                            TopicOption.ADD_TAG -> CreateTagDialog(onClose = { showDialog = false }, title)
+                            TopicOption.REMOVE_TAG -> RemoveTag(onClose = { showDialog = false }, title)
+                            TopicOption.EDIT_TAG -> EditTag(onClose = { showDialog = false }, title)
                             null -> {}
                         }
                     }
@@ -140,7 +139,7 @@ fun UpcomingTasksPanel(
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        MarkTaskIcon(store, task, onDeleted = { onDeleted() })
+                        MarkTaskIcon(task, onDeleted = { onDeleted() })
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = task.name,
@@ -151,7 +150,7 @@ fun UpcomingTasksPanel(
                             val endHour = task.time.end.toFormattedHour(tz)
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "${store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
+                                text = "${Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -165,7 +164,6 @@ fun UpcomingTasksPanel(
         if (selectedTask != null) {
             TaskInformationDialog(
                 selectedTask = selectedTask!!,
-                store = store,
                 onDismiss = { selectedTask = null },
                 onEdit = { onEdit(it) },
                 onDeleted = { onDeleted(); selectedTask = null },
@@ -176,10 +174,10 @@ fun UpcomingTasksPanel(
 }
 
 @Composable
-fun MarkTaskIcon(store: Store, task: Task, onDeleted: () -> Unit) {
+fun MarkTaskIcon(task: Task, onDeleted: () -> Unit) {
     IconButton(
         onClick = {
-            val command = CommandBuilder(store)
+            val command = CommandBuilder()
                 .set("id", task.id.toString())
                 .build(CommandType.MARK_COMPLETE)
             command
@@ -199,10 +197,10 @@ fun MarkTaskIcon(store: Store, task: Task, onDeleted: () -> Unit) {
 }
 
 @Composable
-fun UncompleteTaskIcon(store: Store, task: Task, onDeleted: () -> Unit){
+fun UncompleteTaskIcon(task: Task, onDeleted: () -> Unit){
     IconButton(
         onClick = {
-            val command = CommandBuilder(store)
+            val command = CommandBuilder()
                 .set("id", task.id.toString())
                 .build(CommandType.UNMARK_COMPLETE)
             command

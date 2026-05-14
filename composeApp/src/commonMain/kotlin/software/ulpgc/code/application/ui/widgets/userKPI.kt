@@ -65,13 +65,12 @@ data class UserKpiState(
 
 @Composable
 fun rememberUserKpi(
-    store: Store,
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): State<UserKpiState> {
 
     return remember(timeZone) {
         derivedStateOf {
-            val tasks = store.tasks()
+            val tasks = Store.tasks()
             computeUserKpi(
                 tasks = tasks.toList(),
                 now = Clock.System.now(),

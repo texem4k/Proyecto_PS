@@ -42,7 +42,6 @@ import software.ulpgc.code.architecture.model.tasks.Task
 @Composable
 fun SearchResultsDialog(
     onDismiss: () -> Unit,
-    store: Store,
     value: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters
@@ -64,27 +63,27 @@ fun SearchResultsDialog(
 
             filters.topics.forEach { topicFilter ->
                 topicsList.add(topicFilter)
-                val topicId = store.topics().first { it.name == topicFilter }.id
-                accumulated += store.tasks().filter { it.topicId == topicId }
+                val topicId = Store.topics().first { it.name == topicFilter }.id
+                accumulated += Store.tasks().filter { it.topicId == topicId }
             }
 
             filters.priority.forEach { f ->
                 priorityList.add(f)
                 val priority = Priority.entries.first { p -> p.text == f }
-                accumulated += store.tasks().filter { task -> priority.value == task.priority.value }
+                accumulated += Store.tasks().filter { task -> priority.value == task.priority.value }
             }
 
             filters.tags.forEach { t ->
                 tagsList.add(t)
-                val tagId = store.tags().first { it.name == t }.id
-                accumulated += store.tasks().filter { task ->
+                val tagId = Store.tags().first { it.name == t }.id
+                accumulated += Store.tasks().filter { task ->
                     task.tags.any { it.toString() == tagId.toString() }
                 }
             }
 
             accumulated.toList()
         } else {
-            store.tasks().toList()
+            Store.tasks().toList()
                 .filter {
                     it.name.normalizeAccents()
                         .contains(value.normalizeAccents(), ignoreCase = true)
@@ -175,7 +174,6 @@ fun SearchResultsDialog(
                 if (search.isNotEmpty()) {
                     Box(modifier = Modifier.weight(2f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                         UpcomingTasksPanel(
-                            store = store,
                             tareas = search,
                             title = "Resultados (${search.size})",
                             screen = Screen.RESULTS,

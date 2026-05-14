@@ -70,7 +70,6 @@ fun HomeCalendar(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     onNavigate: (Screen) -> Unit,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -200,7 +199,6 @@ fun HomeCalendar(
             DayDetailDialog(
                 date = selectedDate,
                 entries = entriesForDay,
-                store = store,
                 onTaskCreated = onTaskCreated,
                 onDismiss = { showDialog = false },
                 onDeleted = onDeleted,

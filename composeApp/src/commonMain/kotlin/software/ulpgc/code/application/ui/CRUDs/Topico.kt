@@ -31,7 +31,6 @@ data class ModifingForm(
 )
 @Composable
 fun CreateTopicDialog(
-    store: Store,
     onClose: () -> Unit
 ) {
 
@@ -66,10 +65,10 @@ fun CreateTopicDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (store.topics().any { it.name == name }) {
+                if (Store.topics().any { it.name == name }) {
                     error = "Ya existe un tópico"
                 } else {
-                    val command = CommandBuilder(store).set("name", name).set("color", chosenColor.toArgb().toString()).build(CommandType.CREATE_TOPIC)
+                    val command = CommandBuilder().set("name", name).set("color", chosenColor.toArgb().toString()).build(CommandType.CREATE_TOPIC)
                     command.onSuccess{CommandLauncher.launch(it)}.onFailure { println("error: ${it.message}") }
                     onClose()
                 }
@@ -85,9 +84,9 @@ fun CreateTopicDialog(
 
 
 @Composable
-fun EditTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
+fun EditTopic(topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
 
-    val currentTopic = store.topics().find { it.name == topicName }
+    val currentTopic = Store.topics().find { it.name == topicName }
     var chosenColor by remember { mutableStateOf(currentTopic?.color) }
 
     var topicData by remember(topicName) {
@@ -121,7 +120,7 @@ fun EditTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted:
         },
         confirmButton = {
             Button(onClick = {
-                val exists = store.topics().any {
+                val exists = Store.topics().any {
                     it.name == topicData.name && it.id != currentTopic?.id
                 }
                 when {
@@ -132,7 +131,7 @@ fun EditTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted:
 
                     else -> {
 
-                        val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", chosenColor!!.toArgb().toString()).build(CommandType.UPDATE_TOPIC)
+                        val command = CommandBuilder().set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", chosenColor!!.toArgb().toString()).build(CommandType.UPDATE_TOPIC)
 
                         command
                             .onSuccess { CommandLauncher.launch(it) }
@@ -156,8 +155,8 @@ fun EditTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted:
 
 
 @Composable
-fun DeleteTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
-    val currentTopic = store.topics().find { it.name == topicName }
+fun DeleteTopic(topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
+    val currentTopic = Store.topics().find { it.name == topicName }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -169,7 +168,7 @@ fun DeleteTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDelete
         },
         confirmButton = {
             Button(onClick = {
-                val command = CommandBuilder(store).set("id", currentTopic?.id.toString()).build(CommandType.DELETE_TOPIC)
+                val command = CommandBuilder().set("id", currentTopic?.id.toString()).build(CommandType.DELETE_TOPIC)
                 command.onSuccess{CommandLauncher.launch(it)}.onFailure { println("error: ${it.message}") }
                 onDismiss()
                 onDeleted()

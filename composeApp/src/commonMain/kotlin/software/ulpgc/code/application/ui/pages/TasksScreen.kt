@@ -30,7 +30,6 @@ import software.ulpgc.code.architecture.model.tasks.Task
 @Composable
 fun TasksScreen(
     onNavigate: (Screen) -> Unit,
-    store: Store,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters,
@@ -128,7 +127,6 @@ fun TasksScreen(
                                 showFilters = false
                                 onShowResults(true)
                             },
-                            store = store,
                             onDismiss = { showFilters = false }
                         )
                     }
@@ -141,13 +139,13 @@ fun TasksScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    if (!store.tasks().any{t -> !t.isCompleted}) {
+                    if (!Store.tasks().any{t -> !t.isCompleted}) {
                         Text(
                             "No tienes ninguna tarea ahora mismo, ¡Puedes descansar un poco \uD83D\uDE09!",
                             fontSize = 18.sp
                         )
                     } else {
-                        var taskList by remember { mutableStateOf(store.tasks().toList()) }
+                        var taskList by remember { mutableStateOf(Store.tasks().toList()) }
                         val group = taskList.filter { !it.isCompleted }.groupBy { it.topicId }
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
@@ -158,10 +156,9 @@ fun TasksScreen(
                         ) {
                             items(group.entries.toList()) { (titulo, tareasGrupo) ->
                                 val topicName =
-                                    store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
+                                    Store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
 
                                 _root_ide_package_.software.ulpgc.code.application.ui.UpcomingTasksPanel(
-                                    store,
                                     tareasGrupo,
                                     topicName,
                                     onEdit = { task ->
@@ -169,7 +166,7 @@ fun TasksScreen(
                                         showEditTask = true
                                     },
                                     onDeleted = {
-                                        taskList = store.tasks().toList()
+                                        taskList = Store.tasks().toList()
                                         onDeleted()
                                     },
                                     screen = Screen.TASKS
@@ -206,7 +203,6 @@ fun TasksScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 CreateTask(
-                    store = store,
                     onClose = {
                         showCreateTaskcopy = false
                         onCreated()
@@ -235,7 +231,6 @@ fun TasksScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 CreateTask(
-                    store = store,
                     task = taskToEdit,
                     onClose = {
                         showEditTask = false
@@ -249,7 +244,6 @@ fun TasksScreen(
 
     if (showCreateTopic) {
         CreateTopicDialog(
-            store = store,
             onClose = {
                 showCreateTopic = false
                 onCreated()
@@ -259,7 +253,6 @@ fun TasksScreen(
 
     if (showCreateTag) {
         CreateTagDialog(
-            store = store,
             onClose = {
                 showCreateTag = false
                 onCreated()

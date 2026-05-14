@@ -86,8 +86,6 @@ fun SideBar(
         }
 
         Spacer(modifier = Modifier.weight(1f))
-
-
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
 
         SideBarNavItem(
@@ -95,7 +93,6 @@ fun SideBar(
             isSelected = selectedScreen == Screen.PROFILE,
             onClick = { showPopup = true }
         )
-
     }
     Box(
         modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -108,12 +105,6 @@ fun SideBar(
             )
         }
     ) {
-        SideBarNavItem(
-            item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
-            isSelected = selectedScreen == Screen.PROFILE,
-            onClick = { showPopup = true }
-        )
-
         if (showPopup) {
             Popup(
                 alignment = Alignment.TopStart,

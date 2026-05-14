@@ -36,10 +36,10 @@ import kotlinx.datetime.atStartOfDayIn
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlinx.datetime.Instant
+import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
 
 
@@ -66,7 +66,6 @@ enum class CreateMode {
 }
 @Composable
 fun CreateTask(
-    store: Storage,
     onClose: () -> Unit,
     task: Task? = null,
     initialDate: LocalDate? = null
@@ -78,9 +77,13 @@ fun CreateTask(
     var selectedPeriod by remember { mutableStateOf<TaskInterval?>(null) }
     var periodicEnabled by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(CreateMode.DATES) }
+    var totalSteps by remember { mutableStateOf(3) }
+
 
     val action = if (task != null) "Editar" else "Crear"
-    val totalSteps = 4
+    if (Store.currentUser().toString() != "root"){
+        totalSteps = 4
+    }
 
     LaunchedEffect(task) {
         if (task != null) {
@@ -156,7 +159,6 @@ fun CreateTask(
                     when (currentStep) {
                         0 -> StepBasicInfo(form = form, onFormChange = { form = it })
                         1 -> StepTopicsAndPeriod(
-                            store = store,
                             form = form,
                             onFormChange = { form = it },
                             periodicEnabled = periodicEnabled,
@@ -210,7 +212,7 @@ fun CreateTask(
                             formError = true
                             return@WizardNavigation
                         }
-                        val builder = CommandBuilder(store)
+                        val builder = CommandBuilder()
                             .set("priority", form.taskPriority)
                             .set("name", form.taskName)
                             .set("userId", "00000000-0000-0000-0000-000026033100")
@@ -281,8 +283,49 @@ private fun StepBasicInfo(form: FormState, onFormChange: (FormState) -> Unit) {
 }
 
 @Composable
+private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        StepLabel("Información básica")
+
+        TextFieldCustom(
+            value = form.taskName,
+            label = "* Nombre tarea",
+            onValueChange = { onFormChange(form.copy(taskName = it)) },
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TextFieldCustom(
+            value = form.taskDescription,
+            label = "Descripción",
+            onValueChange = { onFormChange(form.copy(taskDescription = it)) },
+            keyboardOptions = KeyboardOptions.Default
+        )
+
+        TextFieldCustom(
+            value = form.taskPriority,
+            label = "* Prioridad (1–10)",
+            placeholder = "1 - 10",
+            onValueChange = { newValue ->
+                val filtered = newValue.filter { it.isDigit() }.take(2)
+                val number = filtered.toIntOrNull()
+                if (filtered.isEmpty() || (number != null && number in 1..10)) {
+                    onFormChange(form.copy(taskPriority = filtered))
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+    }
+}
+
+
+@Composable
 private fun StepTopicsAndPeriod(
-    store: Storage,
     form: FormState,
     onFormChange: (FormState) -> Unit,
     periodicEnabled: Boolean,
@@ -301,7 +344,7 @@ private fun StepTopicsAndPeriod(
 
         DropdownCustom(
             section = "* Selecciona el tópico",
-            items = store.topics().toList(),
+            items = Store.topics().toList(),
             selection = DropdownSelection.Single(form.taskTopic),
             onItemSelected = { onFormChange(form.copy(taskTopic = it)) },
             itemId = { it.id },
@@ -310,7 +353,7 @@ private fun StepTopicsAndPeriod(
 
         DropdownCustom(
             section = "Selecciona los tags",
-            items = store.tags()
+            items = Store.tags()
                 .filter { form.taskTopic == null || it.topicId == form.taskTopic }
                 .toList(),
             selection = DropdownSelection.Multiple(form.taskTags),

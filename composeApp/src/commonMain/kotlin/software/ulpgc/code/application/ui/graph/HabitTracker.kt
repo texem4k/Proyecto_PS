@@ -44,7 +44,6 @@ fun HabitTrackerChart(
     }
 
     Column(modifier = modifier) {
-        // Toggle selector
         ModeToggle(
             currentMode = mode,
             onModeChange = { mode = it }
@@ -52,12 +51,10 @@ fun HabitTrackerChart(
 
         Spacer(Modifier.height(16.dp))
 
-        // Leyenda
         ChartLegend()
 
         Spacer(Modifier.height(8.dp))
 
-        // Gráfica
         TaskCompletionChart(stats = stats, isWeekly = mode == ChartMode.WEEKLY)
     }
 }
@@ -111,6 +108,5 @@ fun LegendItem(color: Color, label: String) {
     }
 }
 
-// Colores diferenciados
-val ProposedColor  = Color(0xFF5C6BC0)  // Azul/indigo — tareas propuestas
-val CompletedColor = Color(0xFF26A69A)  // Teal — tareas completadas
+val ProposedColor  = Color(0xFF5C6BC0)
+val CompletedColor = Color(0xFF26A69A)

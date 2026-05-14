@@ -41,7 +41,6 @@ import kotlin.time.Clock
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -71,7 +70,6 @@ import software.ulpgc.code.architecture.model.tasks.MAX
 @Composable
 fun CalendarScreen(
     onNavigate: (Screen) -> Unit,
-    store: Store,
     onSettingsClick: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -93,7 +91,7 @@ fun CalendarScreen(
     var filters by remember { mutableStateOf(TaskFilters(true, setOf("No completadas"))) }
 
     val filteredEntries = remember(version, filters) {
-        getFilteredEntries(store, filters)
+        getFilteredEntries(filters)
     }
 
     Row(
@@ -113,7 +111,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
@@ -127,7 +124,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
@@ -140,11 +136,10 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
-                    onFilterClick = { showFilters = true }
+                    onFilterClick = { showFilters = true },
                 )
 
                 CalendarViewMode.AÑO -> YearView(
@@ -153,7 +148,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
@@ -176,7 +170,6 @@ fun CalendarScreen(
                             )
                             showFilters = false
                         },
-                        store = store,
                         onDismiss = { showFilters = false }
                     )
                 }
@@ -188,7 +181,6 @@ fun CalendarScreen(
 fun DayEntriesPanel(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Store,
     modifier: Modifier = Modifier,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -231,7 +223,6 @@ fun DayEntriesPanel(
     selectedEntry?.task?.let { task ->
         TaskInformationDialog(
             selectedTask = task,
-            store = store,
             onDismiss = { selectedEntry = null },
             onEdit = { editedTask ->
                 taskToEdit = editedTask
@@ -261,7 +252,6 @@ fun DayEntriesPanel(
                     .fillMaxHeight(0.7f)
             ) {
                 CreateTask(
-                    store = store,
                     onClose = {
                         showCreateTask = false
                         taskToEdit = null
@@ -278,7 +268,6 @@ fun DayEntriesPanel(
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDismiss: () -> Unit,
     onDeleted: () -> Unit,
@@ -297,7 +286,7 @@ fun DayDetailDialog(
                 )
             },
             text = {
-                DayEntriesPanel(date = date, entries = entries, store = store, onDeleted = onDeleted, onEdit = onEdit)
+                DayEntriesPanel(date = date, entries = entries, onDeleted = onDeleted, onEdit = onEdit)
             },
             confirmButton = {
                 Row {
@@ -326,7 +315,6 @@ fun DayDetailDialog(
                     .fillMaxHeight(0.7f)
             ) {
                 CreateTask(
-                    store = store,
                     onClose = {
                         showCreateTask = false
                         onTaskCreated()
