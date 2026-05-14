@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -88,50 +89,49 @@ fun SideBar(
         Spacer(modifier = Modifier.weight(1f))
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
 
-        SideBarNavItem(
-            item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
-            isSelected = selectedScreen == Screen.PROFILE,
-            onClick = { showPopup = true }
-        )
-    }
-    Box(
-        modifier = Modifier.onGloballyPositioned { coordinates ->
-            val pos = coordinates.positionInWindow()
-            buttonBounds = Rect(
-                left = pos.x,
-                top = pos.y,
-                right = pos.x + coordinates.size.width,
-                bottom = pos.y + coordinates.size.height
-            )
-        }
-    ) {
-        if (showPopup) {
-            Popup(
-                alignment = Alignment.TopStart,
-                offset = IntOffset(
-                    x = buttonBounds.right.toInt() + 8,
-                    y = if (cardHeight == 0) {
-                        // Primer frame: coloca arriba del botón como fallback
-                        buttonBounds.top.toInt()
-                    } else if (buttonBounds.top - cardHeight >= 0) {
-                        // Hay espacio arriba → sube el popup
-                        (buttonBounds.bottom - cardHeight).toInt()
-                    } else {
-                        // No hay espacio arriba → baja el popup
-                        buttonBounds.top.toInt()
-                    }
-                ),
-                onDismissRequest = { showPopup = false },
-                properties = PopupProperties(focusable = true)
-            ) {
-                UserMenuCard(
-                    modifier = Modifier.onGloballyPositioned {
-                        cardHeight = it.size.height
-                    },
-                    name = "Enrique Sosa",
-                    role = "Invitado",
-                    onDismiss = { showPopup = false }
+        Box(
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                val pos = coordinates.positionInRoot()
+                buttonBounds = Rect(
+                    left = pos.x,
+                    top = pos.y,
+                    right = pos.x + coordinates.size.width,
+                    bottom = pos.y + coordinates.size.height
                 )
+            }
+        ) {
+            SideBarNavItem(
+                item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
+                isSelected = selectedScreen == Screen.PROFILE,
+                onClick = { showPopup = true }
+            )
+
+            if (showPopup) {
+
+                val density = LocalDensity.current
+                val offsetY = with(density) {
+                    (-cardHeight + 250.dp.toPx()).toInt()
+                }
+
+                Popup(
+                    alignment = Alignment.BottomStart,
+                    offset = IntOffset(
+                        x = buttonBounds.right.toInt() + 8,
+                        y = offsetY
+                    ),
+                    onDismissRequest = { showPopup = false },
+                    properties = PopupProperties(focusable = true)
+                ) {
+                    UserMenuCard(
+                        modifier = Modifier.onGloballyPositioned {
+                            cardHeight = it.size.height
+                            println("DEBUG cardHeight: $cardHeight")
+                        },
+                        name = "Enrique Sosa",
+                        role = "Invitado",
+                        onDismiss = { showPopup = false }
+                    )
+                }
             }
         }
     }
