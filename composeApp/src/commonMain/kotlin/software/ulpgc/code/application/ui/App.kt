@@ -75,7 +75,7 @@ fun App(
         ) {
             storeError?.let { error -> StoreErrorDisplay(error) }
             if (storeReady) {
-                key(refreshKey){
+
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
@@ -174,7 +174,7 @@ fun App(
 
                         else -> {}
                     }
-                }
+
             }
         }
 

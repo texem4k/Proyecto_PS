@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -57,18 +56,15 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
-import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
-import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
+import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
-import kotlin.sequences.forEach
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -104,11 +100,13 @@ fun HomeScreen(
 
 
     val sampleEntries = remember(version) {
-        getSamplesEntries(store)
+        getFilteredEntries(store, TaskFilters(true, setOf("No completadas")))
     }
 
+    val priorityTask = remember (version) { TaskOptimizer.sortedTasks.toList() }
+
     Box(
-        modifier = setUndoRedo(onDeleted, focusRequester)
+        modifier = setUndoRedo({ version++; onDeleted() } , focusRequester)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
@@ -164,7 +162,7 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (TaskOptimizer.sortedTasks.toList().isEmpty()) {
+                    if (priorityTask.isEmpty()) {
                         item {
                             Text(
                                 "No hay tareas prioritarias asignadas, ¡Disfruta del día \uD83D\uDE09!",
@@ -172,7 +170,7 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        items(TaskOptimizer.sortedTasks.toList()) { task ->
+                        items(priorityTask) { task ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -189,6 +187,7 @@ fun HomeScreen(
                                     MarkTaskIcon(store, task, onDeleted = {
                                         onDeleted()
                                         version++
+                                        focusRequester.requestFocus()
                                     })
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -253,9 +252,16 @@ fun HomeScreen(
                     }
                 }
 
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {
-                    onDeleted()
-                    version++})
+                ShowNearAndCompleteTasks(
+                    store,
+                    modifier = Modifier.weight(1f),
+                    onDeleted = {
+                        version++
+                        onDeleted()
+                        focusRequester.requestFocus()
+                    },
+                    refreshFlag = version
+                )
             }
         }
     }
@@ -294,37 +300,6 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
         )
     }
 }
-
-fun getSamplesEntries(store: Storage): MutableMap<LocalDate, MutableList<SampleEntry>> {
-    val topicsById = store.topics().associateBy { it.id }
-    val tasks = store.tasks()
-    val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
-
-    tasks.forEach { task ->
-        val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-        var current = startDate
-        while (current <= endDate) {
-            val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
-            val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
-
-            val entry = SampleEntry(
-                title = task.name,
-                time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
-                        "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                color = Color(topicColor),
-                task  = task
-            )
-
-            map.getOrPut(current) { mutableListOf() }.add(entry)
-            current = current.plus(1, DateTimeUnit.DAY)
-        }
-    }
-    return map
-}
-
 
 
 fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
@@ -380,11 +355,11 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit){
+fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit, refreshFlag: Int = 0){
     Row(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        MenuTareas(store, onDeleted = onDeleted)
+        MenuTareas(store, onDeleted = onDeleted, refreshFlag)
     }
 }
