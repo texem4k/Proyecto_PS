@@ -75,7 +75,7 @@ fun App(
         ) {
             storeError?.let { error -> StoreErrorDisplay(error) }
             if (storeReady) {
-                key(refreshKey) {
+
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
@@ -105,7 +105,7 @@ fun App(
                                 taskToEdit = task
                                 startEditMode = true
                                 screen = Screen.TASKS
-                            },
+                            } ,
                             onDeleted = { refreshKey++ },
                             onCreated = { refreshKey++ },
                             taskToEdit = if (startEditMode) taskToEdit else null,
@@ -174,7 +174,7 @@ fun App(
 
                         else -> {}
                     }
-                }
+
             }
         }
 
@@ -192,7 +192,6 @@ fun App(
         }
     }
 }
-
 
 @Composable
 fun StoreErrorDisplay(exception: AppException) {
