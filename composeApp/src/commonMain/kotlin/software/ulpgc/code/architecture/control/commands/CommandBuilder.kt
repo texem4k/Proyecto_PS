@@ -1,7 +1,9 @@
 package software.ulpgc.code.architecture.control.commands
 
+import androidx.compose.ui.graphics.Color
 import software.ulpgc.code.architecture.control.exceptions.CommandException
 import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -34,12 +36,12 @@ class CommandBuilder internal constructor (private val store: Storage) {
                 store,
                 priority().getOrThrow(),
                 name().getOrThrow(),
-                userId().getOrThrow(),
                 description().getOrThrow(),
                 topicId().getOrThrow(),
                 time().getOrThrow(),
                 interval().getOrThrow(),
-                tags().getOrThrow()
+                tags().getOrThrow(),
+                users().getOrThrow()
             )
             CommandType.UPDATE_TOPIC -> UpdateTopicCommand(
                 topic().getOrThrow(),
@@ -48,18 +50,17 @@ class CommandBuilder internal constructor (private val store: Storage) {
             )
             CommandType.UPDATE_TAG -> UpdateTagCommand(
                 tag().getOrThrow(),
-                name().getOrThrow(),
-                topicId().getOrThrow()
+                name().getOrThrow()
             )
             CommandType.UPDATE_TASK -> UpdateTaskCommand(
                 task().getOrThrow(),
                 priority().getOrThrow(),
                 name().getOrThrow(),
                 description().getOrThrow(),
-                topicId().getOrThrow(),
                 time().getOrThrow(),
                 interval().getOrThrow(),
-                tags().getOrThrow()
+                tags().getOrThrow(),
+                users().getOrThrow()
             )
             CommandType.DELETE_TOPIC -> DeleteTopicCommand(
                 store,
@@ -102,44 +103,48 @@ class CommandBuilder internal constructor (private val store: Storage) {
     }
 
     private fun interval(): Result<TaskInterval> = runCatching {
-        return getOrThrow("interval", { interval -> TaskInterval.valueOf(interval)})
+        return getOrThrow("interval") { interval -> TaskInterval.valueOf(interval) }
     }
 
     private fun time(): Result<Time> = runCatching {
-        return getOrThrow("time", { time -> TimeFactory().parse(time) })
+        return getOrThrow("time") { time -> TimeFactory().parse(time) }
     }
 
     private fun id(): Result<Uuid> = runCatching {
-        return getOrThrow("id", { id -> Uuid.parse(id)})
+        return getOrThrow("id") { id -> Uuid.parse(id) }
     }
 
     private fun topicId(): Result<Uuid> = runCatching {
-        return getOrThrow("topicId", { id -> Uuid.parse(id)})
+        return getOrThrow("topicId") { id -> Uuid.parse(id) }
     }
 
-    private fun userId(): Result<Uuid> = runCatching {
-        return getOrThrow("userId", { id -> Uuid.parse(id)})
+    private fun users(): Result<MutableSet<Uuid>> = runCatching {
+        return getOrThrow("users") { user ->
+            if (user == "") mutableSetOf(store.currentUser().id)
+            else user.split(", ").map { Uuid.parse(it) }.toMutableSet()
+        }
     }
 
     private fun name(): Result<String> = runCatching {
-        return getOrThrow("name", { name -> name})
+        return getOrThrow("name") { name -> name }
     }
 
     private fun description(): Result<String> = runCatching {
-        return getOrThrow("description", { description -> description})
+        return getOrThrow("description") { description -> description }
     }
 
     private fun tags(): Result<MutableSet<Uuid>> = runCatching {
-        return getOrThrow("tags", { tags ->
-            if(tags=="") mutableSetOf()
-            else tags.split(", ").map { Uuid.parse(it) }.toMutableSet()})
+        return getOrThrow("tags") { tags ->
+            if (tags == "") mutableSetOf()
+            else tags.split(", ").map { Uuid.parse(it) }.toMutableSet()
+        }
     }
 
-    private fun color(): Result<Int> = runCatching {
-        return getOrThrow("color", { color -> color.toInt()})
+    private fun color(): Result<Color> = runCatching {
+        return getOrThrow("color") { color -> Color(color.toInt()) }
     }
 
-    private fun priority(): Result<Int> = runCatching {
-        return getOrThrow("priority", { priority -> priority.toInt()})
+    private fun priority(): Result<Priority> = runCatching {
+        return getOrThrow("priority") { priority -> Priority.valueOf(priority) }
     }
 }
