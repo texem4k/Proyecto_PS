@@ -16,9 +16,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 
 data class SideBarItem(
     val icon: ImageVector,
@@ -38,8 +44,10 @@ fun SideBar(
     selectedScreen: Screen,
     onSettingsClick: () -> Unit
 ) {
-    var loginPushed by remember { mutableStateOf(false) }
-
+    var showPopup by remember {mutableStateOf(false)}
+    var buttonBounds by remember { mutableStateOf(Rect.Zero) }
+    val density = LocalDensity.current
+    var cardHeightPx = with(density) { 280.dp.toPx() }.toInt()
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -85,14 +93,24 @@ fun SideBar(
         SideBarNavItem(
             item = SideBarItem(Icons.Default.Person, Screen.PROFILE),
             isSelected = selectedScreen == Screen.PROFILE,
-            onClick = {loginPushed=true}
+            onClick = {showPopup=true}
         )
 
     }
-    if(loginPushed) {
-        key(loginPushed) {
-            AuthFlow(
-                onDismiss  = { loginPushed = false }
+    if(showPopup) {
+        Popup(
+            alignment = Alignment.TopStart,
+            offset = IntOffset(
+                x = buttonBounds.size.width.toInt() + 8,
+                y = calculatePopupY(buttonBounds, cardHeightPx)  // 👈 dinámico
+            ),
+            onDismissRequest = { showPopup = false },
+            properties = PopupProperties(focusable = true)
+        ) {
+            UserMenuCard(
+                name = "Enrique Sosa",
+                role = "Invitado",
+                onDismiss = { showPopup = false },
             )
         }
     }
@@ -185,5 +203,22 @@ private fun ThemeButton(
         )
     ) {
         Text(text)
+    }
+}
+
+
+
+fun calculatePopupY(buttonBounds: Rect, cardHeightPx: Int): Int {
+    if (cardHeightPx == 0) return 0  // primer frame, aún no se ha medido
+
+    val spaceAbove = buttonBounds.top.toInt()
+    val screenHeight = (buttonBounds.top + buttonBounds.bottom).toInt() // aproximación
+
+    return if (spaceAbove >= cardHeightPx) {
+        // Hay espacio arriba → el popup sube
+        (buttonBounds.top - cardHeightPx).toInt()
+    } else {
+        // No hay espacio arriba → el popup baja
+        buttonBounds.bottom.toInt()
     }
 }

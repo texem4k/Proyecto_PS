@@ -35,7 +35,7 @@ fun CreateTopicDialog(
     onClose: () -> Unit
 ) {
 
-    var chosenColor by remember { mutableStateOf<Color?>(null) }
+    var chosenColor by remember { mutableStateOf(Color(0x00000000)) }
     var name by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
@@ -57,7 +57,7 @@ fun CreateTopicDialog(
                         chosenColor = color
                     }
                 )
-                Text("Color seleccionado: ${chosenColor?.toRgbString()}")
+                Text("Color seleccionado: ${chosenColor.toRgbString()}")
 
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
@@ -69,9 +69,8 @@ fun CreateTopicDialog(
                 if (store.topics().any { it.name == name }) {
                     error = "Ya existe un tópico"
                 } else {
-                    val command = CommandBuilder(store).set("name", name).set("color", chosenColor?.toArgb().toString()).build(CommandType.CREATE_TOPIC)
+                    val command = CommandBuilder(store).set("name", name).set("color", chosenColor.toArgb().toString()).build(CommandType.CREATE_TOPIC)
                     command.onSuccess{CommandLauncher.launch(it)}.onFailure { println("error: ${it.message}") }
-
                     onClose()
                 }
             }) {
