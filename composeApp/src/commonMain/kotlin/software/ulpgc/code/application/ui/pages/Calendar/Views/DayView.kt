@@ -61,7 +61,7 @@ import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.collections.map
 
@@ -74,7 +74,7 @@ fun DayView(
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Storage,
+    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit,

@@ -23,15 +23,14 @@ import software.ulpgc.code.application.ui.CreateTask
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.application.ui.pages.ShowDialMenu
 import software.ulpgc.code.application.ui.pages.setUndoRedo
-import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
     onNavigate: (Screen) -> Unit,
-    store: Storage,
+    store: Store,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters,

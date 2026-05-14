@@ -19,7 +19,7 @@ import software.ulpgc.code.application.ui.toRgbString
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
 
 
@@ -31,7 +31,7 @@ data class ModifingForm(
 )
 @Composable
 fun CreateTopicDialog(
-    store: Storage,
+    store: Store,
     onClose: () -> Unit
 ) {
 
@@ -85,7 +85,7 @@ fun CreateTopicDialog(
 
 
 @Composable
-fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
+fun EditTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {} ) {
 
     val currentTopic = store.topics().find { it.name == topicName }
     var chosenColor by remember { mutableStateOf(currentTopic?.color) }
@@ -156,7 +156,7 @@ fun EditTopic(store: Storage ,topicName: String,onDismiss: () -> Unit, onDeleted
 
 
 @Composable
-fun DeleteTopic(store: Storage, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
+fun DeleteTopic(store: Store, topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = {}){
     val currentTopic = store.topics().find { it.name == topicName }
 
     AlertDialog(

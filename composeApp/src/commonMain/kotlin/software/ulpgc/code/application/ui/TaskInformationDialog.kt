@@ -14,13 +14,13 @@ import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
 fun TaskInformationDialog(
     selectedTask: Task,
-    store: Storage,
+    store: Store,
     onDismiss: () -> Unit,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},

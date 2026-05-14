@@ -59,7 +59,7 @@ import software.ulpgc.code.application.ui.pages.Calendar.CalendarConstants
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.time.Clock
@@ -70,7 +70,7 @@ fun HomeCalendar(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     onNavigate: (Screen) -> Unit,
-    store: Storage,
+    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit

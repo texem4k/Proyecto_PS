@@ -35,7 +35,6 @@ fun App(
     var searchText by remember { mutableStateOf("") }
     var filters by remember { mutableStateOf(TaskFilters()) }
     var refreshKey by remember { mutableStateOf(0) }
-    var store by remember { mutableStateOf<Store?>(null) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
     var storeError by remember { mutableStateOf<AppException?>(null) }
     var startEditMode by remember { mutableStateOf(false) }
@@ -46,14 +45,14 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        store = Store(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, { store ->
-            TaskNotifier.setUpWith(store)
-            TaskMonitor(store)
-            TaskOptimizer.setUpWith(store)
+        Store.initialize(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, {
+            TaskNotifier.setUpWith(Store)
+            TaskMonitor(Store)
+            TaskOptimizer.setUpWith(Store)
         })
     }
 
-    val storeReady = store?.ready?.collectAsState()?.value ?: false
+    val storeReady = Store.ready.collectAsState().value
 
     AppTheme(theme = selectedTheme) {
         if (showThemeDialog) {
@@ -79,7 +78,7 @@ fun App(
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             onEdit = { task ->
@@ -97,7 +96,7 @@ fun App(
 
                         Screen.TASKS -> TasksScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -119,7 +118,7 @@ fun App(
 
                         Screen.TASKS_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -133,7 +132,7 @@ fun App(
 
                         Screen.TOPIC_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -147,7 +146,7 @@ fun App(
 
                         Screen.TAG_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -161,13 +160,13 @@ fun App(
 
                         Screen.DASHBOARD -> DashboardScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             onSettingsClick = { showThemeDialog = true }
                         )
 
                         Screen.CALENDAR -> CalendarScreen(
                             onNavigate = { screen = it },
-                            store!!,
+                            Store,
                             onSettingsClick = { showThemeDialog = true }
                         )
 
@@ -184,7 +183,7 @@ fun App(
                     showResults = false
                     filters.hasFilter = false
                 },
-                store = store!!,
+                store = Store,
                 value = searchText,
                 onSearchTextChange = { searchText = it },
                 filters = filters

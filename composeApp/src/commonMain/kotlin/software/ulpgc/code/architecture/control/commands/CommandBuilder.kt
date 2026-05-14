@@ -2,7 +2,7 @@ package software.ulpgc.code.architecture.control.commands
 
 import androidx.compose.ui.graphics.Color
 import software.ulpgc.code.architecture.control.exceptions.CommandException
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
@@ -12,7 +12,7 @@ import software.ulpgc.code.architecture.model.times.Time
 import software.ulpgc.code.architecture.model.times.TimeFactory
 import kotlin.uuid.Uuid
 
-class CommandBuilder internal constructor (private val store: Storage) {
+class CommandBuilder internal constructor () {
     private val args: MutableMap<String, String> = mutableMapOf()
 
     fun set(argName: String, argValue: String): CommandBuilder {
@@ -23,17 +23,14 @@ class CommandBuilder internal constructor (private val store: Storage) {
     fun build(type: CommandType): Result<Command> = runCatching {
         return Result.success(when(type) {
             CommandType.CREATE_TOPIC -> CreateTopicCommand(
-                store,
                 name().getOrThrow(),
                 color().getOrThrow()
             )
             CommandType.CREATE_TAG -> CreateTagCommand(
-                store,
                 name().getOrThrow(),
                 topicId().getOrThrow()
             )
             CommandType.CREATE_TASK -> CreateTaskCommand(
-                store,
                 priority().getOrThrow(),
                 name().getOrThrow(),
                 description().getOrThrow(),
@@ -63,15 +60,12 @@ class CommandBuilder internal constructor (private val store: Storage) {
                 users().getOrThrow()
             )
             CommandType.DELETE_TOPIC -> DeleteTopicCommand(
-                store,
                 id().getOrThrow()
             )
             CommandType.DELETE_TAG -> DeleteTagCommand(
-                store,
                 id().getOrThrow()
             )
             CommandType.DELETE_TASK -> DeleteTaskCommand(
-                store,
                 id().getOrThrow()
             )
             CommandType.MARK_COMPLETE -> MarkCompleteTaskCommand(
@@ -88,17 +82,17 @@ class CommandBuilder internal constructor (private val store: Storage) {
     }
 
     private fun tag(): Result<Tag> = runCatching {
-        return Result.success(store.tags().find { id().getOrThrow() == it.id}
+        return Result.success(Store.tags().find { id().getOrThrow() == it.id}
             ?: throw CommandException("No existe el tag ${id()} en el store"))
     }
 
     private fun task(): Result<Task> = runCatching {
-        return Result.success(store.tasks().find { id().getOrThrow() == it.id}
+        return Result.success(Store.tasks().find { id().getOrThrow() == it.id}
             ?: throw CommandException("No existe el tarea ${id()} en el store"))
     }
 
     private fun topic(): Result<Topic> = runCatching {
-        return Result.success(store.topics().find { id().getOrThrow() == it.id}
+        return Result.success(Store.topics().find { id().getOrThrow() == it.id}
             ?: throw CommandException("No existe el topic ${id()} en el store"))
     }
 
@@ -120,7 +114,7 @@ class CommandBuilder internal constructor (private val store: Storage) {
 
     private fun users(): Result<MutableSet<Uuid>> = runCatching {
         return getOrThrow("users") { user ->
-            if (user == "") mutableSetOf(store.currentUser().id)
+            if (user == "") mutableSetOf(Store.currentUser().id)
             else user.split(", ").map { Uuid.parse(it) }.toMutableSet()
         }
     }
