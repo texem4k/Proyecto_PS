@@ -1,12 +1,13 @@
 package software.ulpgc.code.architecture.control.commands
 
+import androidx.compose.ui.graphics.Color
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.Topic
 
 class UpdateTopicCommand internal constructor (private val currentTopic: Topic, private val newTopic: Topic): Command {
 
-    constructor(currentTopic: Topic, newName: String, newColor: Int) : this(
+    constructor(currentTopic: Topic, newName: String, newColor: Color) : this(
         currentTopic, Topic(newName, newColor, currentTopic.id),
     )
 

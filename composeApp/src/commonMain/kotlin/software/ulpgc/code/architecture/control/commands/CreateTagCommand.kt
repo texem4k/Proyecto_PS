@@ -12,7 +12,7 @@ class CreateTagCommand internal constructor (private val store: Storage, private
     override fun execute(): List<Command> {
         LogMaster.log("CreateTagCommand {$tag}")
         tag.dbState = DBState.NEW
-        store.addTags(listOf(tag))
+        store.addTag(tag)
         return listOf(DeleteTagCommand(store, tag))
     }
 }

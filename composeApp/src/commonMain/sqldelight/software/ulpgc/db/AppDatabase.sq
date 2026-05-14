@@ -1,96 +1,162 @@
+import androidx.compose.ui.graphics.Color;
 import kotlin.Boolean;
+import kotlin.String;
+import kotlin.time.Instant;
+import kotlin.uuid.Uuid;
+import software.ulpgc.code.architecture.model.Priority;
+import software.ulpgc.code.architecture.model.Privilege;
+import software.ulpgc.code.architecture.model.tasks.TaskInterval;
+import software.ulpgc.code.architecture.model.times.Time;
 
 --  ./gradlew generateCommonMainAppDatabaseInterface
 PRAGMA foreign_keys = 1;
 
+-- TABLAS DE USUARIOS
 CREATE TABLE User (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL
+    id TEXT AS Uuid PRIMARY KEY,
+    name TEXT AS String NOT NULL
 );
 
+CREATE TABLE WorkGroup (
+    id TEXT AS Uuid PRIMARY KEY,
+    name TEXT AS String NOT NULL,
+    description TEXT AS String NOT NULL
+);
+
+CREATE TABLE WorkGroupUser (
+    userId TEXT AS Uuid NOT NULL,
+    groupId TEXT AS Uuid NOT NULL,
+    privilege INTEGER AS Privilege NOT NULL,
+    PRIMARY KEY(userId, groupId),
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (groupId) REFERENCES WorkGroup(id) ON DELETE CASCADE
+);
+
+CREATE TABLE AssignUserTask (
+    taskId TEXT AS Uuid NOT NULL,
+    userId TEXT AS Uuid NOT NULL,
+    groupId TEXT AS Uuid NOT NULL,
+    PRIMARY KEY (taskId, userId),
+    FOREIGN KEY (taskId, groupId) REFERENCES Task(id, groupId) ON DELETE CASCADE,
+    FOREIGN KEY (userId, groupId) REFERENCES WorkGroupUser(userId, groupId) ON DELETE CASCADE
+);
+
+-- TABLAS DE DATOS
 CREATE TABLE Topic (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    color INTEGER NOT NULL
+    id TEXT AS Uuid PRIMARY KEY,
+    groupId TEXT AS Uuid NOT NULL,
+    name TEXT AS String NOT NULL,
+    color INTEGER AS Color NOT NULL,
+    FOREIGN KEY (groupId) REFERENCES WorkGroup(id) ON DELETE CASCADE,
+    UNIQUE (id, groupId)
 );
 
 CREATE TABLE Tag (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    topicId TEXT NOT NULL,
-    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
+    id TEXT AS Uuid PRIMARY KEY,
+    topicId TEXT AS Uuid NOT NULL,
+    name TEXT AS String NOT NULL,
+    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE,
+    UNIQUE (id, topicId)
 );
 
 CREATE TABLE Task (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    priority INTEGER NOT NULL,
-    userId TEXT NOT NULL,
-    description TEXT NOT NULL,
-    interval INTEGER NOT NULL,
-    topicId TEXT NOT NULL,
+    id TEXT AS Uuid PRIMARY KEY,
+    topicId TEXT AS Uuid NOT NULL,
+    groupId TEXT AS Uuid NOT NULL,
+    name TEXT AS String NOT NULL,
+    description TEXT AS String NOT NULL,
+    time TEXT AS Time NOT NULL,
+    interval INTEGER AS TaskInterval NOT NULL,
+    priority INTEGER AS Priority NOT NULL,
     isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (topicId) REFERENCES Topic(id) ON DELETE CASCADE
-);
-
-CREATE TABLE Time (
-    id TEXT PRIMARY KEY,
-    taskId TEXT NOT NULL,
-    type INTEGER NOT NULL,
-    start TEXT NOT NULL,
-    end TEXT NOT NULL,
-    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
+    FOREIGN KEY (topicId, groupId) REFERENCES Topic(id, groupId) ON DELETE CASCADE,
+    UNIQUE (id, groupId),
+    UNIQUE (id, topicId)
 );
 
 CREATE TABLE TaskTag (
-    taskId TEXT NOT NULL,
-    tagId TEXT NOT NULL,
+    taskId TEXT AS Uuid NOT NULL,
+    tagId TEXT AS Uuid NOT NULL,
+    topicId TEXT AS Uuid NOT NULL,
     PRIMARY KEY (taskId, tagId),
-    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE,
-    FOREIGN KEY (tagId) REFERENCES Tag(id) ON DELETE CASCADE
+    FOREIGN KEY (taskId, topicId) REFERENCES Task(id, topicId) ON DELETE CASCADE,
+    FOREIGN KEY (tagId, topicId) REFERENCES Tag(id, topicId) ON DELETE CASCADE
 );
 
--- Extras
-
-countUsers:
-SELECT COUNT(*) FROM User;
+-- TABLAS DE METADATOS
+CREATE TABLE TaskCompletion (
+    id TEXT AS Uuid PRIMARY KEY,
+    taskId TEXT AS Uuid NOT NULL,
+    date TEXT AS Instant NOT NULL,
+    completed INTEGER AS Boolean NOT NULL,
+    FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
+);
 
 -- Inserciones
-
 insertUser:
-INSERT OR IGNORE INTO User(id, name) VALUES(?, ?);
+INSERT OR IGNORE INTO User VALUES (id = ?, name = ?);
+
+insertGroup:
+INSERT OR IGNORE INTO WorkGroup VALUES (id = ?, name = ?, description = ?);
+
+insertUserIntoGroup:
+INSERT OR IGNORE INTO WorkGroupUser VALUES (userId = ?, groupId = ?, privilege = ?);
+
+insertUserForTask:
+INSERT OR IGNORE INTO AssignUserTask(taskId, userId, groupId)
+    SELECT :taskId, :userId, Task.groupId
+    FROM Task
+    WHERE Task.id = :taskId;
 
 insertTopic:
-INSERT OR IGNORE INTO Topic(id, name, color) VALUES(?, ?, ?);
+INSERT OR IGNORE INTO Topic VALUES (id = ?, groupId = ?, name = ?, color = ?);
 
 insertTag:
-INSERT OR IGNORE INTO Tag(id, name, topicId) VALUES(?, ?, ?);
+INSERT OR IGNORE INTO Tag VALUES (id = ?, topicId = ?, name = ?);
 
 insertTask:
-INSERT OR IGNORE INTO Task(id, name, priority, userId, description, interval, topicId, isCompleted) VALUES (?, ?, ?, ?, ?, ?,  ?, ?);
+INSERT OR IGNORE INTO Task(id, topicId, groupId, name, description, time, interval, priority, isCompleted)
+    SELECT :id, :topicId, Topic.groupId, :name, :description, :time, :interval, :priority, :isCompleted
+    FROM Topic
+    WHERE Topic.id = :topicId;
 
-insertTime:
-INSERT OR IGNORE INTO Time(id, taskId ,type, start, end) VALUES(?, ?, ?, ?, ?);
+insertTagForTask:
+INSERT OR IGNORE INTO TaskTag(taskId, tagId, topicId)
+    SELECT :taskId, :tagId, Task.topicId
+    FROM Task
+    WHERE Task.id = :taskId;
 
-insertTaskTag:
-INSERT OR IGNORE INTO TaskTag(taskId, tagId) VALUES(?, ?);
+insertTaskCompletion:
+INSERT OR IGNORE INTO TaskCompletion VALUES (id = ?, taskId = ?, date = ?, completed = ?);
 
 -- Actualizaciones
+updateUser:
+UPDATE User SET name = ? WHERE id = ?;
+
+updateGroup:
+UPDATE WorkGroup SET name = ?, description = ? WHERE id = ?;
 
 updateTopic:
 UPDATE Topic SET name = ?, color = ? WHERE id = ?;
 
 updateTag:
-UPDATE Tag SET name = ?, topicId = ? WHERE id = ?;
+UPDATE Tag SET name = ? WHERE id = ?;
 
 updateTask:
-UPDATE Task SET name = ?, userId = ?, priority = ?, description = ?, interval = ?, topicId = ?, isCompleted = ? WHERE id = ?;
+UPDATE Task SET name = ?, description = ?, time = ?, interval = ?, priority = ?, isCompleted = ? WHERE id = ?;
 
-updateTime:
-UPDATE Time SET type = ?, start = ?, end = ? WHERE id = ?;
+updateTaskCompletion:
+UPDATE TaskCompletion SET date = ?, completed = ? WHERE id = ?;
 
 -- Borraciones
+deleteUser:
+DELETE FROM User WHERE id = ?;
+
+deleteGroup:
+DELETE FROM WorkGroup WHERE id = ?;
+
+deleteUsersFromGroup:
+DELETE FROM WorkGroupUser WHERE groupId = ?;
 
 deleteTopic:
 DELETE FROM Topic WHERE id = ?;
@@ -101,10 +167,27 @@ DELETE FROM Tag WHERE id = ?;
 deleteTask:
 DELETE FROM Task WHERE id = ?;
 
-deleteTaskTagsForTask:
+deleteTagsForTask:
 DELETE FROM TaskTag WHERE taskId = ?;
 
+deleteUsersForTask:
+DELETE FROM AssignUserTask WHERE taskId = ?;
+
+deleteTaskCompletion:
+DELETE FROM TaskCompletion WHERE id = ?;
+
 -- Seleciones
+getUsers:
+SELECT * FROM User;
+
+getGroups:
+SELECT * FROM WorkGroup;
+
+getUsersInGroups:
+SELECT * FROM WorkGroupUser;
+
+getUsersFor:
+SELECT * FROM AssignUserTask WHERE taskId = ?;
 
 getTopics:
 SELECT * FROM Topic;
@@ -118,5 +201,5 @@ SELECT * FROM Task;
 getTagsFor:
 SELECT * FROM TaskTag WHERE taskId = ?;
 
-getTimeFor:
-SELECT * FROM Time WHERE taskId = ?;
+getTaskCompletions:
+SELECT * FROM TaskCompletion;

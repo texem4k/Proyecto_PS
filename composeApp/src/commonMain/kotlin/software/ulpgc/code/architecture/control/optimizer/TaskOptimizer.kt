@@ -2,7 +2,7 @@ package software.ulpgc.code.architecture.control.optimizer
 
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.times.BoundedTime
 import software.ulpgc.code.architecture.model.times.EndBasedTime
@@ -77,11 +77,11 @@ object TaskOptimizer: Coroutinable {
         return (placed + gapFills).sortedBy { it.start }
     }
 
-    lateinit var store: Storage
+    lateinit var store: Store
 
     override val delayMilis: Long = 15_000L
 
-    fun setUp(store: Storage) {
+    fun setUpWith(store: Store) {
         this.store = store
         CoroutineManager.add(this)
     }
