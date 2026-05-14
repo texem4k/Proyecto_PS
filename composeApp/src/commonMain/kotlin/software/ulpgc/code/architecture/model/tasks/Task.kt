@@ -11,7 +11,7 @@ import kotlin.time.Duration
 const val MAX = 10.0
 
 data class Task (
-    val topicId: Uuid,
+    var topicId: Uuid,
     var name: String,
     var description: String,
     var time: Time,

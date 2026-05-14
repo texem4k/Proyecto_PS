@@ -10,6 +10,7 @@ class CompletionStat (
     val taskId: Uuid,
     var completed: Boolean,
     var date: Instant = Clock.System.now(),
+    val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
 ): DBObject {
 

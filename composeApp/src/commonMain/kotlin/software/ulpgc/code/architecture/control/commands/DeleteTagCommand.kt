@@ -22,7 +22,7 @@ class DeleteTagCommand internal constructor (private val store: Storage, private
     }
 
     private fun removeTagIn(task: Task, tagId : Uuid) : List<Command> {
-        val newTask = task.copy();
+        val newTask = task.copy()
         newTask.tags.remove(tagId)
         return UpdateTaskCommand(task, newTask).execute()
     }

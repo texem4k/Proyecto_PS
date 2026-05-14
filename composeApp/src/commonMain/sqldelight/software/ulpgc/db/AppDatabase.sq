@@ -1,11 +1,12 @@
+import androidx.compose.ui.graphics.Color;
 import kotlin.Boolean;
-import kotlin.uuid.Uuid;
 import kotlin.String;
 import kotlin.time.Instant;
-import software.ulpgc.code.architecture.model.times.Time;
-import software.ulpgc.code.architecture.model.tasks.TaskInterval;
+import kotlin.uuid.Uuid;
 import software.ulpgc.code.architecture.model.Priority;
 import software.ulpgc.code.architecture.model.Privilege;
+import software.ulpgc.code.architecture.model.tasks.TaskInterval;
+import software.ulpgc.code.architecture.model.times.Time;
 
 --  ./gradlew generateCommonMainAppDatabaseInterface
 PRAGMA foreign_keys = 1;
@@ -45,7 +46,7 @@ CREATE TABLE Topic (
     id TEXT AS Uuid PRIMARY KEY,
     groupId TEXT AS Uuid NOT NULL,
     name TEXT AS String NOT NULL,
-    color INTEGER NOT NULL,
+    color INTEGER AS Color NOT NULL,
     FOREIGN KEY (groupId) REFERENCES WorkGroup(id) ON DELETE CASCADE,
     UNIQUE (id, groupId)
 );
@@ -84,10 +85,10 @@ CREATE TABLE TaskTag (
 
 -- TABLAS DE METADATOS
 CREATE TABLE TaskCompletion (
+    id TEXT AS Uuid PRIMARY KEY,
     taskId TEXT AS Uuid NOT NULL,
     date TEXT AS Instant NOT NULL,
     completed INTEGER AS Boolean NOT NULL,
-    PRIMARY KEY (taskId, date),
     FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
 );
 
@@ -126,7 +127,7 @@ INSERT OR IGNORE INTO TaskTag(taskId, tagId, topicId)
     WHERE Task.id = :taskId;
 
 insertTaskCompletion:
-INSERT OR IGNORE INTO TaskCompletion VALUES (taskId = ?, date = ?, completed = ?);
+INSERT OR IGNORE INTO TaskCompletion VALUES (id = ?, taskId = ?, date = ?, completed = ?);
 
 -- Actualizaciones
 updateUser:
@@ -145,7 +146,7 @@ updateTask:
 UPDATE Task SET name = ?, description = ?, time = ?, interval = ?, priority = ?, isCompleted = ? WHERE id = ?;
 
 updateTaskCompletion:
-UPDATE TaskCompletion SET date = ?, completed = ? WHERE taskId = ? AND date = ?;
+UPDATE TaskCompletion SET date = ?, completed = ? WHERE id = ?;
 
 -- Borraciones
 deleteUser:
@@ -154,8 +155,8 @@ DELETE FROM User WHERE id = ?;
 deleteGroup:
 DELETE FROM WorkGroup WHERE id = ?;
 
-deleteUserFromGroup:
-DELETE FROM WorkGroupUser WHERE userId = ? AND groupId = ?;
+deleteUsersFromGroup:
+DELETE FROM WorkGroupUser WHERE groupId = ?;
 
 deleteTopic:
 DELETE FROM Topic WHERE id = ?;
@@ -169,8 +170,11 @@ DELETE FROM Task WHERE id = ?;
 deleteTagsForTask:
 DELETE FROM TaskTag WHERE taskId = ?;
 
+deleteUsersForTask:
+DELETE FROM AssignUserTask WHERE taskId = ?;
+
 deleteTaskCompletion:
-DELETE FROM TaskCompletion WHERE taskId = ? AND date = ?;
+DELETE FROM TaskCompletion WHERE id = ?;
 
 -- Seleciones
 getUsers:
