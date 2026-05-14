@@ -27,9 +27,8 @@ import software.ulpgc.code.application.ui.CRUDs.RemoveTag
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
-import kotlin.uuid.Uuid
 
 enum class TopicOption(val label: String) {
     EDIT_TOPIC("Editar tópico"),
@@ -41,7 +40,7 @@ enum class TopicOption(val label: String) {
 
 @Composable
 fun UpcomingTasksPanel(
-    store: Storage,
+    store: Store,
     tareas: List<Task>? = null,
     title: String,
     onEdit: (Task) -> Unit = {},
@@ -177,7 +176,7 @@ fun UpcomingTasksPanel(
 }
 
 @Composable
-fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit) {
+fun MarkTaskIcon(store: Store, task: Task, onDeleted: () -> Unit) {
     IconButton(
         onClick = {
             val command = CommandBuilder(store)
@@ -200,7 +199,7 @@ fun MarkTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit) {
 }
 
 @Composable
-fun UncompleteTaskIcon(store: Storage, task: Task, onDeleted: () -> Unit){
+fun UncompleteTaskIcon(store: Store, task: Task, onDeleted: () -> Unit){
     IconButton(
         onClick = {
             val command = CommandBuilder(store)

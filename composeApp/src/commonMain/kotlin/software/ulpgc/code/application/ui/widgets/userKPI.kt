@@ -22,7 +22,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.foundation.background
@@ -65,7 +65,7 @@ data class UserKpiState(
 
 @Composable
 fun rememberUserKpi(
-    store: Storage,
+    store: Store,
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): State<UserKpiState> {
 

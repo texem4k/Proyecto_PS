@@ -57,7 +57,7 @@ import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 
@@ -70,7 +70,7 @@ fun WeekView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
-    store: Storage,
+    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit,

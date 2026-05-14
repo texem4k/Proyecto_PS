@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui.filters
 
-import Screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,14 +8,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Priority
-import kotlin.collections.emptySet
 
 @Composable
 fun FilterContent(
     onApply: (TaskFilters) -> Unit,
-    store: Storage,
+    store: Store,
     onDismiss: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()

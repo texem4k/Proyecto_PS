@@ -50,7 +50,7 @@ import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.Calendar.YearHeader
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import kotlin.time.Clock
 
 @Composable
@@ -61,7 +61,7 @@ fun YearView(
     viewMode: CalendarViewMode,
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Storage,
+    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit,

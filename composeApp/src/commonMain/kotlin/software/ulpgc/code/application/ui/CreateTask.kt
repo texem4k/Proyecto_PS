@@ -29,7 +29,7 @@ import kotlinx.datetime.atStartOfDayIn
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlin.onFailure
@@ -68,7 +68,7 @@ enum class CreateMode {
 
 
 @Composable
-fun CreateTask(store: Storage, onClose: () -> Unit, task: Task? = null, initialDate: LocalDate? = null) {
+fun CreateTask(store: Store, onClose: () -> Unit, task: Task? = null, initialDate: LocalDate? = null) {
 
     var form by remember { mutableStateOf(FormState()) }
     var formError by remember { mutableStateOf(false) }

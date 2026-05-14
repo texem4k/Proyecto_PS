@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -52,7 +51,7 @@ import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.widgets.MenuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
@@ -65,7 +64,6 @@ import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
-import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import kotlin.sequences.forEach
@@ -82,7 +80,7 @@ data class DialMenuItem(
 @Composable
 fun HomeScreen(
     onNavigate: (Screen) -> Unit,
-    store: Storage,
+    store: Store,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onEdit: (Task) -> Unit = {},
@@ -292,7 +290,7 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
     }
 }
 
-fun getSamplesEntries(store: Storage): MutableMap<LocalDate, MutableList<SampleEntry>> {
+fun getSamplesEntries(store: Store): MutableMap<LocalDate, MutableList<SampleEntry>> {
     val topicsById = store.topics().associateBy { it.id }
     val tasks = store.tasks()
     val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
@@ -377,7 +375,7 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Storage, modifier: Modifier, onDeleted: () -> Unit){
+fun ShowNearAndCompleteTasks(store: Store, modifier: Modifier, onDeleted: () -> Unit){
     Row(
         modifier = modifier
             .fillMaxWidth()

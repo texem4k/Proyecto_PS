@@ -21,12 +21,12 @@ import software.ulpgc.code.application.ui.TextFieldCustom
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Topic
 
 @Composable
 fun CreateTagDialog(
-    store: Storage,
+    store: Store,
     onClose: () -> Unit,
     enterTopic: String?
 
@@ -96,7 +96,7 @@ fun CreateTagDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RemoveTag(store: Storage,
+fun RemoveTag(store: Store,
               onClose: () -> Unit,
               topicName: String
 ) {
@@ -181,7 +181,7 @@ fun RemoveTag(store: Storage,
 
 
 @Composable
-fun EditTag(store: Storage,
+fun EditTag(store: Store,
             onClose: () -> Unit,
             topicName: String){
 

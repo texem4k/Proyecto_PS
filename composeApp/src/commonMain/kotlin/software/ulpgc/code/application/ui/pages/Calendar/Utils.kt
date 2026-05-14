@@ -29,7 +29,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Priority
 import kotlin.sequences.forEach
 import kotlin.time.Clock
@@ -207,7 +207,7 @@ fun parseEntryTime(time: String): Pair<Float, Float> {
     }
 }
 
-fun getFilteredEntries(store: Storage, filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
+fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
     val topicsById = store.topics().associateBy { it.id }
     val tasks = store.tasks()
     val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()

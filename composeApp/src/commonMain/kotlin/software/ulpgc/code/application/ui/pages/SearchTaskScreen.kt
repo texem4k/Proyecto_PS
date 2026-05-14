@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.tasks.Task
 
@@ -42,7 +42,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 @Composable
 fun SearchResultsDialog(
     onDismiss: () -> Unit,
-    store: Storage,
+    store: Store,
     value: String,
     onSearchTextChange: (String) -> Unit,
     filters: TaskFilters

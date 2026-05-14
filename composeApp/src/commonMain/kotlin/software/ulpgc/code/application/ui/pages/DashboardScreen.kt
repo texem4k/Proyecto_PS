@@ -25,7 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import software.ulpgc.code.application.ui.widgets.KpiDashboard
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
 import software.ulpgc.code.application.ui.widgets.rememberUserKpi
@@ -34,7 +34,7 @@ import software.ulpgc.code.application.ui.widgets.rememberUserKpi
 @Composable
 fun DashboardScreen(
     onNavigate: (Screen) -> Unit,
-    store: Storage,
+    store: Store,
     onSettingsClick: () -> Unit = {}
 ) {
     Row(

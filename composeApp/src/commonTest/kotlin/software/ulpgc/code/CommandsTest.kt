@@ -3,7 +3,6 @@ package software.ulpgc.code
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.DBState
-import software.ulpgc.code.architecture.io.Storage
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
@@ -18,11 +17,11 @@ import kotlin.uuid.Uuid
 
 private fun MockStore() = Store({ MockDBManager() })
 
-private fun builder(store: Storage) = CommandBuilder(store)
+private fun builder(store: Store) = CommandBuilder(store)
 
 private fun makeTime() = TimeFactory().createTime(Clock.System.now(), 1)
 
-private fun makeTask(store: Storage) = Task(
+private fun makeTask(store: Store) = Task(
     priority = 1,
     name = "Original Task",
     userId = Uuid.random(),
@@ -33,10 +32,10 @@ private fun makeTask(store: Storage) = Task(
     tags = mutableSetOf()
 ).also { store.addTask(listOf(it)) }
 
-private fun makeTopic(store: Storage) =
+private fun makeTopic(store: Store) =
     Topic("Original Topic", 123456).also { store.addTopic(listOf(it)) }
 
-private fun makeTag(store: Storage, topicId: Uuid = Uuid.random()) =
+private fun makeTag(store: Store, topicId: Uuid = Uuid.random()) =
     Tag("Original Tag", topicId).also { store.addTag(listOf(it)) }
 
 class CreateTopicCommandTest {

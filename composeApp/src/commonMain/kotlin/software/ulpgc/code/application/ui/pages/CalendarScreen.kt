@@ -41,7 +41,7 @@ import kotlin.time.Clock
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.io.Storage
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -66,13 +66,12 @@ import software.ulpgc.code.application.ui.pages.Calendar.Views.YearView
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.model.tasks.MAX
-import kotlin.collections.mapValues
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     onNavigate: (Screen) -> Unit,
-    store: Storage,
+    store: Store,
     onSettingsClick: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -260,7 +259,7 @@ fun TaskDetailDialog(
 fun DayEntriesPanel(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Storage,
+    store: Store,
     modifier: Modifier = Modifier,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -350,7 +349,7 @@ fun DayEntriesPanel(
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Storage,
+    store: Store,
     onTaskCreated: () -> Unit,
     onDismiss: () -> Unit,
     onDeleted: () -> Unit,
