@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.io
 
+import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -62,7 +63,7 @@ data class DBData(
     fun dbObjects(): Sequence<DBObject> = userSequence() + groupSequence() + topicSequence() + tagSequence() + taskSequence()
 
     private fun topicSequence(): Sequence<Topic> =
-        this.topics.asSequence().map { (id, name, groupId, color) -> Topic(name, color, groupId, id, DBState.DEFAULT) }
+        this.topics.asSequence().map { (id, name, groupId, color) -> Topic(name, Color(color), groupId, id, DBState.DEFAULT) }
 
     private fun tagSequence(): Sequence<Tag> =
         this.tags.asSequence().map { (id, name, topicId) -> Tag(name, topicId, id, DBState.DEFAULT) }
