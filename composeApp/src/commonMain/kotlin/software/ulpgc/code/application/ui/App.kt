@@ -74,11 +74,10 @@ fun App(
         ) {
             storeError?.let { error -> StoreErrorDisplay(error) }
             if (storeReady) {
-                key(refreshKey){
+
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
-                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             onEdit = { task ->
@@ -96,7 +95,6 @@ fun App(
 
                         Screen.TASKS -> TasksScreen(
                             onNavigate = { screen = it },
-                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -118,7 +116,6 @@ fun App(
 
                         Screen.TASKS_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -132,7 +129,6 @@ fun App(
 
                         Screen.TOPIC_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -146,7 +142,6 @@ fun App(
 
                         Screen.TAG_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
-                            Store,
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
@@ -160,19 +155,18 @@ fun App(
 
                         Screen.DASHBOARD -> DashboardScreen(
                             onNavigate = { screen = it },
-                            Store,
                             onSettingsClick = { showThemeDialog = true }
                         )
 
                         Screen.CALENDAR -> CalendarScreen(
                             onNavigate = { screen = it },
-                            Store,
                             onSettingsClick = { showThemeDialog = true }
                         )
 
+
                         else -> {}
                     }
-                }
+
             }
         }
 
@@ -182,7 +176,6 @@ fun App(
                     showResults = false
                     filters.hasFilter = false
                 },
-                store = Store,
                 value = searchText,
                 onSearchTextChange = { searchText = it },
                 filters = filters

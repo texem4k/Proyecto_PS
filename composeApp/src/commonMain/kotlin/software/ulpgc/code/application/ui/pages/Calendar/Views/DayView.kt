@@ -74,7 +74,6 @@ fun DayView(
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit,
@@ -178,9 +177,9 @@ fun DayView(
         selectedEntry?.let { entry ->
             val task = entry.task
             if (task != null) {
-                val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                val topicName = Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
                 val tagNames = task.tags.mapNotNull { id ->
-                    store.tags().associateBy { it.id }[id]?.name
+                    Store.tags().associateBy { it.id }[id]?.name
                 }
                 AlertDialog(
                     onDismissRequest = { selectedEntry = null },
@@ -198,7 +197,7 @@ fun DayView(
                     confirmButton = {
                         Button(onClick = { selectedEntry = null }) { Text("Cerrar") }
                         Button(onClick = {
-                            val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
+                            val command = CommandBuilder().set("id", task.id.toString()).build(CommandType.DELETE_TASK)
                             command
                                 .onSuccess { CommandLauncher.launch(it) }
                                 .onFailure { println("error: ${it.message}") }
@@ -232,7 +231,6 @@ fun DayView(
                         .fillMaxHeight(0.7f)
                 ) {
                     CreateTask(
-                        store = store,
                         onClose = {
                             showCreateTask = false
                             taskToEdit = null
@@ -248,7 +246,6 @@ fun DayView(
             DayDetailDialog(
                 date = currentDay,
                 entries = sampleEntries[currentDay] ?: emptyList(),
-                store = store,
                 onTaskCreated = onTaskCreated,
                 onDismiss = { showCreateDialog = false },
                 onDeleted = onDeleted,

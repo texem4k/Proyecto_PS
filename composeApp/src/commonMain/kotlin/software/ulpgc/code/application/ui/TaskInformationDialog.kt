@@ -20,14 +20,13 @@ import software.ulpgc.code.architecture.model.tasks.Task
 @Composable
 fun TaskInformationDialog(
     selectedTask: Task,
-    store: Store,
     onDismiss: () -> Unit,
     onEdit: (Task) -> Unit = {},
     onDeleted: () -> Unit = {},
     onRequestEditNavigation: (() -> Unit)? = null
 ) {
     val tagNames = remember(selectedTask) {
-        selectedTask.tags.mapNotNull { id -> store.tags().associateBy { it.id }[id]?.name }
+        selectedTask.tags.mapNotNull { id -> Store.tags().associateBy { it.id }[id]?.name }
     }
     val timeData = remember(selectedTask) {
         selectedTask.time.mostrar().split(",")
@@ -41,7 +40,7 @@ fun TaskInformationDialog(
         text = {
             Text(
                 "Descripción: ${selectedTask.description}\n" +
-                        "Tema: ${store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
+                        "Tema: ${Store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
                         "Tags: ${tagNames.joinToString(", ")}\n" +
                         "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
                         "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
@@ -62,7 +61,7 @@ fun TaskInformationDialog(
                         ConfirmDeleteDialog(
                             taskName = selectedTask.name,
                             onConfirm = {
-                                val command = CommandBuilder(store)
+                                val command = CommandBuilder()
                                     .set("id", selectedTask.id.toString())
                                     .build(CommandType.DELETE_TASK)
                                 command

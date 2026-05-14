@@ -41,7 +41,6 @@ import kotlin.time.Clock
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -71,7 +70,6 @@ import software.ulpgc.code.architecture.model.tasks.MAX
 @Composable
 fun CalendarScreen(
     onNavigate: (Screen) -> Unit,
-    store: Store,
     onSettingsClick: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -93,32 +91,11 @@ fun CalendarScreen(
     var filters by remember { mutableStateOf(TaskFilters(true, setOf("No completadas"))) }
 
     val filteredEntries = remember(version, filters) {
-        getFilteredEntries(store, filters)
+        getFilteredEntries(filters)
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                //TODO PREGUNTAR SI ESTO YA ESTA RECOGIDO EN ALGUNA FUNCION
-                //setUndoRedo()
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when {
-                    event.isCtrlPressed && event.key == Key.Z -> {
-                        CommandLauncher.undo()
-                        version++
-                        true
-                    }
-                    event.isCtrlPressed && event.key == Key.Y -> {
-                        CommandLauncher.redo()
-                        version++
-                        true
-                    }
-                    else -> false
-                }
-            }
+        modifier = setUndoRedo(onDeleted, focusRequester)
     ) {
         SideBar(
             selectedScreen = Screen.CALENDAR,
@@ -134,7 +111,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
@@ -148,7 +124,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
@@ -161,11 +136,10 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
-                    onFilterClick = { showFilters = true }
+                    onFilterClick = { showFilters = true },
                 )
 
                 CalendarViewMode.AÑO -> YearView(
@@ -174,7 +148,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    store = store,
                     onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
@@ -197,7 +170,6 @@ fun CalendarScreen(
                             )
                             showFilters = false
                         },
-                        store = store,
                         onDismiss = { showFilters = false }
                     )
                 }
@@ -205,61 +177,10 @@ fun CalendarScreen(
         }
     }
 }
-
-//TODO PREGUNTAR A TEXE Y ENRIQUE SI ESTO EXISTE
-//EXISTE CUANDO SE PUEDA CAMBIARLO POR TASK INFORMATION DIALOG
-/*@Composable
-fun TaskDetailDialog(
-    entry: SampleEntry,
-    store: Storage,
-    onDismiss: () -> Unit,
-    onDeleted: () -> Unit,
-    onEdit: (Task) -> Unit
-) {
-    val task = entry.task
-    if (task != null) {
-        val topicName = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
-        val tagNames = task.tags.mapNotNull { id ->
-            store.tags().associateBy { it.id }[id]?.name
-        }
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(task.name, fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    "Descripción: ${task.description}\n" +
-                            "Tema: $topicName\n" +
-                            "Tags: ${tagNames.joinToString(", ")}\n" +
-                            "Fecha de comienzo: ${task.time.start}\n" +
-                            "Fecha de final: ${task.time.end}\n" +
-                            "Prioridad: ${task.priority}"
-                )
-            },
-            confirmButton = {
-                Button(onClick = onDismiss) { Text("Cerrar") }
-                Button(onClick = {
-                    val command = CommandBuilder(store).set("id", task.id.toString()).build(CommandType.DELETE_TASK)
-                    command
-                        .onSuccess { CommandLauncher.launch(it) }
-                        .onFailure { println("error: ${it.message}") }
-                    onDismiss()
-                    onDeleted()
-                }) { Text("Eliminar tarea") }
-                Button(onClick = {
-                    onEdit(task)
-                    onDismiss()
-                }) { Text("Editar tarea") }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-}*/
-
 @Composable
 fun DayEntriesPanel(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Store,
     modifier: Modifier = Modifier,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -302,7 +223,6 @@ fun DayEntriesPanel(
     selectedEntry?.task?.let { task ->
         TaskInformationDialog(
             selectedTask = task,
-            store = store,
             onDismiss = { selectedEntry = null },
             onEdit = { editedTask ->
                 taskToEdit = editedTask
@@ -332,7 +252,6 @@ fun DayEntriesPanel(
                     .fillMaxHeight(0.7f)
             ) {
                 CreateTask(
-                    store = store,
                     onClose = {
                         showCreateTask = false
                         taskToEdit = null
@@ -349,7 +268,6 @@ fun DayEntriesPanel(
 fun DayDetailDialog(
     date: LocalDate,
     entries: List<SampleEntry>,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDismiss: () -> Unit,
     onDeleted: () -> Unit,
@@ -368,7 +286,7 @@ fun DayDetailDialog(
                 )
             },
             text = {
-                DayEntriesPanel(date = date, entries = entries, store = store, onDeleted = onDeleted, onEdit = onEdit)
+                DayEntriesPanel(date = date, entries = entries, onDeleted = onDeleted, onEdit = onEdit)
             },
             confirmButton = {
                 Row {
@@ -397,7 +315,6 @@ fun DayDetailDialog(
                     .fillMaxHeight(0.7f)
             ) {
                 CreateTask(
-                    store = store,
                     onClose = {
                         showCreateTask = false
                         onTaskCreated()
@@ -413,6 +330,6 @@ fun DayDetailDialog(
 fun urgencyColorFromEntries(entries: List<SampleEntry>): Color {
     val priorities = entries.mapNotNull { it.task?.priority }
     if (priorities.isEmpty()) return Color.Transparent
-    val t = (priorities.average() / MAX).coerceIn(0.0, 1.0).toFloat()
+    val t = (priorities.map{it.value}.average() / MAX).coerceIn(0.0, 1.0).toFloat()
     return Color(red = t, green = 1f - t, blue = 0f, alpha = 0.6f)
 }

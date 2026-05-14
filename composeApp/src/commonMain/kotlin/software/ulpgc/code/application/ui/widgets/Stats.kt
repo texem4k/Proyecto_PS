@@ -31,8 +31,8 @@ import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
-fun MenuTareas(store: Store, onDeleted: () -> Unit) {
-    var taskList by remember { mutableStateOf(store.tasks().toList()) }
+fun MenuTareas(onDeleted: () -> Unit, refreshFlag: Int) {
+    var taskList by remember(refreshFlag) { mutableStateOf(Store.tasks().toList()) }
     var showCompleted by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
@@ -107,7 +107,7 @@ fun MenuTareas(store: Store, onDeleted: () -> Unit) {
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if(showCompleted) UncompleteTaskIcon(store, task, onDeleted = {
+                        if(showCompleted) UncompleteTaskIcon(task, onDeleted = {
                             onDeleted()
                         })
                         Column(modifier = Modifier.weight(1f)) {
@@ -118,7 +118,7 @@ fun MenuTareas(store: Store, onDeleted: () -> Unit) {
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico",
+                                text = Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -131,7 +131,6 @@ fun MenuTareas(store: Store, onDeleted: () -> Unit) {
         if (selectedTask != null) {
             TaskInformationDialog(
                 selectedTask = selectedTask!!,
-                store = store,
                 onDismiss = { selectedTask = null }
             )
         }

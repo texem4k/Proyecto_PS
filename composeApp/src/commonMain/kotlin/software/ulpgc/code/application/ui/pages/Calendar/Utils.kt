@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -207,9 +208,9 @@ fun parseEntryTime(time: String): Pair<Float, Float> {
     }
 }
 
-fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
-    val topicsById = store.topics().associateBy { it.id }
-    val tasks = store.tasks()
+fun getFilteredEntries(filters: TaskFilters): Map<LocalDate, List<SampleEntry>> {
+    val topicsById = Store.topics().associateBy { it.id }
+    val tasks = Store.tasks()
     val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
 
     tasks.forEach { task ->
@@ -220,7 +221,7 @@ fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<
         while (current <= endDate) {
             val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
             val endTime = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
+            val topicColor = (topicsById[task.topicId]?.color?.toArgb() ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
 
             val entry = SampleEntry(
                 title = task.name,
@@ -241,8 +242,8 @@ fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<
     return map.mapValues { (_, entries) ->
         entries.filter { entry ->
             val task = entry.task ?: return@filter false
-            val topicName = store.topics().find { it.id == task.topicId }?.name.orEmpty()
-            val tagNames = task.tags.mapNotNull { id -> store.tags().find { it.id == id }?.name }.toSet()
+            val topicName = Store.topics().find { it.id == task.topicId }?.name.orEmpty()
+            val tagNames = task.tags.mapNotNull { id -> Store.tags().find { it.id == id }?.name }.toSet()
             val statusOk = filters.status.isEmpty() || filters.status.any { selected ->
                 when (selected) {
                         "Completadas" -> task.isCompleted
@@ -252,7 +253,7 @@ fun getFilteredEntries(store: Store, filters: TaskFilters): Map<LocalDate, List<
             }
 
             val priorityOk = filters.priority.isEmpty() || filters.priority.any { selectedText ->
-                Priority.entries.firstOrNull { it.text == selectedText }?.values?.contains(task.priority) == true
+                Priority.entries.firstOrNull { it.text == selectedText }?.value == task.priority.value
             }
             val topicOk = filters.topics.isEmpty() || filters.topics.contains(topicName)
             val tagsOk = filters.tags.isEmpty() || filters.tags.any { selected -> tagNames.contains(selected) }

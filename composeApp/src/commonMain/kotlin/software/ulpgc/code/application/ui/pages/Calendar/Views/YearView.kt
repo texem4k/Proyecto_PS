@@ -61,7 +61,6 @@ fun YearView(
     viewMode: CalendarViewMode,
     onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit,
@@ -140,7 +139,6 @@ fun YearView(
             DayDetailDialog(
                 date = dialogDate,
                 entries = entriesForDay,
-                store = store,
                 onTaskCreated = onTaskCreated,
                 onDismiss = { showDialog = false },
                 onDeleted = onDeleted,

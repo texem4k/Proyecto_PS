@@ -1,6 +1,7 @@
 package software.ulpgc.code.application.ui
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -10,7 +11,8 @@ enum class AppThemeType {
     GRAY,
     LAVANDA,
     BLUE,
-    TERRACOTA
+    TERRACOTA,
+    DARK
 }
 
 private val GreenColorScheme = lightColorScheme(
@@ -113,6 +115,40 @@ private val TerracotaColorScheme = lightColorScheme(
     onError = Color(0xFFFFFFFF),
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF4F8CFF),
+    onPrimary = Color(0xFFFFFFFF),
+
+    primaryContainer = Color(0xFF1E2A3A),
+    onPrimaryContainer = Color(0xFFE3EEFF),
+
+    secondary = Color(0xFF8FA3BF),
+    onSecondary = Color(0xFF121212),
+
+    secondaryContainer = Color(0xFF2A3441),
+    onSecondaryContainer = Color(0xFFE3EEFF),
+
+    tertiary = Color(0xFFB0BEC5),
+    onTertiary = Color(0xFF121212),
+
+    background = Color(0xFF121212),
+    onBackground = Color(0xFFEAEAEA),
+
+    surface = Color(0xFF1C1C1C),
+    onSurface = Color(0xFFEAEAEA),
+
+    surfaceVariant = Color(0xFF2A2A2A),
+    onSurfaceVariant = Color(0xFFD0D0D0),
+
+    inverseSurface = Color(0xFFEAEAEA),
+    inverseOnSurface = Color(0xFF121212),
+
+    outline = Color(0xFF8A8A8A),
+
+    error = Color(0xFFCF6679),
+    onError = Color(0xFF000000),
+)
+
 @Composable
 fun AppTheme(
     theme: AppThemeType,
@@ -124,6 +160,8 @@ fun AppTheme(
         AppThemeType.LAVANDA -> LavandaColorScheme
         AppThemeType.BLUE -> BlueColorScheme
         AppThemeType.TERRACOTA -> TerracotaColorScheme
+        AppThemeType.DARK -> DarkColorScheme
+
     }
 
     MaterialTheme(

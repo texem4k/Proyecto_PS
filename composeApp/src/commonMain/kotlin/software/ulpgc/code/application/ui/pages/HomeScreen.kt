@@ -51,22 +51,19 @@ import software.ulpgc.code.application.ui.DialMenu
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.widgets.MenuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
-import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
-import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
+import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
-import kotlin.sequences.forEach
+import software.ulpgc.code.architecture.io.Store
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -80,7 +77,6 @@ data class DialMenuItem(
 @Composable
 fun HomeScreen(
     onNavigate: (Screen) -> Unit,
-    store: Store,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onEdit: (Task) -> Unit = {},
@@ -98,16 +94,17 @@ fun HomeScreen(
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
     var version by remember { mutableStateOf(0) }
-    //val priorityTasks = remember(version) { TaskOptimizer.sortedTasks.toList() }
 
 
 
     val sampleEntries = remember(version) {
-        getSamplesEntries(store)
+        getFilteredEntries(TaskFilters(true, setOf("No completadas")))
     }
 
+    val priorityTask = remember (version) { TaskOptimizer.sortedTasks.toList() }
+
     Box(
-        modifier = setUndoRedo(onDeleted, focusRequester)
+        modifier = setUndoRedo({ version++; onDeleted() } , focusRequester)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
@@ -143,8 +140,12 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.Top,
 
                     ) {
-                    Text("Tareas Prioritarias", fontSize = 24.sp)
+                    Text(
+                        "Tareas Prioritarias",
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.onBackground)
                     Divider(
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .padding(top = 4.dp, bottom = 16.dp),
@@ -159,7 +160,7 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (TaskOptimizer.sortedTasks.toList().isEmpty()) {
+                    if (priorityTask.isEmpty()) {
                         item {
                             Text(
                                 "No hay tareas prioritarias asignadas, ¡Disfruta del día \uD83D\uDE09!",
@@ -167,7 +168,7 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        items(TaskOptimizer.sortedTasks.toList()) { task ->
+                        items(priorityTask) { task ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -181,9 +182,10 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
 
-                                    MarkTaskIcon(store, task, onDeleted = {
+                                    MarkTaskIcon(task, onDeleted = {
                                         onDeleted()
                                         version++
+                                        focusRequester.requestFocus()
                                     })
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -198,7 +200,7 @@ fun HomeScreen(
 
                                         Text(
                                             text = "${
-                                                store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
+                                                Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
                                             } $endDate $endHour",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -239,7 +241,6 @@ fun HomeScreen(
                             sampleEntries = sampleEntries,
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
-                            store = store,
                             onNavigate = onNavigate,
                             onTaskCreated = { version++ },
                             onDeleted = { version-- },
@@ -248,16 +249,21 @@ fun HomeScreen(
                     }
                 }
 
-                ShowNearAndCompleteTasks(store, modifier = Modifier.weight(1f), onDeleted = {
-                    onDeleted()
-                    version++})
+                ShowNearAndCompleteTasks(
+                    modifier = Modifier.weight(1f),
+                    onDeleted = {
+                        version++
+                        onDeleted()
+                        focusRequester.requestFocus()
+                    },
+                    refreshFlag = version
+                )
             }
         }
     }
     if (selectedTask != null) {
         TaskInformationDialog(
             selectedTask = selectedTask!!,
-            store = store,
             onDismiss = { selectedTask = null },
             onDeleted = {
                 version++
@@ -289,37 +295,6 @@ fun SearchBar(text: String, onTextChange: (String) -> Unit, onSearch: () -> Unit
         )
     }
 }
-
-fun getSamplesEntries(store: Store): MutableMap<LocalDate, MutableList<SampleEntry>> {
-    val topicsById = store.topics().associateBy { it.id }
-    val tasks = store.tasks()
-    val map = mutableMapOf<LocalDate, MutableList<SampleEntry>>()
-
-    tasks.forEach { task ->
-        val startDate = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val endDate   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-        var current = startDate
-        while (current <= endDate) {
-            val startTime = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault())
-            val endTime   = task.time.end.toLocalDateTime(TimeZone.currentSystemDefault())
-            val topicColor = (topicsById[task.topicId]?.color ?: 0xFF9E9E9E.toInt()) or 0xFF000000.toInt()
-
-            val entry = SampleEntry(
-                title = task.name,
-                time  = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')} · " +
-                        "${endTime.hour.toString().padStart(2, '0')}:${endTime.minute.toString().padStart(2, '0')}",
-                color = Color(topicColor),
-                task  = task
-            )
-
-            map.getOrPut(current) { mutableListOf() }.add(entry)
-            current = current.plus(1, DateTimeUnit.DAY)
-        }
-    }
-    return map
-}
-
 
 
 fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
@@ -375,11 +350,11 @@ fun ShowDialMenu(
 
 
 @Composable
-fun ShowNearAndCompleteTasks(store: Store, modifier: Modifier, onDeleted: () -> Unit){
+fun ShowNearAndCompleteTasks(modifier: Modifier, onDeleted: () -> Unit, refreshFlag: Int = 0){
     Row(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        MenuTareas(store, onDeleted = onDeleted)
+        MenuTareas(onDeleted = onDeleted, refreshFlag)
     }
 }

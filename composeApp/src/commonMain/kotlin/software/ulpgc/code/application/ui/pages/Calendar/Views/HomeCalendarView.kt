@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -69,7 +70,6 @@ fun HomeCalendar(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     onNavigate: (Screen) -> Unit,
-    store: Store,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -109,7 +109,7 @@ fun HomeCalendar(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(8.dp)
     ) {
         val headerHeight = 80.dp
@@ -143,8 +143,8 @@ fun HomeCalendar(
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 when {
-                                    day.date == selectedDate -> Color(0xFF4F6EF7)
-                                    day.date == today -> Color(0xFF4F6EF7).copy(alpha = 0.15f)
+                                    day.date == selectedDate -> MaterialTheme.colorScheme.primary
+                                    day.date == today -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                     else -> Color.Transparent
                                 }
                             )
@@ -166,7 +166,7 @@ fun HomeCalendar(
                                     day.date == selectedDate -> Color.White
                                     day.date == today -> Color(0xFF4F6EF7)
                                     day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
-                                    else -> Color.Unspecified
+                                    else -> MaterialTheme.colorScheme.onSurface
                                 },
                                 fontWeight = if (day.date == today || day.date == selectedDate) FontWeight.Bold else FontWeight.Normal
                             )
@@ -185,8 +185,7 @@ fun HomeCalendar(
                                         modifier = Modifier.offset(y = -2.dp),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
+                                        color = MaterialTheme.colorScheme.onPrimary                                    )
                                 }
                             }
                         }
@@ -200,7 +199,6 @@ fun HomeCalendar(
             DayDetailDialog(
                 date = selectedDate,
                 entries = entriesForDay,
-                store = store,
                 onTaskCreated = onTaskCreated,
                 onDismiss = { showDialog = false },
                 onDeleted = onDeleted,
@@ -230,16 +228,19 @@ fun miniCalendarHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${CalendarConstants.MONTH_NAMES_ES[month.yearMonth.month.ordinal]} ${month.yearMonth.year}",
+                text = "${CalendarConstants.MONTH_NAMES_ES[month.yearMonth.month.ordinal]} ${month.yearMonth.year}" ,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(onClick = onPreviousClick) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+                Icon(Icons.Default.ChevronLeft, contentDescription = null,     tint = MaterialTheme.colorScheme.onSurface)
+
             }
             IconButton(onClick = onNextClick) {
-                Icon(Icons.Default.ChevronRight, contentDescription = null)
+                Icon(Icons.Default.ChevronRight, contentDescription = null,     tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -251,8 +252,7 @@ fun miniCalendarHeader(
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
-                color = Color.Black
-            )
+                color = MaterialTheme.colorScheme.onSurface            )
         }
     }
 }

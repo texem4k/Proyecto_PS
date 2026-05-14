@@ -16,10 +16,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,6 +66,12 @@ fun DialMenu(
             icon = Icons.Default.LocalOffer,
             label = "Nuevo tag",
             color = Color(0xFFD85A30),
+            onClick = onCreateTag
+        ),
+        DialMenuItem(
+            icon = Icons.Default.Group,
+            label = "Nuevo grupo",
+            color = Color(0xFFC8C804),
             onClick = onCreateTag
         ),
     )
@@ -120,14 +128,17 @@ private fun DialChildButton(
     onDismiss: () -> Unit
 ) {
     val angleDeg = when (index) {
-        0 -> -180.0
-        1 -> -90.0
+        0 -> 180.0   // izquierda
+        1 -> 115.0   // arriba izquierda
+        2 -> 65.0    // arriba derecha
+        3 -> 0.0     // derecha
         else -> 0.0
     }
     val angleRad = angleDeg * PI / 180.0
+    val radius = 80f
 
-    val offsetX = (70f * cos(angleRad)).toFloat().dp
-    val offsetY = (70f * sin(angleRad)).toFloat().dp
+    val offsetX = (radius * cos(angleRad)).toFloat().dp
+    val offsetY = -(radius * sin(angleRad)).toFloat().dp
 
     val scale by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
@@ -140,7 +151,7 @@ private fun DialChildButton(
 
     Box(
         modifier = Modifier
-            .offset(if (offsetX.value < -10) offsetX + 5.dp else offsetX + 19.dp, offsetY)
+            .offset(if (offsetX.value < -10) offsetX + 5.dp else offsetX + 25.dp, offsetY)
             .scale(scale)
     ) {
         Box(
@@ -163,21 +174,17 @@ private fun DialChildButton(
         }
 
         val textOffsetX = when {
-            offsetX.value > 10 -> 48.dp
-            offsetX.value < -10 -> (-75).dp
-            else -> (-15).dp
+            offsetX.value > 20 -> 48.dp
+            offsetX.value < -20 -> (-85).dp
+            else -> (-20).dp
         }
 
-        val textOffsetY = when {
-            offsetY.value < -10 -> (-25).dp
-            offsetY.value > 10 -> 45.dp
-            else -> 10.dp
-        }
+        val textOffsetY = 10.dp
 
         Text(
             text = item.label,
             fontSize = 12.sp,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .offset(textOffsetX, textOffsetY)
                 .alpha(scale)
