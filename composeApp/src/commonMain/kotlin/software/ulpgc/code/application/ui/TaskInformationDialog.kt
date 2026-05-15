@@ -49,7 +49,7 @@ fun TaskInformationDialog(
                         "Tags: ${tagNames.joinToString(", ")}\n" +
                         "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
                         "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
-                        "Prioridad: ${selectedTask.priority}" +
+                        "Prioridad: ${selectedTask.priority.text} (${selectedTask.priority.value})" +
                         if (!isRoot && assignedUsers.isNotEmpty()) "\nUsuarios: ${assignedUsers.joinToString(", ")}" else ""
 
             )

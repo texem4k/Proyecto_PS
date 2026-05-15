@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui
 
-import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,7 +26,8 @@ fun UserMenuCard(
     role: String,
     onDismiss: () -> Unit,
 ) {
-    val auth = LocalAuthState.current  // <-- leer el estado
+    val auth = LocalAuthState.current
+    var manageGroups by remember {mutableStateOf(false)}
 
     Card(
         modifier = modifier
@@ -38,7 +38,6 @@ fun UserMenuCard(
     ) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
 
-            // Header: avatar + nombre
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -63,18 +62,19 @@ fun UserMenuCard(
             }
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
-
-            // Opciones del menú
+            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups = true })
             MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
-            MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = {
+            MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = onDismiss,)
+            HorizontalDivider(color = Color(0xFFEEEEEE))
+            MenuItemRow(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar sesión", onClick = {
                 auth.onLogout()
                 onDismiss()
             })
-
-            HorizontalDivider(color = Color(0xFFEEEEEE))
-
-            MenuItemRow(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar sesión", onClick = onDismiss)
         }
+    }
+
+    if(manageGroups) {
+        ManageGroups()
     }
 }
 

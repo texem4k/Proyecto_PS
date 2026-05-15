@@ -92,7 +92,7 @@ fun CreateTask(
                 taskName = task.name,
                 taskDescription = task.description,
                 taskTopic = task.topicId,
-                taskPriority = task.priority.toString(),
+                taskPriority = task.priority.toString().substring(1),
                 taskStartDate = task.time.start,
                 taskStartDateString = task.time.start.toFormattedDate(TimeZone.currentSystemDefault()),
                 taskFinalDate = task.time.end,

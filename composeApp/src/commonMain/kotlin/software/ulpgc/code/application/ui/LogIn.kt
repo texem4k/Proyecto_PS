@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 enum class DialogState {
@@ -98,34 +99,32 @@ fun LoginDialog(
                     isPassword    = true
                 )
                 if(!validPass&&touch){
-                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red)
+                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.")
+                Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.", textAlign = TextAlign.Center)
             }
         },
         confirmButton = {
-            Button(onClick = {
-                touch=true
-                if(validateEmail(email)) {
-                    validEmail = true
+                Row(horizontalArrangement = Arrangement.Center) {
+                    Button(onClick = {
+                        touch=true
+                        if(validateEmail(email)) {
+                            validEmail = true
+                        }
+                        if(validatePassword(pass)) {
+                            validPass = true
+                        }
+                        if(validEmail && validPass) {
+                            onLoginSuccess(email, pass)
+                        }
+                    })
+                    {
+                        Text("Iniciar sesión")
+                    }
+                    Button(onClick = onCreateAccount) { Text("Crear cuenta") }
+                    Button(onClick = onDismiss)       { Text("Cancelar")     }
                 }
-                if(validatePassword(pass)) {
-                    validPass = true
-                }
-                if(validEmail && validPass) {
-                    onLoginSuccess(email, pass)
-                }
-             })
-            {
-                Text("Iniciar sesión")
-            }
-        },
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(onClick = onCreateAccount) { Text("Crear cuenta") }
-                Button(onClick = onDismiss)       { Text("Cancelar")     }
-            }
         }
     )
 }

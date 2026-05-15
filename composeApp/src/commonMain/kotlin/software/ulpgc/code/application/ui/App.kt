@@ -44,7 +44,7 @@ fun App(
     var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
     var showThemeDialog by remember { mutableStateOf(false) }
 
-    var isAuthenticated by remember { mutableStateOf(false) }
+    var isAuthenticated by remember { mutableStateOf(true) }
 
     val authState = AuthState(
         isAuthenticated = isAuthenticated,

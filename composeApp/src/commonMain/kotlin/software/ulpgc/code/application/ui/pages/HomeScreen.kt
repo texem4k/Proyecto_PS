@@ -268,8 +268,10 @@ fun HomeScreen(
             onDeleted = {
                 version++
                 selectedTask = null
+            },
+            onEdit = {
+                onEdit(selectedTask!!)
             }
-
         )
     }
 
