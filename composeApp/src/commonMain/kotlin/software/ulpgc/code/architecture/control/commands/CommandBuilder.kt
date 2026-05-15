@@ -139,6 +139,6 @@ class CommandBuilder internal constructor () {
     }
 
     private fun priority(): Result<Priority> = runCatching {
-        return getOrThrow("priority") { priority -> Priority.valueOf(priority) }
+        return getOrThrow("priority") { priority -> Priority.fromValue(priority.toInt()) }
     }
 }
