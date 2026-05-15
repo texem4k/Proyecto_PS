@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.model.tasks
 
+import com.mmk.kmpnotifier.notification.Notifier
 import com.mmk.kmpnotifier.notification.NotifierManager
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -10,13 +11,12 @@ import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.io.isDeleted
 import kotlin.time.Clock
 
-class TaskMonitor(
-    private val store: Store,
-) : Coroutinable {
+object TaskMonitor: Coroutinable {
 
-    private val notifier = NotifierManager.getLocalNotifier()
+    private lateinit var notifier: Notifier
 
-    init {
+    fun initialize() {
+        notifier = NotifierManager.getLocalNotifier()
         CoroutineManager.add(this)
     }
 
@@ -25,6 +25,7 @@ class TaskMonitor(
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.dbState = DBState.UPDATED
+        Store.addCompletionStat(CompletionStat(task.id, false, task.time.end))
     }
 
     private fun sendNotification(task: Task) {
@@ -47,7 +48,7 @@ class TaskMonitor(
     }
 
     override suspend fun execute() {
-        store.tasks()
+        Store.tasks()
             .filter { needsRenewal(it) }
             .forEach {
                 while(needsRenewal(it)) {
