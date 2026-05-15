@@ -56,7 +56,8 @@ data class FormState(
     var taskDuration: String = "",
     var taskPriority: String = "",
     var taskStartHour: String = "",
-    var taskFinalHour: String = ""
+    var taskFinalHour: String = "",
+    var taskUsers: List<Uuid> = emptyList()
 )
 
 enum class CreateMode {
@@ -81,7 +82,7 @@ fun CreateTask(
 
 
     val action = if (task != null) "Editar" else "Crear"
-    if (Store.currentUser().toString() != "root"){
+    if (Store.currentUser().name.lowercase() != "root"){
         totalSteps = 4
     }
 
@@ -99,6 +100,7 @@ fun CreateTask(
                 taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskTags = task.tags.toList(),
+                taskUsers = task.users.toList(),
             )
         } else if (initialDate != null) {
             val instant = initialDate.atStartOfDayIn(TimeZone.currentSystemDefault())
@@ -144,16 +146,6 @@ fun CreateTask(
 
                 AnimatedContent(
                     targetState = step,
-                    transitionSpec = {
-                        val direction = if (targetState > initialState) 1 else -1
-                        slideInHorizontally(
-                            initialOffsetX = { it * direction },
-                            animationSpec = tween(260)
-                        ) togetherWith slideOutHorizontally(
-                            targetOffsetX = { -it * direction },
-                            animationSpec = tween(260)
-                        )
-                    },
                     label = "wizard_step"
                 ) { currentStep ->
                     when (currentStep) {
@@ -175,6 +167,7 @@ fun CreateTask(
                             mode = mode,
                             onModeChange = { mode = it }
                         )
+                        3 -> UserInfo(form = form, onFormChange = { form = it }) // NUEVO
                     }
                 }
 
@@ -212,6 +205,9 @@ fun CreateTask(
                             formError = true
                             return@WizardNavigation
                         }
+
+                        val isRoot = Store.currentUser().toString().lowercase() == "root"
+
                         val builder = CommandBuilder()
                             .set("priority", form.taskPriority)
                             .set("name", form.taskName)
@@ -221,6 +217,7 @@ fun CreateTask(
                             .set("interval", form.taskInterval.toString())
                             .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
+                            .set("users", if (isRoot) "" else form.taskUsers.joinToString(", "))
 
                         val command = if (task != null) {
                             builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
@@ -291,34 +288,32 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        StepLabel("Información básica")
+        StepLabel("Asignar usuarios")
 
-        TextFieldCustom(
-            value = form.taskName,
-            label = "* Nombre tarea",
-            onValueChange = { onFormChange(form.copy(taskName = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        val currentUserGroup = Store.groups().find { group ->
+            group.users.contains(Store.currentUser().id)
+        }
 
-        TextFieldCustom(
-            value = form.taskDescription,
-            label = "Descripción",
-            onValueChange = { onFormChange(form.copy(taskDescription = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        val usersInGroup = currentUserGroup
+            ?.users
+            ?.mapNotNull { userId -> Store.users().find { it.id == userId } }
+            ?: emptyList()
 
-        TextFieldCustom(
-            value = form.taskPriority,
-            label = "* Prioridad (1–10)",
-            placeholder = "1 - 10",
-            onValueChange = { newValue ->
-                val filtered = newValue.filter { it.isDigit() }.take(2)
-                val number = filtered.toIntOrNull()
-                if (filtered.isEmpty() || (number != null && number in 1..10)) {
-                    onFormChange(form.copy(taskPriority = filtered))
-                }
+        DropdownCustom(
+            section = "Selecciona los usuarios",
+            items = usersInGroup,
+            selection = DropdownSelection.Multiple(form.taskUsers),
+            onItemSelected = { userId ->
+                onFormChange(
+                    form.copy(
+                        taskUsers = form.taskUsers.toMutableList().apply {
+                            if (contains(userId)) remove(userId) else add(userId)
+                        }
+                    )
+                )
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            itemId = { it.id },
+            itemName = { it.name }
         )
     }
 }
@@ -649,7 +644,12 @@ private fun WizardHeader(title: String, step: Int, totalSteps: Int, onClose: () 
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val stepLabels = listOf("Básico", "Clasificación", "Fechas")
+            val stepLabels = buildList {
+                add("Básico")
+                add("Clasificación")
+                add("Fechas")
+                if (totalSteps > 3) add("Usuarios")
+            }
             stepLabels.forEachIndexed { index, label ->
                 StepIndicator(
                     index = index,

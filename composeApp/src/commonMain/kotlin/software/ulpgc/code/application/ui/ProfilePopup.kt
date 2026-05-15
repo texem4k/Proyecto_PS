@@ -27,6 +27,8 @@ fun UserMenuCard(
     role: String,
     onDismiss: () -> Unit,
 ) {
+    val auth = LocalAuthState.current  // <-- leer el estado
+
     Card(
         modifier = modifier
             .width(220.dp)
@@ -64,7 +66,10 @@ fun UserMenuCard(
 
             // Opciones del menú
             MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
-            MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = onDismiss)
+            MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = {
+                auth.onLogout()
+                onDismiss()
+            })
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
 

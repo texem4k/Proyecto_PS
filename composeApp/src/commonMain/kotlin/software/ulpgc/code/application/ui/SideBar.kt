@@ -49,6 +49,9 @@ fun SideBar(
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
+    val auth = LocalAuthState.current
+
+
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -106,7 +109,7 @@ fun SideBar(
                 onClick = { showPopup = true }
             )
 
-            if (showPopup) {
+            if (showPopup && auth.isAuthenticated) {
 
                 val density = LocalDensity.current
                 val offsetY = with(density) {
@@ -132,6 +135,17 @@ fun SideBar(
                         onDismiss = { showPopup = false }
                     )
                 }
+            }
+
+
+            else if (showPopup && !auth.isAuthenticated) {
+                AuthFlow(
+                    onDismiss = { showPopup = false },
+                    onAuthSuccess = {
+                        auth.onLogin()
+                        showPopup = false
+                    }
+                )
             }
         }
     }

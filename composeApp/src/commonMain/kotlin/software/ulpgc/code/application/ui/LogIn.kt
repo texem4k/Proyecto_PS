@@ -30,7 +30,7 @@ enum class DialogState {
 @Composable
 fun AuthFlow(
     onDismiss: () -> Unit,
-    onAuthSuccess: (UserSession) -> Unit
+    onAuthSuccess: () -> Unit,
 ) {
     var dialogState by remember { mutableStateOf(DialogState.LOGIN) }
 
@@ -42,16 +42,14 @@ fun AuthFlow(
             onDismiss    = { dialogState = DialogState.NONE },
             onCreateAccount = { dialogState = DialogState.REGISTER },
             onLoginSuccess  = { email, pass ->
-                val user = UserSession(email = email, name = email.substringBefore("@"))
-                onAuthSuccess(user)
+                onAuthSuccess()
                 dialogState = DialogState.NONE
             }
         )
         DialogState.REGISTER -> RegisterDialog(
             onDismiss       = { dialogState = DialogState.NONE },
             onRegisterSuccess = { email, pass, name ->
-                val user = UserSession(email = email, name = name)
-                onAuthSuccess(user)
+                onAuthSuccess()
                 dialogState = DialogState.NONE
             }
         )
@@ -224,11 +222,3 @@ data class UserSession(
     val email: String,
     val name: String
 )
-
-// Estado de autenticación
-sealed class AuthState {
-    object Unauthenticated : AuthState()
-    object Loading : AuthState()
-    data class Authenticated(val user: UserSession) : AuthState()
-    data class Error(val message: String) : AuthState()
-}

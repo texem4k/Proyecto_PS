@@ -31,6 +31,11 @@ fun TaskInformationDialog(
     val timeData = remember(selectedTask) {
         selectedTask.time.mostrar().split(",")
     }
+    val isRoot = Store.currentUser().name.lowercase() == "root"
+    val assignedUsers = remember(selectedTask) {
+        if (isRoot) emptyList()
+        else selectedTask.users.mapNotNull { id -> Store.users().find { it.id == id }?.name }
+    }
 
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
@@ -44,7 +49,9 @@ fun TaskInformationDialog(
                         "Tags: ${tagNames.joinToString(", ")}\n" +
                         "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
                         "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
-                        "Prioridad: ${selectedTask.priority}"
+                        "Prioridad: ${selectedTask.priority}" +
+                        if (!isRoot && assignedUsers.isNotEmpty()) "\nUsuarios: ${assignedUsers.joinToString(", ")}" else ""
+
             )
         },
         confirmButton = {
