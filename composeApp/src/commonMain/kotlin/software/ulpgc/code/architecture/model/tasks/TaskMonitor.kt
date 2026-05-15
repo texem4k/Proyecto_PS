@@ -6,6 +6,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.io.isDeleted
@@ -26,6 +27,7 @@ object TaskMonitor: Coroutinable {
         task.isCompleted = false
         task.dbState = DBState.UPDATED
         Store.addCompletionStat(CompletionStat(task.id, false, task.time.end))
+        LogMaster.log("Task ${task.name} renovada para la fecha ${task.time.start} - ${task.time.end}")
     }
 
     private fun sendNotification(task: Task) {

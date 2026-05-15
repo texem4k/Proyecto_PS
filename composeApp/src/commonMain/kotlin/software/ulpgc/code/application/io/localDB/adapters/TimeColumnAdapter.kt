@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.io.adapters
+package software.ulpgc.code.application.io.localDB.adapters
 
 import app.cash.sqldelight.ColumnAdapter
 import software.ulpgc.code.architecture.model.times.Time

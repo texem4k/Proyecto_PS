@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.io
+package software.ulpgc.code.application.io.localDB
 
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable

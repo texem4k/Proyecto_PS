@@ -1,12 +1,12 @@
-package software.ulpgc.code.application.io
+package software.ulpgc.code.application.io.localDB
 
 import androidx.compose.ui.graphics.Color
-import software.ulpgc.code.application.io.adapters.ColorColumnAdapter
-import software.ulpgc.code.application.io.adapters.EnumColumnAdapter
-import software.ulpgc.code.application.io.adapters.InstantColumnAdapter
-import software.ulpgc.code.application.io.adapters.StringColumnAdapter
-import software.ulpgc.code.application.io.adapters.TimeColumnAdapter
-import software.ulpgc.code.application.io.adapters.UuidColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.ColorColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.EnumColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.InstantColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.StringColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.TimeColumnAdapter
+import software.ulpgc.code.application.io.localDB.adapters.UuidColumnAdapter
 import software.ulpgc.code.architecture.control.exceptions.DBException
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
