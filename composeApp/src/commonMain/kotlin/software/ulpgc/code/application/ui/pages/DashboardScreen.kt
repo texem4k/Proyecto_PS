@@ -27,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.graph.BarGraph
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
+import software.ulpgc.code.application.ui.graph.aggregateByDay
 import software.ulpgc.code.application.ui.widgets.rememberUserKpi
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +49,7 @@ fun DashboardScreen(
             onNavigate = onNavigate,
             onSettingsClick = onSettingsClick
         )
-
+        val tasks = remember() { Store.tasks().toList() }
         Column(
             modifier = Modifier
                 .weight(2.7f)
@@ -82,7 +84,9 @@ fun DashboardScreen(
                         KpiDashboard(kpi = kpi)
                     }
                 }
-                ShowNearAndCompleteTasks(modifier = Modifier.weight(1f), onDeleted = {})
+
+                //AQUI
+                BarGraph(aggregateByDay(tasks),Modifier.weight(1f))
             }
 
             Card(
