@@ -27,6 +27,7 @@ import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Privilege
 import software.ulpgc.code.architecture.model.tasks.Task
 
 enum class TopicOption(val label: String) {
@@ -176,13 +177,15 @@ fun UpcomingTasksPanel(
 fun MarkTaskIcon(task: Task, onDeleted: () -> Unit) {
     IconButton(
         onClick = {
-            val command = CommandBuilder()
-                .set("id", task.id.toString())
-                .build(CommandType.MARK_COMPLETE)
-            command
-                .onSuccess { CommandLauncher.launch(it); onDeleted() }
-                .onFailure { println("error: ${it.message}") }
-            onDeleted()
+            if (task.users.contains(Store.currentUser().id) ||
+                Store.currentGroup().users[Store.currentUser().id] in listOf(Privilege.ADMIN, Privilege.MOD)) {
+                val command = CommandBuilder()
+                    .set("id", task.id.toString())
+                    .build(CommandType.MARK_COMPLETE)
+                command
+                    .onSuccess { CommandLauncher.launch(it); onDeleted() }
+                    .onFailure { println("error: ${it.message}") }
+            }
         },
         modifier = Modifier.size(32.dp)
     ) {
@@ -199,13 +202,15 @@ fun MarkTaskIcon(task: Task, onDeleted: () -> Unit) {
 fun UncompleteTaskIcon(task: Task, onDeleted: () -> Unit){
     IconButton(
         onClick = {
-            val command = CommandBuilder()
-                .set("id", task.id.toString())
-                .build(CommandType.UNMARK_COMPLETE)
-            command
-                .onSuccess { CommandLauncher.launch(it); onDeleted() }
-                .onFailure { println("error: ${it.message}") }
-            onDeleted()
+            if (task.users.contains(Store.currentUser().id) ||
+                Store.currentGroup().users[Store.currentUser().id] in listOf(Privilege.ADMIN, Privilege.MOD)) {
+                val command = CommandBuilder()
+                    .set("id", task.id.toString())
+                    .build(CommandType.UNMARK_COMPLETE)
+                command
+                    .onSuccess { CommandLauncher.launch(it); onDeleted() }
+                    .onFailure { println("error: ${it.message}") }
+            }
         },
         modifier = Modifier.size(32.dp)
     ) {

@@ -74,7 +74,8 @@ fun UserMenuCard(
     }
 
     if(manageGroups){
-        ManageGroups(onDismiss = { manageGroups=false })
+        //ManageGroups(onDismiss = { manageGroups=false })
+        EditGroup({manageGroups=false}, onSubmit = {})
     }
 }
 

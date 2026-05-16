@@ -50,6 +50,15 @@ fun TasksScreen(
     var showCreateTag by remember { mutableStateOf(false) }
     var showEditTask by remember { mutableStateOf(false) }
     var showCreateGroup by remember { mutableStateOf(false) }
+    var version by remember { mutableStateOf(0) }
+    val taskList = remember(version) {
+        Store.tasks().toList()
+    }
+    val group = remember(version) {
+        taskList
+            .filter { !it.isCompleted }
+            .groupBy { it.topicId }
+    }
 
     LaunchedEffect(taskToEdit) {
         if (taskToEdit != null) showEditTask = true
@@ -140,8 +149,6 @@ fun TasksScreen(
                             fontSize = 18.sp
                         )
                     } else {
-                        var taskList by remember { mutableStateOf(Store.tasks().toList()) }
-                        val group = taskList.filter { !it.isCompleted }.groupBy { it.topicId }
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
                             modifier = Modifier.fillMaxWidth(0.5f),
@@ -161,7 +168,7 @@ fun TasksScreen(
                                         showEditTask = true
                                     },
                                     onDeleted = {
-                                        taskList = Store.tasks().toList()
+                                        version++
                                         onDeleted()
                                     },
                                     screen = Screen.TASKS
