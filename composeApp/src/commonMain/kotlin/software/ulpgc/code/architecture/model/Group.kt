@@ -10,5 +10,4 @@ data class Group (
     var users: MutableMap<Uuid, Privilege> = mutableMapOf(),
     val id: Uuid = Uuid.random(),
     override var dbState: DBState = DBState.NEW
-): DBObject {
-}
+): DBObject
