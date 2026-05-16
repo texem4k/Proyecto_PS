@@ -20,6 +20,7 @@ import software.ulpgc.code.application.ui.CRUDs.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.CreateTask
+import software.ulpgc.code.application.ui.CreateGroup
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.application.ui.pages.ShowDialMenu
 import software.ulpgc.code.application.ui.pages.setUndoRedo
@@ -39,9 +40,8 @@ fun TasksScreen(
     autoOpen: AutoOpen? = null,
     taskToEdit: Task? = null,
     onEditDone: () -> Unit = {},
-    onShowResults: (Boolean) -> Unit={},
-    onSettingsClick: () -> Unit={}
-
+    onShowResults: (Boolean) -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     var showFilters by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -49,19 +49,18 @@ fun TasksScreen(
     var showCreateTopic by remember { mutableStateOf(false) }
     var showCreateTag by remember { mutableStateOf(false) }
     var showEditTask by remember { mutableStateOf(false) }
+    var showCreateGroup by remember { mutableStateOf(false) }
 
     LaunchedEffect(taskToEdit) {
-        if (taskToEdit != null) {
-            showEditTask = true
-        }
+        if (taskToEdit != null) showEditTask = true
     }
 
     LaunchedEffect(autoOpen) {
         when (autoOpen) {
-            AutoOpen.TASK -> showCreateTaskcopy = true
+            AutoOpen.TASK  -> showCreateTaskcopy = true
             AutoOpen.TOPIC -> showCreateTopic = true
-            AutoOpen.TAG -> showCreateTag = true
-            null -> {}
+            AutoOpen.TAG   -> showCreateTag = true
+            null           -> {}
         }
     }
 
@@ -69,9 +68,7 @@ fun TasksScreen(
         focusRequester.requestFocus()
     }
 
-    Box(
-        modifier = setUndoRedo(onDeleted, focusRequester)
-    ) {
+    Box(modifier = setUndoRedo(onDeleted, focusRequester)) {
         Row(modifier = Modifier.fillMaxSize()) {
 
             SideBar(
@@ -86,7 +83,6 @@ fun TasksScreen(
                     .fillMaxHeight()
                     .padding(16.dp)
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -102,7 +98,6 @@ fun TasksScreen(
                             onShowResults(true)
                         }
                     )
-
                     IconButton(onClick = { showFilters = true }) {
                         Icon(
                             imageVector = Icons.Default.FilterList,
@@ -139,7 +134,7 @@ fun TasksScreen(
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    if (!Store.tasks().any{t -> !t.isCompleted}) {
+                    if (!Store.tasks().any { t -> !t.isCompleted }) {
                         Text(
                             "No tienes ninguna tarea ahora mismo, ¡Puedes descansar un poco \uD83D\uDE09!",
                             fontSize = 18.sp
@@ -174,14 +169,14 @@ fun TasksScreen(
                             }
                         }
                     }
-
                 }
 
                 ShowDialMenu(
-                    onCreateTask = { showCreateTaskcopy = true },
+                    onCreateTask  = { showCreateTaskcopy = true },
                     onCreateTopic = { showCreateTopic = true },
-                    onCreateTag = { showCreateTag = true },
-                    modifier=Modifier.fillMaxWidth().weight(0.1f)
+                    onCreateTag   = { showCreateTag = true },
+                    onCreateGroup = { showCreateGroup = true },
+                    modifier = Modifier.fillMaxWidth().weight(0.1f)
                 )
             }
         }
@@ -215,9 +210,7 @@ fun TasksScreen(
 
     if (showEditTask && taskToEdit != null) {
         Dialog(
-            onDismissRequest = {
-                showEditTask = false
-            },
+            onDismissRequest = { showEditTask = false },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
                 dismissOnBackPress = false,
@@ -258,6 +251,16 @@ fun TasksScreen(
                 onCreated()
             },
             null
+        )
+    }
+
+    if (showCreateGroup) {
+        CreateGroup(
+            onClose = {
+                showCreateGroup = false
+                onCreated()
+            },
+            onSubmit = { }
         )
     }
 }

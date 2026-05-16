@@ -62,7 +62,7 @@ fun UserMenuCard(
             }
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
-            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups = true })
+            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups=true })
             MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
             MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = onDismiss,)
             HorizontalDivider(color = Color(0xFFEEEEEE))
@@ -73,8 +73,8 @@ fun UserMenuCard(
         }
     }
 
-    if(manageGroups) {
-        ManageGroups()
+    if(manageGroups){
+        ManageGroups(onDismiss = { manageGroups=false })
     }
 }
 

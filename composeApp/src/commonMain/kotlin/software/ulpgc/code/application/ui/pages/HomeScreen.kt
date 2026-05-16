@@ -216,6 +216,7 @@ fun HomeScreen(
                     { onNavigate(Screen.TASKS_CREATE) },
                     { onNavigate(Screen.TOPIC_CREATE) },
                     { onNavigate(Screen.TAG_CREATE) },
+                    {onNavigate(Screen.GROUP_CREATE) },
                     modifier=Modifier.fillMaxWidth().weight(0.1f))
 
             }
@@ -329,6 +330,7 @@ fun ShowDialMenu(
     onCreateTask: () -> Unit,
     onCreateTopic: () -> Unit,
     onCreateTag: () -> Unit,
+    onCreateGroup: () -> Unit,
     modifier: Modifier
 ) {
     Row(
@@ -343,7 +345,8 @@ fun ShowDialMenu(
             DialMenu(
                 onCreateTask = onCreateTask,
                 onCreateTopic = onCreateTopic,
-                onCreateTag = onCreateTag
+                onCreateTag = onCreateTag,
+                onCreateGroup = onCreateGroup
             )
         }
     }

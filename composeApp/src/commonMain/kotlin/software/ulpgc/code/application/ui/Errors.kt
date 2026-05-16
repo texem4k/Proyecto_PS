@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import software.ulpgc.code.application.ui.FormState
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -82,3 +83,21 @@ fun validateDateErrorMessage(e: Exception, m: String): String {
     return "Los valores de día y mes deben ser correctos (0-31/1-12)"
 }
 
+fun validateGroupStep0(form: CreateGroupFormState): String? {
+    if (form.groupName.isBlank()) return "El nombre del grupo es obligatorio."
+    return null
+}
+
+fun isValidEmail(email: String): Boolean =
+    email.isNotBlank() && Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$").matches(email)
+
+fun validateStep0(form: FormState): String? {
+    if (form.taskName.isBlank()) return "El nombre de la tarea es obligatorio."
+    if (form.taskPriority.isBlank()) return "La prioridad es obligatoria (1–10)."
+    return null
+}
+
+fun validateStep1(form: FormState): String? {
+    if (form.taskTopic == null) return "Debes seleccionar un tópico."
+    return null
+}

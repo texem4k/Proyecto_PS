@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,10 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
@@ -40,6 +39,15 @@ private val topItems = listOf(
     SideBarItem(Icons.Default.Palette, Screen.SETTINGS),
 )
 
+val gro = listOf(
+    "Grupo1asasasasas",
+    "Grupo2",
+    "Grupo3sssssssssssssssssssssss",
+    "Grupo4ssasas",
+    "Local",
+    "Tu tablero en la nube"
+)
+
 @Composable
 fun SideBar(
     onNavigate: (Screen) -> Unit,
@@ -47,6 +55,7 @@ fun SideBar(
     onSettingsClick: () -> Unit
 ) {
     var showPopup by remember { mutableStateOf(false) }
+    var expand by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
     val auth = LocalAuthState.current
@@ -62,7 +71,43 @@ fun SideBar(
     ) {
 
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
+        var actualGroup by remember { mutableStateOf("Tu tablero en la nube") }
 
+        Row(modifier=Modifier.fillMaxWidth()){
+            Box {
+                Button(onClick = { expand = true },
+                    contentPadding = PaddingValues(0.2.dp),
+                    modifier=Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent
+                    ),
+                    border = null,
+                    elevation = null) {
+                    Text(actualGroup.take(15),fontSize = 10.sp, maxLines = 1)
+                }
+
+                DropdownMenu(
+                    expanded = expand,
+                    onDismissRequest = { expand = false },
+                    modifier = Modifier.fillMaxWidth(0.15f)
+                ) {
+
+                    for(g in gro){
+                        DropdownMenuItem(
+                            text = { Text(g) },
+                            onClick = {
+                                actualGroup = g
+                                expand = false
+                            }
+                        )
+                    }
+                }
+            }
+
+        }
+
+
+        Spacer(Modifier.height(16.dp))
         SideBarNavItem(
             item = home,
             isSelected = selectedScreen == home.screen,

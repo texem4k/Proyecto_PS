@@ -26,7 +26,6 @@ import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
-import software.ulpgc.code.application.ui.AuthState
 
 
 @Composable
@@ -43,6 +42,7 @@ fun App(
     var showResults by remember { mutableStateOf(false) }
     var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showCreateGroup by remember { mutableStateOf(false) }
 
     var isAuthenticated by remember { mutableStateOf(true) }
 
@@ -68,14 +68,11 @@ fun App(
             if (showThemeDialog) {
                 ThemeDialog(
                     current = selectedTheme,
-                    onThemeSelected = {
-                        selectedTheme = it
-                    },
-                    onDismiss = {
-                        showThemeDialog = false
-                    }
+                    onThemeSelected = { selectedTheme = it },
+                    onDismiss = { showThemeDialog = false }
                 )
             }
+
             Column(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.primaryContainer)
@@ -83,8 +80,8 @@ fun App(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 storeError?.let { error -> StoreErrorDisplay(error) }
-                if (storeReady) {
 
+                if (storeReady) {
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
@@ -129,9 +126,7 @@ fun App(
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TASK,
                             onShowResults = { showResults = it }
@@ -142,22 +137,24 @@ fun App(
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TOPIC,
                             onShowResults = { showResults = it }
                         )
+
+                        Screen.GROUP_CREATE -> {
+                            // Vuelve a HOME y abre el popup de crear grupo
+                            screen = Screen.HOME
+                            showCreateGroup = true
+                        }
 
                         Screen.TAG_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TAG,
                             onShowResults = { showResults = it }
@@ -173,10 +170,8 @@ fun App(
                             onSettingsClick = { showThemeDialog = true }
                         )
 
-
                         else -> {}
                     }
-
                 }
             }
 
@@ -191,6 +186,13 @@ fun App(
                     filters = filters
                 )
             }
+
+            if (storeReady && showCreateGroup) {
+                CreateGroup(
+                    onClose = { showCreateGroup = false },
+                    onSubmit = { }
+                )
+            }
         }
     }
 }
@@ -199,18 +201,10 @@ fun App(
 fun StoreErrorDisplay(exception: AppException) {
     AlertDialog(
         onDismissRequest = {},
-        title = {
-            Text("Error")
-        },
-        text = {
-            Text(
-                exception.message ?: "Ha ocurrido un error inesperado"
-            )
-        },
+        title = { Text("Error") },
+        text = { Text(exception.message ?: "Ha ocurrido un error inesperado") },
         confirmButton = {
-            Button(onClick = {}) {
-                Text("Aceptar")
-            }
+            Button(onClick = {}) { Text("Aceptar") }
         }
     )
 }
