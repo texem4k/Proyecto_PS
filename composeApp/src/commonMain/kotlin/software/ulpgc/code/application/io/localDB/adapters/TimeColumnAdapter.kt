@@ -6,7 +6,7 @@ import software.ulpgc.code.architecture.model.times.TimeFactory
 
 object TimeColumnAdapter: ColumnAdapter<Time, String> {
     override fun decode(databaseValue: String): Time {
-        return TimeFactory().parse(databaseValue)
+        return TimeFactory.parse(databaseValue)
     }
 
     override fun encode(value: Time): String {

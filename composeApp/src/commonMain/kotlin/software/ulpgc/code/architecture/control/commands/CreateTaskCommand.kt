@@ -20,7 +20,7 @@ class CreateTaskCommand internal constructor (private val task: Task, private va
         task.dbState = DBState.NEW
         Store.addTask(task)
         if (stats.isEmpty()) {
-            Store.addCompletionStat(CompletionStat(task.id, false, task.time.end))
+            Store.addCompletionStat(CompletionStat(task.id, task.time.start, false, task.time.end))
         } else {
             stats.forEach { Store.addCompletionStat(it) }
         }

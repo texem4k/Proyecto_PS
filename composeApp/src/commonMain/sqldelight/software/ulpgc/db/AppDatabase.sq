@@ -87,7 +87,8 @@ CREATE TABLE TaskTag (
 CREATE TABLE TaskCompletion (
     id TEXT AS Uuid PRIMARY KEY,
     taskId TEXT AS Uuid NOT NULL,
-    date TEXT AS Instant NOT NULL,
+    proposedDate TEXT AS Instant NOT NULL,
+    endDate TEXT AS Instant NOT NULL,
     completed INTEGER AS Boolean NOT NULL,
     FOREIGN KEY (taskId) REFERENCES Task(id) ON DELETE CASCADE
 );
@@ -127,7 +128,7 @@ INSERT OR IGNORE INTO TaskTag(taskId, tagId, topicId)
     WHERE Task.id = :taskId;
 
 insertTaskCompletion:
-INSERT OR IGNORE INTO TaskCompletion(id, taskId, date, completed) VALUES (?, ?, ?, ?);
+INSERT OR IGNORE INTO TaskCompletion(id, taskId, proposedDate, endDate, completed) VALUES (?, ?, ?, ?, ?);
 
 -- Actualizaciones
 updateUser:
@@ -146,7 +147,7 @@ updateTask:
 UPDATE Task SET name = ?, description = ?, time = ?, interval = ?, priority = ?, isCompleted = ? WHERE id = ?;
 
 updateTaskCompletion:
-UPDATE TaskCompletion SET date = ?, completed = ? WHERE id = ?;
+UPDATE TaskCompletion SET endDate = ?, completed = ? WHERE id = ?;
 
 -- Borraciones
 deleteUser:

@@ -21,6 +21,6 @@ class DeleteTaskCommand internal constructor (private val task: Task): Command {
     }
 
     fun copyOf(stats: List<CompletionStat>): List<CompletionStat> {
-        return stats.map{ CompletionStat(it.taskId, it.completed, it.date, it.id) }
+        return stats.map{ CompletionStat(it.taskId, it.proposedDate ,it.completed, it.endDate, it.id) }
     }
 }

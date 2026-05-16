@@ -18,12 +18,11 @@ class MarkCompleteTaskCommand (val task: Task) : Command {
 
     fun setCompletionStat(task: Task){
         val stat = Store.completions()
-            .filter{ it.taskId == task.id }
+            .filter { it.taskId == task.id }
             .filterNot { it.completed }
-            .sortedByDescending { it.date }
-            .first()
+            .maxBy { it.endDate }
         stat.completed = true
-        stat.date = Clock.System.now()
+        stat.endDate = Clock.System.now()
         stat.dbState = DBState.UPDATED
     }
 }

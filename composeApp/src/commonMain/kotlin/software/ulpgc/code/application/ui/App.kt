@@ -46,9 +46,9 @@ fun App(
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
         Store.initialize(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, {
-            TaskNotifier.setUpWith(Store)
+            TaskNotifier.initialize()
             TaskMonitor.initialize()
-            TaskOptimizer.setUpWith(Store)
+            TaskOptimizer.initialize()
         })
     }
 

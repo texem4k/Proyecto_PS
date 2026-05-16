@@ -101,7 +101,7 @@ class CommandBuilder internal constructor () {
     }
 
     private fun time(): Result<Time> = runCatching {
-        return getOrThrow("time") { time -> TimeFactory().parse(time) }
+        return getOrThrow("time") { time -> TimeFactory.parse(time) }
     }
 
     private fun id(): Result<Uuid> = runCatching {

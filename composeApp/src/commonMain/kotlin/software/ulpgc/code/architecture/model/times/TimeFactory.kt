@@ -5,7 +5,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-class TimeFactory() {
+object TimeFactory {
     fun createTime(
         start: Instant,
         end: Instant,

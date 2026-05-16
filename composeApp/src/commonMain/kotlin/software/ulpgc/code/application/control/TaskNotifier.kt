@@ -15,13 +15,11 @@ object TaskNotifier : Coroutinable {
     private enum class NotificationState {
         REMINDED, IMPORTANT, FINISHED
     }
-    private var store: Store? = null
     private val notifier = NotifierManager.getLocalNotifier()
     private val notificationStates: MutableMap<Uuid, NotificationState> = mutableMapOf()
     private const val REMINDING_FACTOR = 3
 
-    fun setUpWith(store: Store) {
-        this.store = store
+    fun initialize() {
         CoroutineManager.add(this)
     }
 
@@ -68,7 +66,7 @@ object TaskNotifier : Coroutinable {
     }
 
     override suspend fun execute() {
-        store?.tasks()?.filterNot(Task::isCompleted)?.forEach { task ->
+        Store.tasks().filterNot(Task::isCompleted).forEach { task ->
             if (hasFinished(task)) {
                 if (notificationStates[task.id] == NotificationState.FINISHED) return
                 notify(task, NotificationState.FINISHED)

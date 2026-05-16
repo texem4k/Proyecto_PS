@@ -19,10 +19,9 @@ class UnmarkCompleteTaskCommand (val task: Task) : Command {
         val stat = Store.completions()
             .filter { it.taskId == task.id }
             .filter { it.completed }
-            .sortedByDescending { it.date }
-            .first()
+            .maxBy { it.endDate }
         stat.completed = false
-        stat.date = task.time.end
+        stat.endDate = task.time.end
         stat.dbState = DBState.UPDATED
     }
 

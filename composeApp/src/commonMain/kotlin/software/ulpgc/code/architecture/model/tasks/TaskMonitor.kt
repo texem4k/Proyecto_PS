@@ -13,7 +13,6 @@ import software.ulpgc.code.architecture.io.isDeleted
 import kotlin.time.Clock
 
 object TaskMonitor: Coroutinable {
-
     private lateinit var notifier: Notifier
 
     fun initialize() {
@@ -26,7 +25,7 @@ object TaskMonitor: Coroutinable {
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.dbState = DBState.UPDATED
-        Store.addCompletionStat(CompletionStat(task.id, false, task.time.end))
+        Store.addCompletionStat(CompletionStat(task.id, task.time.start, false, task.time.end))
         LogMaster.log("Task ${task.name} renovada para la fecha ${task.time.start} - ${task.time.end}")
     }
 

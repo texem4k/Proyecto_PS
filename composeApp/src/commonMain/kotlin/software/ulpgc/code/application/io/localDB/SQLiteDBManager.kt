@@ -54,8 +54,9 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
         ),
         TaskCompletionAdapter = DBTaskCompletion.Adapter(
             taskIdAdapter = UuidColumnAdapter,
-            dateAdapter = InstantColumnAdapter,
-            idAdapter = UuidColumnAdapter
+            idAdapter = UuidColumnAdapter,
+            proposedDateAdapter = InstantColumnAdapter,
+            endDateAdapter = InstantColumnAdapter
         ),
         TaskTagAdapter = DBTaskTag.Adapter(
             taskIdAdapter = UuidColumnAdapter,
@@ -156,8 +157,8 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
     }.mapDBException("Failed to fetch users")
 
     override fun completionStats(): Result<List<CompletionStat>> = runCatching {
-        dbQuery.getTaskCompletions { id, taskId, date, completed ->
-            CompletionStat(taskId, completed, date, id, DBState.DEFAULT)
+        dbQuery.getTaskCompletions { id, taskId, proposedDate, endDate, completed ->
+            CompletionStat(taskId, proposedDate, completed, endDate, id, DBState.DEFAULT)
         }.executeAsList()
     }.mapDBException("Failed to fetch completion stats")
 
@@ -186,7 +187,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 obj.tags.forEach { tag -> dbQuery.insertTagForTask(obj.id, tag) }
                 obj.users.forEach { user -> dbQuery.insertUserForTask(obj.id, user) }
             }
-            is CompletionStat -> dbQuery.insertTaskCompletion(obj.id, obj.taskId, obj.date, obj.completed)
+            is CompletionStat -> dbQuery.insertTaskCompletion(obj.id, obj.taskId, obj.proposedDate, obj.endDate, obj.completed)
         }
     }
 
@@ -221,7 +222,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 obj.tags.forEach { tag -> dbQuery.insertTagForTask(obj.id, tag) }
                 obj.users.forEach { user -> dbQuery.insertUserForTask(obj.id, user) }
             }
-            is CompletionStat -> dbQuery.updateTaskCompletion(obj.date, obj.completed, obj.id)
+            is CompletionStat -> dbQuery.updateTaskCompletion(obj.endDate, obj.completed, obj.id)
         }
     }
 

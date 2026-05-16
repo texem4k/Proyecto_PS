@@ -37,7 +37,7 @@ fun buildTime(form: Form): Time {
             val error = isValidDate(start, "inicial")
             require(error.isEmpty()) { error }
 
-            TimeFactory().createTime(start, form.taskDuration.toLong())
+            TimeFactory.createTime(start, form.taskDuration.toLong())
         }
 
         form.taskFinalDateString.length == 8 && form.taskDuration.isNotEmpty() -> {
@@ -47,7 +47,7 @@ fun buildTime(form: Form): Time {
             val error = isValidDate(end, "final")
             require(error.isEmpty()) { error }
 
-            TimeFactory().createTime(form.taskDuration.toLong(), end)
+            TimeFactory.createTime(form.taskDuration.toLong(), end)
         }
 
         form.taskStartDateString.length == 8 && form.taskFinalDateString.length == 8 -> {
@@ -63,7 +63,7 @@ fun buildTime(form: Form): Time {
                 "Fecha final o inicial incorrecta"
             }
 
-            TimeFactory().createTime(start, end)
+            TimeFactory.createTime(start, end)
         }
 
         else -> throw IllegalArgumentException("Combinación de fechas inválida")
