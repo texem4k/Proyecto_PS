@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,13 +46,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.CreateTask
@@ -63,7 +55,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.Views.MonthView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.WeekView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.YearView
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
-import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.model.tasks.MAX
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -6,8 +6,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.yearMonth
-import software.ulpgc.code.architecture.model.tasks.Task
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import kotlin.time.Clock
 
 data class DayStats(
@@ -17,24 +17,22 @@ data class DayStats(
 )
 
 
-fun aggregateByDay(tasks: List<Task>): List<DayStats> {
+fun aggregateByDay(taskStat :Sequence<CompletionStat>): List<DayStats> {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val windowStart = today.minus(4, DateTimeUnit.DAY)
-    val windowEnd   = today.plus(4, DateTimeUnit.DAY)
-    val tasksByDate = tasks
-        .groupBy { task ->
-            task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        }
+    val monday      = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
+    val windowStart = monday
+    val tasksByDate = taskStat
+        .groupBy { task -> task.proposedDate.toLocalDateTime(TimeZone.currentSystemDefault()).date }
 
     return buildList {
         var current = windowStart
-        while (current <= windowEnd) {
+        while (current <= today) {
             val dayTasks = tasksByDate[current] ?: emptyList()
             add(
                 DayStats(
                     date      = current,
                     proposed  = dayTasks.size,
-                    completed = dayTasks.count { it.isCompleted }
+                    completed = dayTasks.count { it.completed }
                 )
             )
             current = current.plus(1, DateTimeUnit.DAY)
@@ -42,7 +40,7 @@ fun aggregateByDay(tasks: List<Task>): List<DayStats> {
     }
 }
 
-fun aggregateByWeek(tasks: List<Task>): List<DayStats> {
+fun aggregateByWeek(taskStat :Sequence<CompletionStat>): List<DayStats> {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     val currentMonday = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
@@ -51,9 +49,8 @@ fun aggregateByWeek(tasks: List<Task>): List<DayStats> {
         currentMonday.minus(weeksBack * 7, DateTimeUnit.DAY)
     }
 
-    val tasksByWeek = tasks
-        .groupBy { task ->
-            val date = task.time.start.toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val tasksByWeek = taskStat.groupBy { task ->
+            val date = task.proposedDate.toLocalDateTime(TimeZone.currentSystemDefault()).date
             date.minus(date.dayOfWeek.ordinal, DateTimeUnit.DAY)
         }
 
@@ -62,19 +59,19 @@ fun aggregateByWeek(tasks: List<Task>): List<DayStats> {
         DayStats(
             date      = monday,
             proposed  = weekTasks.size,
-            completed = weekTasks.count { it.isCompleted }
+            completed = weekTasks.count { it.completed }
         )
     }
 }
 
-fun aggregateByMonth(tasks: List<Task>): List<DayStats> {
+fun aggregateByMonth(taskStat :Sequence<CompletionStat>): List<DayStats> {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    val months = (1..4).map { today.minus(it, DateTimeUnit.MONTH) }
+    val months = (0..4).map { today.minus(it, DateTimeUnit.MONTH) }
 
-    val tasksByMonth = tasks.groupBy { task ->
+    val tasksByMonth = taskStat.groupBy { task ->
 
-        val date = task.time.start
+        val date = task.proposedDate
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
 
@@ -86,19 +83,44 @@ fun aggregateByMonth(tasks: List<Task>): List<DayStats> {
         DayStats(
             date      = start,
             proposed  = monthTasks.size,
-            completed = monthTasks.count { it.isCompleted }
+            completed = monthTasks.count { it.completed }
         )
     }.reversed()
 }
 
-fun aggregateByQuarter(tasks: List<Task>): List<DayStats> {
+fun aggregateByQuarter(taskStat :Sequence<CompletionStat>): List<DayStats> {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    val years = (1..4).map { today.minus(it, DateTimeUnit.YEAR) }
+    val quarters = (0..4).map { today.minus(it*3, DateTimeUnit.MONTH) }
 
-    val tasksByMonth = tasks.groupBy { task ->
+    val tasksByQuarter = taskStat.groupBy { task ->
 
-        val date = task.time.start
+        val date = task.proposedDate
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        quarters.firstOrNull { date >= it } ?: quarters.last()
+    }
+
+    return quarters.map { start ->
+        val quarterTasks = tasksByQuarter[start] ?: emptyList()
+        DayStats(
+            date      = start,
+            proposed  = quarterTasks.size,
+            completed = quarterTasks.count { it.completed }
+        )
+    }.reversed()
+}
+
+fun aggregateByYear(taskStat :Sequence<CompletionStat>): List<DayStats> {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val endOfYear = LocalDate(today.year, 1, 1)
+
+
+    val years = (0..4).map { endOfYear.minus(it, DateTimeUnit.YEAR) }
+
+    val tasksByYear = taskStat.groupBy { task ->
+
+        val date = task.proposedDate
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
 
@@ -106,35 +128,11 @@ fun aggregateByQuarter(tasks: List<Task>): List<DayStats> {
     }
 
     return years.map { start ->
-        val monthTasks = tasksByMonth[start] ?: emptyList()
+        val yearTasks = tasksByYear[start] ?: emptyList()
         DayStats(
             date      = start,
-            proposed  = monthTasks.size,
-            completed = monthTasks.count { it.isCompleted }
-        )
-    }.reversed()
-}
-
-fun aggregateByYear(tasks: List<Task>): List<DayStats> {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-    val years = (1..4).map { today.minus(it, DateTimeUnit.YEAR) }
-
-    val tasksByMonth = tasks.groupBy { task ->
-
-        val date = task.time.start
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-
-        years.firstOrNull { date >= it } ?: years.last()
-    }
-
-    return years.map { start ->
-        val monthTasks = tasksByMonth[start] ?: emptyList()
-        DayStats(
-            date      = start,
-            proposed  = monthTasks.size,
-            completed = monthTasks.count { it.isCompleted }
+            proposed  = yearTasks.size,
+            completed = yearTasks.count { it.completed }
         )
     }.reversed()
 }

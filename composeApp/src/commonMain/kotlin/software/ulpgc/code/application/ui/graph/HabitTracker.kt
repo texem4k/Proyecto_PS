@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
@@ -27,25 +26,27 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberColumnCar
 import com.patrykandpatrick.vico.multiplatform.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.multiplatform.common.Fill
 import com.patrykandpatrick.vico.multiplatform.common.component.rememberLineComponent
-import com.patrykandpatrick.vico.multiplatform.common.component.rememberTextComponent
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
 
 enum class ChartMode { DAILY, WEEKLY, MONTHLY, QUARTERLY,ANNUAL }
 
 @Composable
 fun HabitTrackerChart(
-    tasks: List<Task>,
+    taskStat: Sequence<CompletionStat>,
     modifier: Modifier = Modifier
 ) {
     var mode by remember { mutableStateOf(ChartMode.DAILY) }
 
-    val stats = remember(tasks, mode) {
+    val stats = remember(mode) {
         when (mode) {
-            ChartMode.DAILY -> aggregateByDay(tasks)
-            ChartMode.WEEKLY -> aggregateByWeek(tasks)
-            ChartMode.MONTHLY -> aggregateByMonth(tasks)
-            ChartMode.QUARTERLY -> aggregateByQuarter(tasks)
-            ChartMode.ANNUAL -> aggregateByYear(tasks)
+            ChartMode.DAILY -> aggregateByDay(taskStat)
+            ChartMode.WEEKLY -> aggregateByWeek(taskStat)
+            ChartMode.MONTHLY -> aggregateByMonth(taskStat)
+            ChartMode.QUARTERLY -> aggregateByQuarter(taskStat)
+            ChartMode.ANNUAL -> aggregateByYear(taskStat)
         }
     }
 
@@ -61,7 +62,7 @@ fun HabitTrackerChart(
 
         Spacer(Modifier.height(8.dp))
 
-        TaskCompletionChart(stats = stats, isWeekly = mode == ChartMode.WEEKLY)
+        TaskCompletionChart(stats = stats, mode= mode)
     }
 }
 
@@ -111,57 +112,78 @@ fun ChartLegend() {
 
 @Composable
 fun BarGraph(
-    stats: List<DayStats>,
+    completionStat: Sequence<CompletionStat>,
+    tasks: Sequence<Task>,
     modifier: Modifier = Modifier
 ) {
-    val proposedColor = Color(0xFF5C6BC0)
-    val completedColor = Color(0xFF26A69A)
-    val textColor = Color.White
-    val gridColor = Color.White.copy(alpha = 0.15f)
-    val axisColor = Color.White.copy(alpha = 0.5f)
+    val beforeColor = Color(0xFF26A69A)
+    val onTimeColor = Color(0xFF5C6BC0)
+    val lateColor   = Color(0xFFEF5350)
+    val textColor   = Color.White
+    val gridColor   = Color.White.copy(alpha = 0.15f)
+    val axisColor   = Color.White.copy(alpha = 0.5f)
+    val tz          = TimeZone.currentSystemDefault()
 
-    if (stats.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.9f),
-            contentAlignment = Alignment.Center
-        ) { Text("Sin datos en este período") }
-        return
+    val taskMap = remember(tasks) { tasks.associateBy { it.id } }
+
+    val beforeTotal = remember(completionStat, taskMap) {
+        completionStat.count { stat ->
+            if (!stat.completed) return@count false
+            val deadline = taskMap[stat.taskId]?.time?.end?.toLocalDateTime(tz)?.date ?: return@count false
+            stat.endDate.toLocalDateTime(tz).date < deadline
+        }
     }
 
-    val model = remember(stats) {
-        val xValues = stats.indices.map { it.toFloat() }
+    val onTimeTotal = remember(completionStat, taskMap) {
+        completionStat.count { stat ->
+            if (!stat.completed) return@count false
+            val deadline = taskMap[stat.taskId]?.time?.end?.toLocalDateTime(tz)?.date ?: return@count false
+            stat.endDate.toLocalDateTime(tz).date == deadline
+        }
+    }
+
+    val lateTotal = remember(completionStat, taskMap) {
+        completionStat.count { stat ->
+            if (!stat.completed) return@count false
+            val deadline = taskMap[stat.taskId]?.time?.end?.toLocalDateTime(tz)?.date ?: return@count false
+            stat.endDate.toLocalDateTime(tz).date > deadline
+        }
+    }
+
+    val model = remember(beforeTotal, onTimeTotal, lateTotal) {
         CartesianChartModel(
             ColumnCartesianLayerModel.build {
-                series(x = xValues, y = stats.map { it.proposed.toFloat() })
-                series(x = xValues, y = stats.map { it.completed.toFloat() })
+                series(
+                    x = listOf(0f, 1f, 2f),
+                    y = listOf(beforeTotal.toFloat(), onTimeTotal.toFloat(), lateTotal.toFloat())
+                )
             }
         )
-    }
-
-    val bottomAxisFormatter: CartesianValueFormatter = remember(stats) {
-        CartesianValueFormatter { _, value, _ ->
-            val idx = value.toInt()
-            if (idx in stats.indices) {
-                val d = stats[idx].date
-                "${d.dayOfMonth}/${d.monthNumber}"
-            } else ""
-        }
     }
 
     Surface(
         color = Color(0xFF0D0D0D),
         shape = RoundedCornerShape(16.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(all = 16.dp)
+        modifier = modifier.fillMaxWidth().padding(16.dp)
     ) {
         CartesianChartHost(
             chart = rememberCartesianChart(
                 rememberColumnCartesianLayer(
                     columnProvider = ColumnCartesianLayer.ColumnProvider.series(
-                        rememberLineComponent(fill = Fill(proposedColor)),
-                        rememberLineComponent(fill = Fill(completedColor))
-                    )
+                        rememberLineComponent(
+                            fill = Fill(beforeColor),
+                            thickness = 40.dp
+                        ),
+                        rememberLineComponent(
+                            fill = Fill(onTimeColor),
+                            thickness = 40.dp
+                        ),
+                        rememberLineComponent(
+                            fill = Fill(lateColor),
+                            thickness = 40.dp
+                        )
+                    ),
+                    columnCollectionSpacing = 8.dp
                 ),
                 startAxis = VerticalAxis.rememberStart(
                     itemPlacer = VerticalAxis.ItemPlacer.step(step = { 1.0 }),
@@ -171,14 +193,6 @@ fun BarGraph(
                     line = rememberAxisLineComponent(fill = Fill(axisColor)),
                     tick = rememberAxisTickComponent(fill = Fill(axisColor)),
                     guideline = rememberAxisGuidelineComponent(fill = Fill(gridColor)),
-                    titleComponent = rememberTextComponent(
-                        style = TextStyle(
-                            color = textColor,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    ),
-                    title = "Nº de tareas",
                     valueFormatter = { _, value, _ -> value.toInt().toString() }
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
@@ -188,16 +202,22 @@ fun BarGraph(
                     ),
                     line = rememberAxisLineComponent(fill = Fill(axisColor)),
                     tick = rememberAxisTickComponent(fill = Fill(axisColor)),
-                    guideline = rememberAxisGuidelineComponent(fill = Fill(gridColor)),
-                    valueFormatter = bottomAxisFormatter
+                    guideline = null,
+                    valueFormatter = CartesianValueFormatter { _, value, _ ->
+                        when (value.toInt()) {
+                            0    -> "Antes"
+                            1    -> "En plazo"
+                            2    -> "Retraso"
+                            else -> ""
+                        }
+                    }
                 )
             ),
             model = model,
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
+                .height(350.dp)
                 .padding(horizontal = 16.dp)
-                .background(Color.Transparent)
         )
     }
 }

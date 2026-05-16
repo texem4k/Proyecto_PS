@@ -33,13 +33,12 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLineCo
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.multiplatform.common.component.rememberTextComponent
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
+import software.ulpgc.code.application.ui.graph.ChartMode
+
 @Composable
 fun TaskCompletionChart(
     stats: List<DayStats>,
-    isWeekly: Boolean = false
+    mode: ChartMode
 ) {
     val proposedColor  = Color(0xFF7C83FD)
     val completedColor = Color(0xFF00E5B0)
@@ -70,7 +69,10 @@ fun TaskCompletionChart(
             val idx = value.toInt()
             if (idx in stats.indices) {
                 val d = stats[idx].date
-                "${d.dayOfMonth}/${d.monthNumber}"
+                when (mode) {
+                    ChartMode.ANNUAL -> "${d.year}"
+                    else -> "${d.dayOfMonth}/${d.monthNumber}/${d.year}"
+                }
             } else ""
         }
     }

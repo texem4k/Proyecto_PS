@@ -50,7 +50,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.Calendar.YearHeader
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Store
 import kotlin.time.Clock
 
 @Composable
