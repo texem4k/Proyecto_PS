@@ -97,7 +97,7 @@ fun HomeCalendar(
 
     var showDialog by remember { mutableStateOf(false) }
 
-    val dayUrgencyColor by remember {
+    val dayUrgencyColor by remember(sampleEntries) {
         derivedStateOf {
             sampleEntries.mapValues { (_, entries) ->
                 urgencyColorFromEntries(entries)

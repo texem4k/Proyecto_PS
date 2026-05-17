@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.multiplatform.cartesian.Zoom
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLabelComponent
@@ -32,6 +33,8 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisGuidel
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLineComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.multiplatform.cartesian.marker.Interaction
+import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.multiplatform.common.component.rememberTextComponent
 import software.ulpgc.code.application.ui.graph.ChartMode
 
@@ -83,7 +86,7 @@ fun TaskCompletionChart(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(all = 16.dp)
+            .padding(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 8.dp)
     ) {
         CartesianChartHost(
             chart = rememberCartesianChart(
@@ -130,8 +133,11 @@ fun TaskCompletionChart(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp)
-                .padding(horizontal = 16.dp)
-                .background(Color.Transparent)
+                .padding(horizontal = 8.dp)
+                .background(Color.Transparent),
+            zoomState = rememberVicoZoomState(
+                zoomEnabled = false  // desactiva zoom completamente
+            ),
         )
     }
 }

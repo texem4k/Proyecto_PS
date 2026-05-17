@@ -1,13 +1,14 @@
 package software.ulpgc.code.application.ui.graph
 
+import androidx.compose.runtime.remember
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
+import kotlin.collections.plus
 import kotlin.time.Clock
 
 data class DayStats(
@@ -17,22 +18,31 @@ data class DayStats(
 )
 
 
-fun aggregateByDay(taskStat :Sequence<CompletionStat>): List<DayStats> {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val monday      = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
-    val windowStart = monday
-    val tasksByDate = taskStat
-        .groupBy { task -> task.proposedDate.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+data class TimeWindow(val start: LocalDate, val end: LocalDate)
+
+fun LocalDate.toWindowStart(windows: List<TimeWindow>): LocalDate? =
+    windows.firstOrNull { this >= it.start && this < it.end }?.start
+
+fun aggregateByDay(taskStat: Sequence<CompletionStat>): List<DayStats> {
+    val tz      = TimeZone.currentSystemDefault()
+    val today   = Clock.System.now().toLocalDateTime(tz).date
+    val monday  = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
+
+    val statList = taskStat.toList()
+
+    val tasksByProposedDate = statList.groupBy { it.proposedDate.toLocalDateTime(tz).date }
+    val completedByEndDate  = statList
+        .filter { it.completed }
+        .groupBy { it.endDate.toLocalDateTime(tz).date }
 
     return buildList {
-        var current = windowStart
+        var current = monday
         while (current <= today) {
-            val dayTasks = tasksByDate[current] ?: emptyList()
             add(
                 DayStats(
                     date      = current,
-                    proposed  = dayTasks.size,
-                    completed = dayTasks.count { it.completed }
+                    proposed  = tasksByProposedDate[current]?.size ?: 0,
+                    completed = completedByEndDate[current]?.size ?: 0
                 )
             )
             current = current.plus(1, DateTimeUnit.DAY)
@@ -40,99 +50,109 @@ fun aggregateByDay(taskStat :Sequence<CompletionStat>): List<DayStats> {
     }
 }
 
-fun aggregateByWeek(taskStat :Sequence<CompletionStat>): List<DayStats> {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-    val currentMonday = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
-
+fun aggregateByWeek(taskStat: Sequence<CompletionStat>): List<DayStats> {
+    val tz           = TimeZone.currentSystemDefault()
+    val today        = Clock.System.now().toLocalDateTime(tz).date
     val weekStarts = (3 downTo 0).map { weeksBack ->
-        currentMonday.minus(weeksBack * 7, DateTimeUnit.DAY)
+        today.minus(weeksBack * 7, DateTimeUnit.DAY)
     }
 
-    val tasksByWeek = taskStat.groupBy { task ->
-            val date = task.proposedDate.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            date.minus(date.dayOfWeek.ordinal, DateTimeUnit.DAY)
-        }
+    val windows = weekStarts.zipWithNext { a, b -> TimeWindow(a, b) } +
+            TimeWindow(weekStarts.last(), weekStarts.last().plus(1, DateTimeUnit.WEEK))
 
-    return weekStarts.map { monday ->
-        val weekTasks = tasksByWeek[monday] ?: emptyList()
+    val tasksByWeek     = taskStat.groupBy { it.proposedDate.toLocalDateTime(tz).date.toWindowStart(windows) }
+    val completedByWeek = taskStat
+        .filter { it.completed }
+        .groupBy { it.endDate.toLocalDateTime(tz).date.toWindowStart(windows) }
+
+    return weekStarts.map { start ->
         DayStats(
-            date      = monday,
-            proposed  = weekTasks.size,
-            completed = weekTasks.count { it.completed }
+            date      = start,
+            proposed  = tasksByWeek[start]?.size ?: 0,
+            completed = completedByWeek[start]?.size ?: 0
         )
     }
 }
 
 fun aggregateByMonth(taskStat :Sequence<CompletionStat>): List<DayStats> {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val tz    = TimeZone.currentSystemDefault()
+    val today = Clock.System.now().toLocalDateTime(tz).date
 
-    val months = (0..4).map { today.minus(it, DateTimeUnit.MONTH) }
+    val months = (4 downTo 0).map { today.minus(it, DateTimeUnit.MONTH) }
+    val statList = taskStat.toList()
+    val windows = months.zipWithNext { a, b -> TimeWindow(a, b) } +
+            TimeWindow(months.last(), months.last().plus(1, DateTimeUnit.MONTH))
 
-    val tasksByMonth = taskStat.groupBy { task ->
+    val tasksByMonth = statList.groupBy { task ->
+        task.proposedDate
+            .toLocalDateTime(tz)
+            .date.toWindowStart(windows)
 
-        val date = task.proposedDate
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
+    }
+    val completedByMonth = statList.filter { it.completed }.groupBy { task ->
+        task.endDate
+            .toLocalDateTime(tz)
+            .date.toWindowStart(windows)
 
-        months.firstOrNull { date >= it } ?: months.last()
     }
 
     return months.map { start ->
-        val monthTasks = tasksByMonth[start] ?: emptyList()
         DayStats(
             date      = start,
-            proposed  = monthTasks.size,
-            completed = monthTasks.count { it.completed }
+            proposed  = tasksByMonth[start]?.size ?: 0,
+            completed = completedByMonth[start]?.size ?: 0
         )
-    }.reversed()
+    }
 }
 
 fun aggregateByQuarter(taskStat :Sequence<CompletionStat>): List<DayStats> {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val tz    = TimeZone.currentSystemDefault()
+    val today = Clock.System.now().toLocalDateTime(tz).date
 
-    val quarters = (0..4).map { today.minus(it*3, DateTimeUnit.MONTH) }
+    val quarters = (4 downTo 0).map { today.minus(it*3, DateTimeUnit.MONTH) }
+
+    val windows = quarters.zipWithNext { a, b -> TimeWindow(a, b) } +
+            TimeWindow(quarters.last(), quarters.last().plus(3, DateTimeUnit.MONTH))
 
     val tasksByQuarter = taskStat.groupBy { task ->
-
-        val date = task.proposedDate
-            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-        quarters.firstOrNull { date >= it } ?: quarters.last()
+        task.proposedDate
+            .toLocalDateTime(tz).date.toWindowStart(windows)
+    }
+    val completedByQuarter = taskStat.filter { it.completed }.groupBy {
+        it.endDate.toLocalDateTime(tz).date.toWindowStart(windows)
     }
 
     return quarters.map { start ->
-        val quarterTasks = tasksByQuarter[start] ?: emptyList()
         DayStats(
             date      = start,
-            proposed  = quarterTasks.size,
-            completed = quarterTasks.count { it.completed }
+            proposed  = tasksByQuarter[start]?.size ?: 0,
+            completed = completedByQuarter[start]?.size ?: 0
         )
-    }.reversed()
+    }
 }
 
 fun aggregateByYear(taskStat :Sequence<CompletionStat>): List<DayStats> {
+    val tz    = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    val endOfYear = LocalDate(today.year, 1, 1)
+    val startOfYear = LocalDate(today.year, 1, 1)
 
+    val years = (4 downTo 0).map { startOfYear.minus(it, DateTimeUnit.YEAR) }
 
-    val years = (0..4).map { endOfYear.minus(it, DateTimeUnit.YEAR) }
+    val windows = years.zipWithNext { a, b -> TimeWindow(a, b) } +
+            TimeWindow(years.last(), years.last().plus(1, DateTimeUnit.YEAR))
 
     val tasksByYear = taskStat.groupBy { task ->
-
-        val date = task.proposedDate
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-
-        years.firstOrNull { date >= it } ?: years.last()
+            task.proposedDate.toLocalDateTime(tz).date.toWindowStart(windows)
+    }
+    val completedByYear = taskStat.filter { it.completed }.groupBy { task ->
+        task.proposedDate.toLocalDateTime(tz).date.toWindowStart(windows)
     }
 
     return years.map { start ->
-        val yearTasks = tasksByYear[start] ?: emptyList()
         DayStats(
             date      = start,
-            proposed  = yearTasks.size,
-            completed = yearTasks.count { it.completed }
+            proposed  = tasksByYear[start]?.size ?: 0,
+            completed = completedByYear[start]?.size ?: 0
         )
-    }.reversed()
+    }
 }

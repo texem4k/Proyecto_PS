@@ -24,27 +24,27 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.application.ui.SideBar
 import software.ulpgc.code.application.ui.graph.BarGraph
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
+import software.ulpgc.code.application.ui.graph.HourlyDensityChart
 import software.ulpgc.code.application.ui.widgets.rememberUserKpi
-import software.ulpgc.code.architecture.model.tasks.CompletionStat
 
 enum class StatMode(val displayName: String) {
     General("General"),
     ActualGroup("Grupo actual")
 }
 
+enum class TypeChart {BarChart, DotChart}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -65,17 +65,17 @@ fun DashboardScreen(
 
         var modeToggle by remember { mutableStateOf(StatMode.ActualGroup)}
         var expanded by remember { mutableStateOf(false) }
+        val taskFlag = Store.tasks()
 
-        var completionStat by remember { mutableStateOf<Sequence<CompletionStat>>(emptySequence()) }
-
-        LaunchedEffect(modeToggle) {
-            completionStat = when (modeToggle) {
+        var completionStat by remember(modeToggle) {
+            val initial = when (modeToggle) {
                 StatMode.ActualGroup -> {
                     val group = Store.tasks().map { it.id }.toHashSet()
                     Store.completions().filter { it.taskId in group }
                 }
                 StatMode.General -> Store.completions()
             }
+            mutableStateOf(initial)
         }
 
         Column(
@@ -84,7 +84,6 @@ fun DashboardScreen(
                 .fillMaxHeight()
                 .padding(16.dp)
         ) {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -102,14 +101,15 @@ fun DashboardScreen(
                     )
                 ) {
 
-                    Box(modifier = Modifier.padding(start = 30.dp, top = 10.dp, bottom = 4.dp),
+                    Box(
+                        modifier = Modifier.padding(start = 30.dp, top = 10.dp, bottom = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Button(
                             modifier = Modifier.width(140.dp).align(Alignment.TopStart),
                             onClick = { expanded = true }
                         ) {
-                                Text(text = modeToggle.displayName)
+                            Text(text = modeToggle.displayName)
                         }
                         DropdownMenu(
                             expanded = expanded,
@@ -139,16 +139,40 @@ fun DashboardScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(start=16.dp, bottom=16.dp, end=16.dp, top=5.dp),
+                            .padding(start = 16.dp, bottom = 16.dp, end = 16.dp, top = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val kpi by rememberUserKpi()
+                        val kpi by rememberUserKpi(taskStat = completionStat)
                         KpiDashboard(kpi = kpi)
                     }
                 }
 
                 //AQUI
-                BarGraph(completionStat, Store.tasks(), Modifier.weight(1f))
+                Column (modifier = Modifier.weight(1f)) {
+                    var currentMode by remember { mutableStateOf(TypeChart.BarChart) }
+                    Row(modifier = Modifier.padding(start = 12.dp)) {
+                        TypeChart.entries.forEach { mode ->
+                            FilterChip(
+                                selected = currentMode == mode,
+                                onClick = { currentMode = mode },
+                                label = {
+                                    Text(
+                                        when (mode) {
+                                            TypeChart.BarChart -> "Diagrama de Barras"
+                                            TypeChart.DotChart -> "Diagrama de Densidad"
+                                        }
+                                    )
+                                },
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                    }
+
+                    when (currentMode) {
+                        TypeChart.BarChart -> BarGraph(completionStat, taskFlag, Modifier.weight(1f))
+                        TypeChart.DotChart -> HourlyDensityChart(completionStat, Modifier.weight(1f))
+                    }
+                }
             }
 
             Card(
@@ -167,16 +191,7 @@ fun DashboardScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "Progreso de hábitos",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    HabitTrackerChart(taskStat = completionStat)
+                    HabitTrackerChart(tasks = taskFlag, taskStat = completionStat)
                 }
             }
         }
