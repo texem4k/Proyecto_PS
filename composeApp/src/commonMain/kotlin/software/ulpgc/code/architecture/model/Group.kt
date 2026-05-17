@@ -8,6 +8,7 @@ data class Group (
     var name: String,
     var description: String,
     var users: MutableMap<Uuid, Privilege> = mutableMapOf(),
-    val id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW
+    val id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ): DBObject

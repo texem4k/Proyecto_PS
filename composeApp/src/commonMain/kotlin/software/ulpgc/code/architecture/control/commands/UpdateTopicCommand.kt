@@ -16,7 +16,8 @@ class UpdateTopicCommand internal constructor (private val currentTopic: Topic, 
         val currentClone = currentTopic.copy()
         currentTopic.name = newTopic.name
         currentTopic.color = newTopic.color
-        currentTopic.dbState = DBState.UPDATED
+        currentTopic.localDBState = DBState.UPDATED
+        currentTopic.cloudDBState = DBState.UPDATED
         return listOf(UpdateTopicCommand(currentTopic, currentClone))
     }
 }

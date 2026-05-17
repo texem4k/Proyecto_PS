@@ -12,15 +12,20 @@ import kotlin.uuid.Uuid
 
 object Store {
     val ready: StateFlow<Boolean> = Storage.ready.asStateFlow()
-    fun initialize(manager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit) {
+    fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager) {
         LocalDBStore.initialize(
-            manager,
+            localManager,
             Storage::cleanLists,
             {
                 Storage.ready.value = true
                 afterLoad()
             },
             onFailLoad,
+            Storage::dbObjects
+        )
+        CloudDBStore.initialize(
+            cloudManager,
+            Storage::cleanLists,
             Storage::dbObjects
         )
     }
@@ -37,17 +42,21 @@ object Store {
         return users().first { it.id == Storage.currentUser }
     }
 
-    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isDeleted() }.filter { it.groupId == Storage.currentGroup }
+    fun changeUserTo(user: User) {
+        Storage.currentUser = user.id
+    }
 
-    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
+    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { it.groupId == Storage.currentGroup }
 
-    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
+    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
 
-    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isDeleted() }
+    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
 
-    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isDeleted() }
+    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
 
-    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isDeleted() }
+    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+
+    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
 
     fun addTopic(topic: Topic) {
         Storage.topics.add(topic)
@@ -90,9 +99,9 @@ private object Storage {
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
     fun cleanLists() {
-        topics.removeAll { it.isDeleted() }
-        tags.removeAll { it.isDeleted() }
-        tasks.removeAll { it.isDeleted() }
-        stats.removeAll { it.isDeleted() }
+        topics.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
+        tags.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
+        tasks.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
+        stats.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
     }
 }

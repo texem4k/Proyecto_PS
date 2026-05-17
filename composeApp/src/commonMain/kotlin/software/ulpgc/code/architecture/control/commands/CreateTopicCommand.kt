@@ -11,7 +11,8 @@ class CreateTopicCommand internal constructor (private val topic: Topic): Comman
 
     override fun execute(): List<Command> {
         LogMaster.log("CreateTopicCommand {$topic}")
-        topic.dbState = DBState.NEW
+        topic.localDBState = DBState.NEW
+        topic.cloudDBState = DBState.NEW
         Store.addTopic(topic)
         return listOf(DeleteTopicCommand(topic))
     }

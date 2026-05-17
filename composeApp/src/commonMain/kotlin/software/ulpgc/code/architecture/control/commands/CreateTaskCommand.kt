@@ -17,7 +17,8 @@ class CreateTaskCommand internal constructor (private val task: Task, private va
 
     override fun execute(): List<Command> {
         LogMaster.log("CreateTaskCommand {$task}")
-        task.dbState = DBState.NEW
+        task.localDBState = DBState.NEW
+        task.localDBState = DBState.NEW
         Store.addTask(task)
         if (stats.isEmpty()) {
             Store.addCompletionStat(CompletionStat(task.id, task.time.start, false, task.time.end))

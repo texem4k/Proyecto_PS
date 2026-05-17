@@ -1,0 +1,50 @@
+package software.ulpgc.code.application.io.cloudDB
+
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.User
+import kotlin.uuid.Uuid
+
+object SupabaseAuth {
+    private lateinit var auth: Auth
+    private val _ready = MutableStateFlow(false)
+    val ready = _ready.asStateFlow()
+
+    fun initialize(auth: Auth) {
+        this.auth = auth
+        _ready.value = true
+    }
+
+    suspend fun login(userEmail: String, userPassword: String) {
+        auth.signInWith(Email) {
+            email = userEmail
+            password = userPassword
+        }
+        auth.startAutoRefreshForCurrentSession()
+    }
+
+    suspend fun logout() {
+        auth.signOut()
+        auth.stopAutoRefreshForCurrentSession()
+    }
+
+    suspend fun register(name: String, userEmail: String, userPassword: String) {
+        val user = auth.signUpWith(Email) {
+            email = userEmail
+            password = userPassword
+        }
+        user?.id?.let { Store.addUser(User(name, Uuid.parse(it))) }
+        login(userEmail, userPassword)
+    }
+
+    fun isLoggedIn(): Boolean {
+        return auth.currentSessionOrNull() != null
+    }
+
+    suspend fun refresh() {
+        auth.refreshCurrentSession()
+    }
+}

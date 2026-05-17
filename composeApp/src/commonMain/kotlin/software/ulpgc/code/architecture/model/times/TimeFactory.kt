@@ -27,18 +27,18 @@ object TimeFactory {
     fun createTime(
         start: Instant,
         durationHours: Long,
-        id: Uuid = Uuid.random()
+        id: Uuid = Uuid.generateV7()
     ): StartBasedTime = StartBasedTime(id, start, (start + durationHours.hours))
 
     fun createTime(
         durationHours: Long,
         end: Instant,
-        id: Uuid = Uuid.random()
+        id: Uuid = Uuid.generateV7()
     ): EndBasedTime = EndBasedTime(id, (end - durationHours.hours), end)
 
     fun createTime(
         start: Instant,
         end: Instant,
-        id: Uuid = Uuid.random()
+        id: Uuid = Uuid.generateV7()
     ): BoundedTime = BoundedTime(id, start, end)
 }

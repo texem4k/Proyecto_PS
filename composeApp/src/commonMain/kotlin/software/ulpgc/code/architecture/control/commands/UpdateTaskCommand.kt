@@ -29,7 +29,8 @@ class UpdateTaskCommand internal constructor (private val currentTask: Task, pri
         currentTask.tags = newTask.tags
         currentTask.users = newTask.users
         currentTask.isCompleted = newTask.isCompleted
-        currentTask.dbState = DBState.UPDATED
+        currentTask.localDBState = DBState.UPDATED
+        currentTask.cloudDBState = DBState.UPDATED
         return listOf(UpdateTaskCommand(currentTask, currentClone))
     }
 }

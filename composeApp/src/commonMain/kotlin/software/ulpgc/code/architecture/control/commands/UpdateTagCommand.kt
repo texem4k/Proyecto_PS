@@ -14,7 +14,8 @@ class UpdateTagCommand internal constructor (private val currentTag: Tag,private
         LogMaster.log("UpdateTopicCommand {from=$currentTag to=$newTag}")
         val currentClone = currentTag.copy()
         currentTag.name = newTag.name
-        currentTag.dbState = DBState.UPDATED
+        currentTag.localDBState = DBState.UPDATED
+        currentTag.cloudDBState = DBState.UPDATED
         return listOf(UpdateTagCommand(currentTag, currentClone))
     }
 }

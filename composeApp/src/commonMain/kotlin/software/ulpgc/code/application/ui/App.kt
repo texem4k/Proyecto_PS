@@ -13,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import software.ulpgc.code.application.control.TaskNotifier
+import software.ulpgc.code.application.io.cloudDB.SupabaseDBManager
+import software.ulpgc.code.application.io.cloudDB.SupabaseProvider
 import software.ulpgc.code.application.io.localDB.DatabaseDriverFactory
 import software.ulpgc.code.application.io.localDB.JSONParser
 import software.ulpgc.code.application.io.localDB.SQLiteDBManager
@@ -45,11 +47,13 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        Store.initialize(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, {
+        SQLiteDBManager.initialize(databaseDriverFactory, seedData)
+        Store.initialize(SQLiteDBManager, { error -> storeError = error }, {
             TaskNotifier.initialize()
             TaskMonitor.initialize()
             TaskOptimizer.initialize()
-        })
+            SupabaseProvider.initialize()
+        }, SupabaseDBManager)
     }
 
     val storeReady = Store.ready.collectAsState().value
@@ -193,7 +197,7 @@ fun StoreErrorDisplay(exception: AppException) {
         },
         text = {
             Text(
-                exception.message ?: "Ha ocurrido un error inesperado"
+                exception.message
             )
         },
         confirmButton = {

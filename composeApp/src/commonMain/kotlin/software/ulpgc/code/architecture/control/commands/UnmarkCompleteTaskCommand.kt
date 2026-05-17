@@ -10,7 +10,8 @@ class UnmarkCompleteTaskCommand (val task: Task) : Command {
     override fun execute(): List<Command> {
         LogMaster.log("UnmarkCompleteTaskCommand {$task}")
         task.isCompleted = false
-        task.dbState = DBState.UPDATED
+        task.localDBState = DBState.UPDATED
+        task.cloudDBState = DBState.UPDATED
         setCompletionStat(task)
         return listOf(MarkCompleteTaskCommand(task))
     }
@@ -22,7 +23,8 @@ class UnmarkCompleteTaskCommand (val task: Task) : Command {
             .maxBy { it.endDate }
         stat.completed = false
         stat.endDate = task.time.end
-        stat.dbState = DBState.UPDATED
+        stat.localDBState = DBState.UPDATED
+        stat.cloudDBState = DBState.UPDATED
     }
 
 

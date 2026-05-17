@@ -11,7 +11,8 @@ class CreateTagCommand internal constructor (private val tag: Tag) : Command {
 
     override fun execute(): List<Command> {
         LogMaster.log("CreateTagCommand {$tag}")
-        tag.dbState = DBState.NEW
+        tag.localDBState = DBState.NEW
+        tag.cloudDBState = DBState.NEW
         Store.addTag(tag)
         return listOf(DeleteTagCommand(tag))
     }
