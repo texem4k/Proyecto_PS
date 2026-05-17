@@ -5,6 +5,7 @@ enum class Screen {
     TASKS_CREATE,
     TOPIC_CREATE,
     TAG_CREATE,
+    GROUP_CREATE,
     PROFILE,
     CALENDAR,
     SETTINGS,

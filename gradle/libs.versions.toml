@@ -22,6 +22,7 @@ material3 = "1.10.0-alpha05"
 sqldelight = "2.3.2"
 kotlinx-datetime = "0.6.1"
 ui = "1.10.3"
+material3Android = "1.4.0"
 
 [libraries]
 android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "androidDriver" }
@@ -53,6 +54,7 @@ native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "a
 sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "androidDriver" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 ui-v1103 = { module = "org.jetbrains.compose.ui:ui", version.ref = "ui" }
+androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

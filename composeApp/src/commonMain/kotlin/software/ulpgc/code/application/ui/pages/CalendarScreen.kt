@@ -61,7 +61,8 @@ import software.ulpgc.code.architecture.model.tasks.MAX
 @Composable
 fun CalendarScreen(
     onNavigate: (Screen) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var version by remember { mutableStateOf(0) }
