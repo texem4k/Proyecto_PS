@@ -1,7 +1,9 @@
 package software.ulpgc.code.application.ui
 
 import Screen
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,11 +23,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Group
+import kotlin.uuid.Uuid
 
 data class SideBarItem(
     val icon: ImageVector,
@@ -36,7 +43,6 @@ private val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
-    SideBarItem(Icons.Default.Palette, Screen.SETTINGS),
 )
 
 val gro = listOf(
@@ -55,11 +61,9 @@ fun SideBar(
     onSettingsClick: () -> Unit
 ) {
     var showPopup by remember { mutableStateOf(false) }
-    var expand by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
     val auth = LocalAuthState.current
-
 
     Column(
         modifier = Modifier
@@ -69,45 +73,9 @@ fun SideBar(
             .padding(vertical = 24.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
-        var actualGroup by remember { mutableStateOf("Tu tablero en la nube") }
+        var actualGroup by remember { mutableStateOf(Store.currentGroup().id) }
 
-        Row(modifier=Modifier.fillMaxWidth()){
-            Box {
-                Button(onClick = { expand = true },
-                    contentPadding = PaddingValues(0.2.dp),
-                    modifier=Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    ),
-                    border = null,
-                    elevation = null) {
-                    Text(actualGroup.take(15),fontSize = 10.sp, maxLines = 1)
-                }
-
-                DropdownMenu(
-                    expanded = expand,
-                    onDismissRequest = { expand = false },
-                    modifier = Modifier.fillMaxWidth(0.15f)
-                ) {
-
-                    for(g in gro){
-                        DropdownMenuItem(
-                            text = { Text(g) },
-                            onClick = {
-                                actualGroup = g
-                                expand = false
-                            }
-                        )
-                    }
-                }
-            }
-
-        }
-
-
-        Spacer(Modifier.height(16.dp))
         SideBarNavItem(
             item = home,
             isSelected = selectedScreen == home.screen,
@@ -118,24 +86,23 @@ fun SideBar(
         Spacer(modifier = Modifier.height(32.dp))
 
         topItems.forEach { item ->
-            if (item.screen == Screen.SETTINGS) {
-                SideBarNavItem(
-                    item = item,
-                    isSelected = selectedScreen == item.screen,
-                    onClick = onSettingsClick
-                )
-            } else {
-                SideBarNavItem(
-                    item = item,
-                    isSelected = selectedScreen == item.screen,
-                    onClick = { onNavigate(item.screen) }
-                )
-            }
+            SideBarNavItem(
+                item = item,
+                isSelected = selectedScreen == item.screen,
+                onClick = { onNavigate(item.screen) }
+            )
             Spacer(modifier = Modifier.height(4.dp))
         }
 
         Spacer(modifier = Modifier.weight(1f))
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.weight(0.05f))
+
+        GroupSelectorMenu(
+            groups = Store.groups().toList(),
+            selectedGroup = Store.currentGroup().id,
+            onGroupSelected = { actualGroup = it },
+        )
 
         Box(
             modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -155,7 +122,6 @@ fun SideBar(
             )
 
             if (showPopup && auth.isAuthenticated) {
-
                 val density = LocalDensity.current
                 val offsetY = with(density) {
                     (-cardHeight + 250.dp.toPx()).toInt()
@@ -173,17 +139,13 @@ fun SideBar(
                     UserMenuCard(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
-                            println("DEBUG cardHeight: $cardHeight")
                         },
                         name = "Enrique Sosa",
                         role = "Invitado",
                         onDismiss = { showPopup = false }
                     )
                 }
-            }
-
-
-            else if (showPopup && !auth.isAuthenticated) {
+            } else if (showPopup && !auth.isAuthenticated) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
                     onAuthSuccess = {
@@ -283,5 +245,87 @@ private fun ThemeButton(
         )
     ) {
         Text(text)
+    }
+}
+
+
+@Composable
+fun GroupSelectorMenu(
+    groups: List<Group>,
+    selectedGroup: Uuid,
+    onGroupSelected: (Uuid) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentGroup = groups.find { it.id == selectedGroup }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+
+        Surface(
+            modifier = Modifier
+                .width(140.dp)
+                .clickable { expanded = true },
+            shape = RoundedCornerShape(32.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            color = Color.Transparent
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if ((currentGroup?.name?.length ?: 0) > 10)
+                        "${currentGroup?.name?.take(10)}..."
+                    else
+                        currentGroup?.name ?: "Seleccionar grupo",
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f),
+                    color = Color(0xFFCDD6F4),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+
+
+                )
+            }
+        }
+
+        Box {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                offset = DpOffset(x = 20.dp, y = (-15).dp),
+                modifier = Modifier.heightIn(max = (3 * 48).dp)
+            ) {
+                groups.forEach { group ->
+                    val isSelected = group.id == selectedGroup
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = group.name,
+                                fontSize = 14.sp,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.DarkGray
+                            )
+                        },
+                        onClick = {
+                            onGroupSelected(group.id)
+                            expanded = false
+                        },
+                        trailingIcon = {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }

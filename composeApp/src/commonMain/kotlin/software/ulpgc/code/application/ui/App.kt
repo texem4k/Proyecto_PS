@@ -27,7 +27,13 @@ import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
 
+val LocalThemeState = compositionLocalOf<ThemeState> { error("No ThemeState provided") }
 
+data class ThemeState(
+    val current: AppThemeType,
+    val onThemeSelected: (AppThemeType) -> Unit,
+    val onThemeClick: () -> Unit
+)
 @Composable
 fun App(
     databaseDriverFactory: DatabaseDriverFactory
@@ -43,13 +49,18 @@ fun App(
     var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showCreateGroup by remember { mutableStateOf(false) }
-
     var isAuthenticated by remember { mutableStateOf(true) }
 
     val authState = AuthState(
         isAuthenticated = isAuthenticated,
         onLogin = { isAuthenticated = true },
         onLogout = { isAuthenticated = false }
+    )
+
+    val themeState = ThemeState(
+        current = selectedTheme,
+        onThemeSelected = { selectedTheme = it },
+        onThemeClick = { showThemeDialog = true }
     )
 
     LaunchedEffect(Unit) {
@@ -63,7 +74,10 @@ fun App(
 
     val storeReady = Store.ready.collectAsState().value
 
-    CompositionLocalProvider(LocalAuthState provides authState) {
+    CompositionLocalProvider(
+        LocalAuthState provides authState,
+        LocalThemeState provides themeState
+    ) {
         AppTheme(theme = selectedTheme) {
             if (showThemeDialog) {
                 ThemeDialog(
@@ -144,7 +158,6 @@ fun App(
                         )
 
                         Screen.GROUP_CREATE -> {
-                            // Vuelve a HOME y abre el popup de crear grupo
                             screen = Screen.HOME
                             showCreateGroup = true
                         }

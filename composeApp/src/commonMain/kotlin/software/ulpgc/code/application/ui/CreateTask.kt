@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -107,17 +108,6 @@ fun CreateTask(
         }
     }
 
-    if (formError) {
-        AlertDialog(
-            onDismissRequest = { formError = false },
-            title = { Text("Error") },
-            text = { Text(messageError) },
-            confirmButton = {
-                Button(onClick = { formError = false }) { Text("Aceptar") }
-            }
-        )
-    }
-
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -129,7 +119,45 @@ fun CreateTask(
             shape = RoundedCornerShape(20.dp),
             tonalElevation = 6.dp
         ) {
+
+
+
             Column(modifier = Modifier.padding(24.dp)) {
+
+
+                if (formError) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = messageError,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { formError = false },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
                 WizardHeader(
                     title = "$action tarea",
