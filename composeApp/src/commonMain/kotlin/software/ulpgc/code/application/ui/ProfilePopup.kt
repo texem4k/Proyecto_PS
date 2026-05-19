@@ -21,13 +21,14 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun UserMenuCard(
-    modifier:Modifier,
+    modifier: Modifier,
     name: String,
     role: String,
     onDismiss: () -> Unit,
 ) {
     val auth = LocalAuthState.current
-    var manageGroups by remember {mutableStateOf(false)}
+    val theme = LocalThemeState.current
+    var manageGroups by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -62,9 +63,9 @@ fun UserMenuCard(
             }
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
-            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups=true })
+            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups = true })
             MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
-            MenuItemRow(Icons.Default.HelpOutline, "Ayuda y soporte", hasArrow = true, onClick = onDismiss,)
+            MenuItemRow(Icons.Default.Palette, "Tema", onClick = { theme.onThemeClick(); onDismiss() })
             HorizontalDivider(color = Color(0xFFEEEEEE))
             MenuItemRow(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar sesión", onClick = {
                 auth.onLogout()
@@ -73,9 +74,8 @@ fun UserMenuCard(
         }
     }
 
-    if(manageGroups){
-        //ManageGroups(onDismiss = { manageGroups=false })
-        EditGroup({manageGroups=false}, onSubmit = {})
+    if (manageGroups) {
+        EditGroup({ manageGroups = false }, onSubmit = {})
     }
 }
 

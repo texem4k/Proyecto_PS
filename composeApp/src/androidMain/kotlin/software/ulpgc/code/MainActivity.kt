@@ -12,13 +12,13 @@ import com.mmk.kmpnotifier.notification.configuration.NotificationPlatformConfig
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         NotifierManager.initialize(
             NotificationPlatformConfiguration.Android(
                 notificationIconResId = android.R.drawable.ic_dialog_info,
-                showPushNotification = true
+                showPushNotification = false
             )
         )
 
