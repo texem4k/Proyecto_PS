@@ -13,9 +13,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import software.ulpgc.code.application.control.TaskNotifier
-import software.ulpgc.code.application.io.DatabaseDriverFactory
-import software.ulpgc.code.application.io.JSONParser
-import software.ulpgc.code.application.io.SQLiteDBManager
+import software.ulpgc.code.application.io.localDB.DatabaseDriverFactory
+import software.ulpgc.code.application.io.localDB.JSONParser
+import software.ulpgc.code.application.io.localDB.SQLiteDBManager
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
@@ -26,6 +26,7 @@ import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
+
 
 @Composable
 fun App(
@@ -41,40 +42,46 @@ fun App(
     var showResults by remember { mutableStateOf(false) }
     var selectedTheme by remember { mutableStateOf(AppThemeType.GREEN) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showCreateGroup by remember { mutableStateOf(false) }
 
+    var isAuthenticated by remember { mutableStateOf(true) }
+
+    val authState = AuthState(
+        isAuthenticated = isAuthenticated,
+        onLogin = { isAuthenticated = true },
+        onLogout = { isAuthenticated = false }
+    )
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
         Store.initialize(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, {
-            TaskNotifier.setUpWith(Store)
-            TaskMonitor(Store)
-            TaskOptimizer.setUpWith(Store)
+            TaskNotifier.initialize()
+            TaskMonitor.initialize()
+            TaskOptimizer.initialize()
         })
     }
 
     val storeReady = Store.ready.collectAsState().value
 
-    AppTheme(theme = selectedTheme) {
-        if (showThemeDialog) {
-            ThemeDialog(
-                current = selectedTheme,
-                onThemeSelected = {
-                    selectedTheme = it
-                },
-                onDismiss = {
-                    showThemeDialog = false
-                }
-            )
-        }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            storeError?.let { error -> StoreErrorDisplay(error) }
-            if (storeReady) {
+    CompositionLocalProvider(LocalAuthState provides authState) {
+        AppTheme(theme = selectedTheme) {
+            if (showThemeDialog) {
+                ThemeDialog(
+                    current = selectedTheme,
+                    onThemeSelected = { selectedTheme = it },
+                    onDismiss = { showThemeDialog = false }
+                )
+            }
 
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .safeContentPadding(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                storeError?.let { error -> StoreErrorDisplay(error) }
+
+                if (storeReady) {
                     when (screen) {
                         Screen.HOME -> HomeScreen(
                             onNavigate = { screen = it },
@@ -102,7 +109,7 @@ fun App(
                                 taskToEdit = task
                                 startEditMode = true
                                 screen = Screen.TASKS
-                            } ,
+                            },
                             onDeleted = { refreshKey++ },
                             onCreated = { refreshKey++ },
                             taskToEdit = if (startEditMode) taskToEdit else null,
@@ -119,9 +126,7 @@ fun App(
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TASK,
                             onShowResults = { showResults = it }
@@ -132,22 +137,24 @@ fun App(
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TOPIC,
                             onShowResults = { showResults = it }
                         )
+
+                        Screen.GROUP_CREATE -> {
+                            // Vuelve a HOME y abre el popup de crear grupo
+                            screen = Screen.HOME
+                            showCreateGroup = true
+                        }
 
                         Screen.TAG_CREATE -> TasksScreen(
                             onNavigate = { screen = it },
                             searchText,
                             onSearchTextChange = { searchText = it },
                             filters,
-                            onEdit = { task ->
-                                taskToEdit = task
-                            },
+                            onEdit = { task -> taskToEdit = task },
                             onDeleted = { refreshKey++ },
                             autoOpen = AutoOpen.TAG,
                             onShowResults = { showResults = it }
@@ -163,23 +170,29 @@ fun App(
                             onSettingsClick = { showThemeDialog = true }
                         )
 
-
                         else -> {}
                     }
-
+                }
             }
-        }
 
-        if (storeReady && showResults) {
-            SearchResultsDialog(
-                onDismiss = {
-                    showResults = false
-                    filters.hasFilter = false
-                },
-                value = searchText,
-                onSearchTextChange = { searchText = it },
-                filters = filters
-            )
+            if (storeReady && showResults) {
+                SearchResultsDialog(
+                    onDismiss = {
+                        showResults = false
+                        filters.hasFilter = false
+                    },
+                    value = searchText,
+                    onSearchTextChange = { searchText = it },
+                    filters = filters
+                )
+            }
+
+            if (storeReady && showCreateGroup) {
+                CreateGroup(
+                    onClose = { showCreateGroup = false },
+                    onSubmit = { }
+                )
+            }
         }
     }
 }
@@ -188,18 +201,10 @@ fun App(
 fun StoreErrorDisplay(exception: AppException) {
     AlertDialog(
         onDismissRequest = {},
-        title = {
-            Text("Error")
-        },
-        text = {
-            Text(
-                exception.message ?: "Ha ocurrido un error inesperado"
-            )
-        },
+        title = { Text("Error") },
+        text = { Text(exception.message ?: "Ha ocurrido un error inesperado") },
         confirmButton = {
-            Button(onClick = {}) {
-                Text("Aceptar")
-            }
+            Button(onClick = {}) { Text("Aceptar") }
         }
     )
 }

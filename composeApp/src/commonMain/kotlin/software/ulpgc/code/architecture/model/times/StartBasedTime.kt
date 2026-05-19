@@ -1,6 +1,5 @@
 package software.ulpgc.code.architecture.model.times
 
-import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 

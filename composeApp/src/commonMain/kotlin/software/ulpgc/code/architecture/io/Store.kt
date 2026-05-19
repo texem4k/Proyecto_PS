@@ -93,5 +93,6 @@ private object Storage {
         topics.removeAll { it.isDeleted() }
         tags.removeAll { it.isDeleted() }
         tasks.removeAll { it.isDeleted() }
+        stats.removeAll { it.isDeleted() }
     }
 }

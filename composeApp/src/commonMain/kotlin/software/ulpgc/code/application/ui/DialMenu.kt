@@ -46,7 +46,8 @@ import kotlin.math.sin
 fun DialMenu(
     onCreateTask: () -> Unit,
     onCreateTopic: () -> Unit,
-    onCreateTag: () -> Unit
+    onCreateTag: () -> Unit,
+    onCreateGroup: () -> Unit
 ) {
 
     val items = listOf(
@@ -68,11 +69,12 @@ fun DialMenu(
             color = Color(0xFFD85A30),
             onClick = onCreateTag
         ),
+
         DialMenuItem(
             icon = Icons.Default.Group,
             label = "Nuevo grupo",
             color = Color(0xFFC8C804),
-            onClick = onCreateTag
+            onClick = onCreateGroup
         ),
     )
 

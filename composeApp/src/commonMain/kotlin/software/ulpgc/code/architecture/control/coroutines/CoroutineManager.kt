@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.ulpgc.code.architecture.control.logs.LogMaster
+import kotlin.time.Duration.Companion.milliseconds
 
 object CoroutineManager {
     private class Coroutine (val coroutinable: Coroutinable, val scope: CoroutineScope) {
@@ -20,7 +21,7 @@ object CoroutineManager {
                 while (isActive) {
                     LogMaster.log("Ejecutando corutina $coroutinable")
                     coroutinable.execute()
-                    delay(coroutinable.delayMilis)
+                    delay(coroutinable.delayMilis.milliseconds)
                 }
             }
         }

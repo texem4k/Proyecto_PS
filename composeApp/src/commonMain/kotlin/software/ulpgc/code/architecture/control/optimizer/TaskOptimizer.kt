@@ -24,7 +24,7 @@ object TaskOptimizer: Coroutinable {
         val flexible = mutableListOf<Task>()
         var cursor = now
 
-        // Pass 1: place constrained tasks in significance order, defer the flexible onesº
+        // Pass 1: place constrained tasks in significance order, defer the flexible ones
         for (task in sortedTasks) {
             when (val time = task.time) {
                 is BoundedTime -> {
@@ -77,12 +77,9 @@ object TaskOptimizer: Coroutinable {
         return (placed + gapFills).sortedBy { it.start }
     }
 
-    lateinit var store: Store
-
     override val delayMilis: Long = 15_000L
 
-    fun setUpWith(store: Store) {
-        this.store = store
+    fun initialize() {
         CoroutineManager.add(this)
     }
 
@@ -91,7 +88,7 @@ object TaskOptimizer: Coroutinable {
     }
 
     override suspend fun execute() {
-        updateTimeFramesFor(store.tasks().filterNot(Task::isCompleted).filterNot{task -> task.time.hasFinished()})
+        updateTimeFramesFor(Store.tasks().filterNot(Task::isCompleted).filterNot{task -> task.time.hasFinished()})
     }
 
     private fun updateTimeFramesFor(tasks: Sequence<Task>) {

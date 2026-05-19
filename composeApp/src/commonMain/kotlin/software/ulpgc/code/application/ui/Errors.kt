@@ -1,5 +1,6 @@
 package software.ulpgc.code.application.ui
 
+import software.ulpgc.code.application.ui.FormState
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -37,7 +38,7 @@ fun buildTime(form: Form): Time {
             val error = isValidDate(start, "inicial")
             require(error.isEmpty()) { error }
 
-            TimeFactory().createTime(start, form.taskDuration.toLong())
+            TimeFactory.createTime(start, form.taskDuration.toLong())
         }
 
         form.taskFinalDateString.length == 8 && form.taskDuration.isNotEmpty() -> {
@@ -47,7 +48,7 @@ fun buildTime(form: Form): Time {
             val error = isValidDate(end, "final")
             require(error.isEmpty()) { error }
 
-            TimeFactory().createTime(form.taskDuration.toLong(), end)
+            TimeFactory.createTime(form.taskDuration.toLong(), end)
         }
 
         form.taskStartDateString.length == 8 && form.taskFinalDateString.length == 8 -> {
@@ -63,7 +64,7 @@ fun buildTime(form: Form): Time {
                 "Fecha final o inicial incorrecta"
             }
 
-            TimeFactory().createTime(start, end)
+            TimeFactory.createTime(start, end)
         }
 
         else -> throw IllegalArgumentException("Combinación de fechas inválida")
@@ -82,3 +83,21 @@ fun validateDateErrorMessage(e: Exception, m: String): String {
     return "Los valores de día y mes deben ser correctos (0-31/1-12)"
 }
 
+fun validateGroupStep0(form: CreateGroupFormState): String? {
+    if (form.groupName.isBlank()) return "El nombre del grupo es obligatorio."
+    return null
+}
+
+fun isValidEmail(email: String): Boolean =
+    email.isNotBlank() && Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$").matches(email)
+
+fun validateStep0(form: FormState): String? {
+    if (form.taskName.isBlank()) return "El nombre de la tarea es obligatorio."
+    if (form.taskPriority.isBlank()) return "La prioridad es obligatoria (1–10)."
+    return null
+}
+
+fun validateStep1(form: FormState): String? {
+    if (form.taskTopic == null) return "Debes seleccionar un tópico."
+    return null
+}

@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.io
+package software.ulpgc.code.application.io.localDB
 
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
@@ -13,6 +13,7 @@ import software.ulpgc.code.architecture.model.Privilege
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.User
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import software.ulpgc.code.architecture.model.times.TimeFactory
@@ -53,14 +54,28 @@ data class TaskData(
 )
 
 @Serializable
+data class StatData(
+    val id: Uuid,
+    val taskId: Uuid,
+    val proposedDate: String,
+    val completed: Boolean,
+    val endDate: String
+)
+
+@Serializable
 data class DBData(
     val users: List<UserData>,
     val topics: List<TopicData>,
     val tags: List<TagData>,
     val tasks: List<TaskData>,
-    val groups: List<GroupData>
+    val groups: List<GroupData>,
+    val stats: List<StatData>
 ) {
-    fun dbObjects(): Sequence<DBObject> = userSequence() + groupSequence() + topicSequence() + tagSequence() + taskSequence()
+    fun dbObjects(): Sequence<DBObject> = userSequence() + groupSequence() + topicSequence() + tagSequence() + taskSequence() + statSequence()
+
+    private fun statSequence(): Sequence<DBObject> =
+        this.stats.asSequence().map { (id, taskId, proposedDate, completed, endDate) -> CompletionStat(taskId, Instant.parse(proposedDate), completed,
+            Instant.parse(endDate), id, DBState.DEFAULT) }
 
     private fun topicSequence(): Sequence<Topic> =
         this.topics.asSequence().map { (id, name, groupId, color) -> Topic(name, Color(color), groupId, id, DBState.DEFAULT) }
@@ -74,7 +89,7 @@ data class DBData(
                 topicId,
                 name,
                 description,
-                TimeFactory().createTime(Instant.parse(time.start), Instant.parse(time.end), time.type, time.id),
+                TimeFactory.createTime(Instant.parse(time.start), Instant.parse(time.end), time.type, time.id),
                 TaskInterval.entries[interval],
                 Priority.fromValue(priority),
                 tags.toMutableSet(),
