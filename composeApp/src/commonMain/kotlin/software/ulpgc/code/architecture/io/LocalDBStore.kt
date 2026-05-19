@@ -33,6 +33,7 @@ object LocalDBStore: Coroutinable {
 
     private suspend fun deleteRequired(objects: Sequence<DBObject>) {
         manager.delete(objects)
+        objects.forEach{ it.localDBState = DBState.CLEARED }
         cleanLists()
     }
 

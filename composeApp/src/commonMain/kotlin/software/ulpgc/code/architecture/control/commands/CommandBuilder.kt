@@ -74,6 +74,10 @@ class CommandBuilder internal constructor () {
             CommandType.UNMARK_COMPLETE -> UnmarkCompleteTaskCommand(
                 task().getOrThrow()
             )
+            CommandType.CREATE_GROUP -> TODO()
+            CommandType.UPDATE_GROUP -> TODO()
+            CommandType.EXIT_GROUP -> TODO()
+            CommandType.EDIT_PRIVILEGES -> TODO()
         })
     }
 
@@ -114,7 +118,7 @@ class CommandBuilder internal constructor () {
 
     private fun users(): Result<MutableSet<Uuid>> = runCatching {
         return getOrThrow("users") { user ->
-            if (user == "") mutableSetOf(Store.currentUser().id)
+            if (user == "") mutableSetOf(Store.currentUser())
             else user.split(", ").map { Uuid.parse(it) }.toMutableSet()
         }
     }

@@ -252,7 +252,7 @@ object SupabaseDBManager: DBManager {
         val groupData = postgrest.from("workgroup")
             .select(Columns.raw("id, name, description, workgroupuser!inner()")) {
                 filter {
-                    eq("workgroupuser.userId", Store.currentUser().id)
+                    eq("workgroupuser.userId", Store.currentUser())
                 }
             }.decodeList<GroupData>()
         val groupUsersData = postgrest.from("workgroupuser")
@@ -306,5 +306,26 @@ object SupabaseDBManager: DBManager {
                 eq("privilege", privilege.ordinal)
             }
         }
+    }
+
+    suspend fun codeExists(code: Int): Boolean {
+        val invite = postgrest.from("invitations")
+            .select(Columns.raw("groupId, code, privilege")) {
+            filter{
+                    eq("code", code)
+            }
+        }.decodeAsOrNull<InvitationsData>()
+        return invite == null
+    }
+
+    suspend fun useCode(code: Int, currentUser: Uuid) {
+        val invite = postgrest.from("invitations")
+            .select(Columns.raw("groupId, code, privilege")) {
+            filter{
+                eq("code", code)
+            }
+        }.decodeAs<InvitationsData>()
+        postgrest.from("workgroupuser")
+            .upsert(GroupUserData(currentUser, invite.groupId, Privilege.entries[invite.privilege]))
     }
 }

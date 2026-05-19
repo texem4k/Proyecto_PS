@@ -8,44 +8,46 @@ object CloudDBStore: Coroutinable {
     lateinit var cleanLists: () -> Unit
     lateinit var dbObjects: () -> Sequence<DBObject>
     lateinit var manager: DBManager
+    lateinit var canUseDatabase: () -> Boolean
 
     fun initialize(
         manager: DBManager,
         cleanLists: () -> Unit,
-        dbObjects: () -> Sequence<DBObject>
+        dbObjects: () -> Sequence<DBObject>,
+        canUseDatabase: () -> Boolean
     ) {
         this.manager = manager
         this.cleanLists = cleanLists
         this.dbObjects = dbObjects
+        this.canUseDatabase = canUseDatabase
         CoroutineManager.add(this)
     }
 
     private suspend fun insertRequired(objects: Sequence<DBObject>) {
         manager.insert(objects)
-        objects.forEach { it.localDBState = DBState.DEFAULT }
+        objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
     private suspend fun updateRequired(objects: Sequence<DBObject>) {
         manager.update(objects)
-        objects.forEach { it.localDBState = DBState.DEFAULT }
+        objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
     private suspend fun deleteRequired(objects: Sequence<DBObject>) {
         manager.delete(objects)
+        objects.forEach { it.cloudDBState = DBState.CLEARED }
         cleanLists()
     }
 
     override val delayMilis: Long = 1_000L
 
     override suspend fun onInit() {
-        LogMaster.log("Cargando datos BD")
-        loadDBData()
-        LogMaster.log("Finalizado carga de datos BD")
+        LogMaster.log("Iniciando Cloud DB Store")
     }
 
     private suspend fun loadDBData() {
-        manager.users().getOrThrow().forEach { Store.addUser(it) }
         manager.groups().getOrThrow().forEach { Store.addGroup(it) }
+        manager.users().getOrThrow().forEach { Store.addUser(it) }
         manager.topics().getOrThrow().forEach { Store.addTopic(it) }
         manager.tags().getOrThrow().forEach { Store.addTag(it) }
         manager.tasks().getOrThrow().forEach { Store.addTask(it) }
@@ -53,9 +55,11 @@ object CloudDBStore: Coroutinable {
     }
 
     override suspend fun execute() {
+        if( !canUseDatabase()) return
         deleteRequired(dbObjects().filter { it.isLocalDeleted() })
         updateRequired(dbObjects().filter { it.isLocalUpdated() })
         insertRequired(dbObjects().filter { it.isLocalNew() })
+        loadDBData()
     }
 
     override suspend fun onDispose() {

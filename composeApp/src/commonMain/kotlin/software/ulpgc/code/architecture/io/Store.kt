@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.io
 
+import io.github.jan.supabase.auth.status.SessionSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +13,7 @@ import kotlin.uuid.Uuid
 
 object Store {
     val ready: StateFlow<Boolean> = Storage.ready.asStateFlow()
-    fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager) {
+    fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager, canUseCloudDB: () -> Boolean) {
         LocalDBStore.initialize(
             localManager,
             Storage::cleanLists,
@@ -26,7 +27,8 @@ object Store {
         CloudDBStore.initialize(
             cloudManager,
             Storage::cleanLists,
-            Storage::dbObjects
+            Storage::dbObjects,
+            canUseCloudDB
         )
     }
     
@@ -38,12 +40,12 @@ object Store {
         Storage.currentGroup = group.id
     }
 
-    fun currentUser(): User {
-        return users().first { it.id == Storage.currentUser }
+    fun currentUser(): Uuid {
+        return Storage.currentUser
     }
 
-    fun changeUserTo(user: User) {
-        Storage.currentUser = user.id
+    fun changeUserTo(userId: Uuid) {
+        Storage.currentUser = userId
     }
 
     fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { it.groupId == Storage.currentGroup }
@@ -81,6 +83,16 @@ object Store {
     fun addCompletionStat(completionStat: CompletionStat) {
         Storage.stats.add(completionStat)
     }
+
+    suspend fun onLogOut() {
+        Storage.restartCurrent()
+        users().filterNot { it.id == currentUser() }
+            .forEach { it.localDBState = DBState.DELETED }
+        groups().filterNot { it.id == currentGroup() }
+            .forEach { it.localDBState = DBState.DELETED }
+        LocalDBStore.execute()
+        Storage.clearAll()
+    }
 }
 
 private object Storage {
@@ -98,10 +110,22 @@ private object Storage {
 
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
+    fun clearAll(){
+        topics.removeAll { it.isLocalCleared() }
+        tags.removeAll { it.isLocalCleared() }
+        tasks.removeAll { it.isLocalCleared() }
+        stats.removeAll { it.isLocalCleared() }
+    }
+
     fun cleanLists() {
-        topics.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
-        tags.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
-        tasks.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
-        stats.removeAll { it.isLocalDeleted() && it.isCloudDeleted() }
+        topics.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        tags.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        tasks.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        stats.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+    }
+
+    fun restartCurrent(){
+        this.currentGroup = Uuid.parse("00000000-0000-0000-0000-000000000000")
+        this.currentUser = Uuid.parse("00000000-0000-0000-0000-000000000000")
     }
 }

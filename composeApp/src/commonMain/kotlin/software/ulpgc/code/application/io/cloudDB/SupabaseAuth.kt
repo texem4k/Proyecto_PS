@@ -2,6 +2,7 @@ package software.ulpgc.code.application.io.cloudDB
 
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.io.Store
@@ -18,17 +19,19 @@ object SupabaseAuth {
         _ready.value = true
     }
 
-    suspend fun login(userEmail: String, userPassword: String) {
+    suspend fun login(userEmail: String, userPassword: String): Result<Unit> = runCatching {
         auth.signInWith(Email) {
             email = userEmail
             password = userPassword
         }
         auth.startAutoRefreshForCurrentSession()
+        Store.changeUserTo(Uuid.parse(auth.currentUserOrNull()?.id!!))
     }
 
     suspend fun logout() {
         auth.signOut()
         auth.stopAutoRefreshForCurrentSession()
+        Store.onLogOut()
     }
 
     suspend fun register(name: String, userEmail: String, userPassword: String) {

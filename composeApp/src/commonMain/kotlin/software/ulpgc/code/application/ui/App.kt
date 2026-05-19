@@ -12,12 +12,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.jordond.connectivity.Connectivity
 import software.ulpgc.code.application.control.TaskNotifier
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.application.io.cloudDB.SupabaseDBManager
 import software.ulpgc.code.application.io.cloudDB.SupabaseProvider
 import software.ulpgc.code.application.io.localDB.DatabaseDriverFactory
 import software.ulpgc.code.application.io.localDB.JSONParser
 import software.ulpgc.code.application.io.localDB.SQLiteDBManager
+import software.ulpgc.code.application.io.network.NetworkMonitor
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
@@ -53,7 +56,12 @@ fun App(
             TaskMonitor.initialize()
             TaskOptimizer.initialize()
             SupabaseProvider.initialize()
-        }, SupabaseDBManager)
+        }, SupabaseDBManager,
+            {
+                NetworkMonitor.state.value == Connectivity.Status.Connected(false) &&
+                        SupabaseAuth.ready.value && SupabaseAuth.isLoggedIn() &&
+                        SupabaseDBManager.ready.value
+            })
     }
 
     val storeReady = Store.ready.collectAsState().value

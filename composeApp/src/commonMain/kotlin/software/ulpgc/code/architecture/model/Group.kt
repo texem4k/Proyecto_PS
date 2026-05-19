@@ -11,4 +11,13 @@ data class Group (
     val id: Uuid = Uuid.generateV7(),
     override var localDBState: DBState = DBState.NEW,
     override var cloudDBState: DBState = DBState.NEW
-): DBObject
+): DBObject {
+    companion object{
+        fun privilegeString(privileges: MutableMap<Uuid, Privilege>): String{
+
+        }
+        fun parsePrivileges(privileges: String): MutableMap<Uuid, Privilege> {
+
+        }
+    }
+}
