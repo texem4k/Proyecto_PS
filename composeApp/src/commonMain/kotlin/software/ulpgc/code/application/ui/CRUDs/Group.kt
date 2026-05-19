@@ -303,7 +303,7 @@ fun MemberRow(
 }
 
 
-enum class EditGroupSection { INFO, TOPICS_TAGS, MEMBERS, INVITE,SETTINGS }
+enum class EditGroupSection { INFO, MEMBERS, INVITE,SETTINGS }
 
 @Composable
 fun EditGroup(
@@ -369,14 +369,12 @@ fun EditGroup(
                         val selected = section == s
                         val label = when (s) {
                             EditGroupSection.INFO         -> "Información"
-                            EditGroupSection.TOPICS_TAGS  -> "Tópicos y Tags"
                             EditGroupSection.MEMBERS      -> "Miembros"
                             EditGroupSection.INVITE       -> "Invitar"
                             EditGroupSection.SETTINGS     -> "Ajustes"
                         }
                         val icon = when (s) {
                             EditGroupSection.INFO         -> Icons.Default.Info
-                            EditGroupSection.TOPICS_TAGS  -> Icons.Default.Label
                             EditGroupSection.MEMBERS      -> Icons.Default.Group
                             EditGroupSection.INVITE      -> Icons.Default.Link
                             EditGroupSection.SETTINGS     -> Icons.Default.Settings
@@ -417,7 +415,6 @@ fun EditGroup(
                 AnimatedContent(targetState = section, label = "edit_group_section") { current ->
                     when (current) {
                         EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
-                        EditGroupSection.TOPICS_TAGS -> EditGroupSectionTopicsTags(group)
                         EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
                         EditGroupSection.INVITE     -> EditGroupSectionInvitations(form, { form = it })
                         EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
@@ -483,157 +480,6 @@ fun EditGroupSectionInvitations(
     }
 }
 
-@Composable
-private fun EditGroupSectionTopicsTags(group: Group) {
-    // Tópicos que pertenecen a este grupo
-    var groupTopics by remember {
-        mutableStateOf(Store.topics().filter { it.groupId == group.id }.toList())
-    }
-    // Todos los tópicos disponibles que NO están ya en el grupo
-    val availableTopics by remember(groupTopics) {
-        derivedStateOf { Store.topics().filter { t -> groupTopics.none { it.id == t.id } }.toList() }
-    }
-    var selectedTopicToAdd by remember { mutableStateOf<software.ulpgc.code.architecture.model.Topic?>(null) }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().height(340.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // ── Tópicos ──
-        Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Column(
-                modifier = Modifier.padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Tópicos", style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 8.dp))
-
-                // Añadir tópico
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        DropdownCustom(
-                            section = "Añadir tópico",
-                            items = availableTopics,
-                            selection = DropdownSelection.Single(selectedTopicToAdd?.id),
-                            onItemSelected = { id ->
-                                selectedTopicToAdd = availableTopics.find { it.id == id }
-                            },
-                            itemId = { it.id },
-                            itemName = { it.name }
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            selectedTopicToAdd?.let {
-                                groupTopics = groupTopics + it
-                                selectedTopicToAdd = null
-                            }
-                        },
-                        enabled = selectedTopicToAdd != null
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Añadir",
-                            tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
-                ) {
-                    items(groupTopics) { topic ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(topic.name, modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyMedium)
-                            IconButton(
-                                onClick = { groupTopics = groupTopics.filter { it.id != topic.id } },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Icon(Icons.Default.Close, contentDescription = "Eliminar",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(14.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Tags ──
-        Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Column(
-                modifier = Modifier.padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Tags", style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 8.dp))
-
-                // Tags disponibles = los que pertenecen a tópicos del grupo
-                val groupTagsFull by remember(groupTopics) {
-                    derivedStateOf {
-                        Store.tags().filter { tag ->
-                            groupTopics.any { topic -> topic.id == tag.topicId }
-                        }.toList()
-                    }
-                }
-
-                if (groupTopics.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "Añade tópicos para ver sus tags",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
-                    ) {
-                        // Agrupados por tópico
-                        groupTopics.forEach { topic ->
-                            item {
-                                Text(
-                                    text = topic.name,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                                )
-                            }
-                            val tagsForTopic = groupTagsFull.filter { it.topicId == topic.id }
-                            items(tagsForTopic) { tag ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(tag.name, modifier = Modifier.weight(1f),
-                                        style = MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 // ── Sección 3: Miembros ───────────────────────────────────────────────────────
 

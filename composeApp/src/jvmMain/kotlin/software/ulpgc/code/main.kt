@@ -2,6 +2,7 @@ package software.ulpgc.code
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.mmk.kmpnotifier.notification.NotifierManager
 import com.mmk.kmpnotifier.notification.configuration.NotificationPlatformConfiguration
 import software.ulpgc.code.application.ui.App
@@ -20,16 +21,31 @@ fun main() = application {
     NotifierManager.setLogger { message ->
         LogMaster.log("**KMPNotifier** $message")
     }
+
+    val windowState = rememberWindowState()
+
     Window(
         onCloseRequest = {
-            CoroutineManager.dispose({
+            CoroutineManager.dispose {
                 exitApplication()
-            })
+            }
         },
         title = "Proyecto_PS",
+        undecorated = true,
+        state = windowState,
     ) {
         App(
-            JavaDatabaseDriverFactory()
+            databaseDriverFactory = JavaDatabaseDriverFactory(),
+            titleBar = {
+                AppTitleBar(
+                    windowState = windowState,
+                    onClose = {
+                        CoroutineManager.dispose {
+                            exitApplication()
+                        }
+                    }
+                )
+            }
         )
     }
 }
