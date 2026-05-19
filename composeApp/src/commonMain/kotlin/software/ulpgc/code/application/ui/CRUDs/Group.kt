@@ -6,20 +6,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -339,7 +335,6 @@ fun EditGroup(
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
 
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -356,7 +351,6 @@ fun EditGroup(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Segmented control
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -480,9 +474,6 @@ fun EditGroupSectionInvitations(
     }
 }
 
-
-// ── Sección 3: Miembros ───────────────────────────────────────────────────────
-
 @Composable
 private fun EditGroupSectionMembers(
     form: CreateGroupFormState,
@@ -496,7 +487,6 @@ private fun EditGroupSectionMembers(
     ) {
         StepLabel("Miembros del grupo")
 
-        // Lista de miembros actuales
         if (form.members.isNotEmpty()) {
             Column(
                 modifier = Modifier
@@ -528,8 +518,6 @@ private fun EditGroupSectionMembers(
         }
     }
 }
-
-// ── Sección 4: Ajustes ────────────────────────────────────────────────────────
 
 @Composable
 private fun EditGroupSectionSettings(
@@ -582,7 +570,6 @@ fun CodeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Privilegio
         Text(
             text = privilege.name,
             style = MaterialTheme.typography.bodyMedium,
@@ -590,7 +577,6 @@ fun CodeRow(
             modifier = Modifier.width(100.dp)
         )
 
-        // Código generado
         Text(
             text = code,
             style = MaterialTheme.typography.bodyMedium,
@@ -636,6 +622,38 @@ fun ShowCode(code: String?){
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 2.sp
             )
+            IconButton(
+                onClick = { /* clipboard */ },
+                modifier = Modifier.size(22.dp)
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun JoinGroup(){
+
+    var code by remember { mutableStateOf("") }
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            TextField(value = code, onValueChange = { code = it })
             IconButton(
                 onClick = { /* clipboard */ },
                 modifier = Modifier.size(22.dp)

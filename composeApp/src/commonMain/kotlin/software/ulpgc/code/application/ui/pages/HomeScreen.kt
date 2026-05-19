@@ -55,6 +55,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import software.ulpgc.code.application.ui.BottomBar
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
@@ -64,6 +65,7 @@ import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.isDesktop
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -108,11 +110,13 @@ fun HomeScreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            SideBar(
-                selectedScreen = Screen.HOME,
-                onNavigate = onNavigate,
-                onSettingsClick = onSettingsClick
-            )
+            if(isDesktop()){
+                SideBar(
+                    selectedScreen = Screen.HOME,
+                    onNavigate = onNavigate,
+                    onSettingsClick = onSettingsClick
+                )
+            }
 
             Column(
                 modifier = Modifier
@@ -217,8 +221,15 @@ fun HomeScreen(
                     { onNavigate(Screen.TOPIC_CREATE) },
                     { onNavigate(Screen.TAG_CREATE) },
                     {onNavigate(Screen.GROUP_CREATE) },
-                    modifier=Modifier.fillMaxWidth().weight(0.1f))
-
+                    modifier=Modifier.fillMaxWidth().weight(0.1f)
+                )
+                if(!isDesktop()){
+                    BottomBar(
+                        selectedScreen = Screen.HOME,
+                        onNavigate = onNavigate,
+                        onSettingsClick = onSettingsClick
+                    )
+                }
             }
 
             Column(

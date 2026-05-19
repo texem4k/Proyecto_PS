@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            App(AndroidDatabaseDriverFactory(this@MainActivity))
+            App(AndroidDatabaseDriverFactory(this@MainActivity), titleBar = {})
         }
     }
 }

@@ -39,7 +39,7 @@ data class SideBarItem(
     val screen: Screen,
 )
 
-private val topItems = listOf(
+val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),

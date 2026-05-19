@@ -29,6 +29,7 @@ fun UserMenuCard(
     val auth = LocalAuthState.current
     val theme = LocalThemeState.current
     var manageGroups by remember { mutableStateOf(false) }
+    var joinGroup by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -64,6 +65,7 @@ fun UserMenuCard(
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
             MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups = true })
+            MenuItemRow(Icons.Default.GroupWork, "Unirse a un grupo", onClick = { joinGroup = true })
             MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
             MenuItemRow(Icons.Default.Palette, "Tema", onClick = { theme.onThemeClick(); onDismiss() })
             HorizontalDivider(color = Color(0xFFEEEEEE))
@@ -76,6 +78,10 @@ fun UserMenuCard(
 
     if (manageGroups) {
         EditGroup({ manageGroups = false }, onSubmit = {})
+    }
+
+    if(joinGroup){
+        JoinGroup()
     }
 }
 
