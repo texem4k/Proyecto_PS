@@ -1,25 +1,18 @@
 package software.ulpgc.code.application.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -38,20 +31,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.datetime.TimeZone
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
-import software.ulpgc.code.architecture.model.Tag
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.uuid.Uuid
 
 
 data class MemberInvite(
@@ -67,12 +56,6 @@ data class CreateGroupFormState(
 val CREATE_GROUP_WIZARD_STEPS = listOf(
     WizardStep("Info"),
     WizardStep("Miembros")
-)
-
-val EDIT_GROUP_WIZARD_STEPS = listOf(
-    WizardStep("Información"),
-    WizardStep("Tópicos y Tags"),
-    WizardStep("Miembros"),
 )
 
 @Composable
@@ -152,41 +135,6 @@ fun CreateGroup(
 }
 
 
-
-
-@Composable
-fun GroupStepSelectGroup(form: CreateGroupFormState,
-                         onFormChange: (CreateGroupFormState) -> Unit) {
-    Column(
-        modifier            = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        StepLabel("Selección de grupo")
-        var actualGroup by remember { mutableStateOf("Tu tablero en la nube") }
-        var expand by remember { mutableStateOf(false) }
-
-        DropdownMenu(
-            expanded = expand,
-            onDismissRequest = { expand = false },
-            modifier = Modifier.fillMaxWidth(0.15f)
-        ) {
-
-            for(g in gro){
-                DropdownMenuItem(
-                    text = { Text(g) },
-                    onClick = {
-                        actualGroup = g
-                        expand = false
-                    }
-                )
-            }
-        }
-        Text("Mensaje para cuando el usuario no tiene privilegios en el grupo elegido")
-    }
-}
-
-
 @Composable
 fun GroupStepBasicInfo(
     form: CreateGroupFormState,
@@ -212,110 +160,6 @@ fun GroupStepBasicInfo(
             onValueChange   = { onFormChange(form.copy(groupDescription = it)) },
             keyboardOptions = KeyboardOptions.Default
         )
-    }
-}
-
-@Composable
-fun GroupStepTopicTags(
-    form: CreateGroupFormState,
-    onFormChange: (CreateGroupFormState) -> Unit
-) {
-    val topics = Store.topics().take(2).toList()
-    val tags = remember(topics) {
-        topics.flatMap { topic ->
-            Store.tags().filter { tag -> tag.topicId == topic.id }
-        }
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        StepLabel("Tópicos y tags")
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // ── Columna izquierda: Tópicos ──
-            Card(modifier = Modifier.weight(1f)) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Tópicos",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        contentPadding = PaddingValues(vertical = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(topics) { t ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(0.95f),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = t.name,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── Columna derecha: Tags ──
-            Card(modifier = Modifier.weight(1f)) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Tags",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        contentPadding = PaddingValues(vertical = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(tags) { tag ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(0.95f),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = tag.name,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -384,43 +228,7 @@ fun GroupStepMembers(
                 Text("Generar código")
             }
 
-            generatedCode?.let { code ->
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(24.dp)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-
-                    Text(
-                        text = code,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 2.sp
-                    )
-
-                    IconButton(
-                        onClick = { /* clipboard */ },
-                        modifier = Modifier.size(22.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ContentCopy,
-                            contentDescription = "Copiar",
-                            modifier = Modifier.size(15.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
+            ShowCode(generatedCode)
         }
         if (generatedCodes.isNotEmpty()) {
             Column(
@@ -495,7 +303,7 @@ fun MemberRow(
 }
 
 
-enum class EditGroupSection { INFO, TOPICS_TAGS, MEMBERS, SETTINGS }
+enum class EditGroupSection { INFO, TOPICS_TAGS, MEMBERS, INVITE,SETTINGS }
 
 @Composable
 fun EditGroup(
@@ -563,12 +371,14 @@ fun EditGroup(
                             EditGroupSection.INFO         -> "Información"
                             EditGroupSection.TOPICS_TAGS  -> "Tópicos y Tags"
                             EditGroupSection.MEMBERS      -> "Miembros"
+                            EditGroupSection.INVITE       -> "Invitar"
                             EditGroupSection.SETTINGS     -> "Ajustes"
                         }
                         val icon = when (s) {
                             EditGroupSection.INFO         -> Icons.Default.Info
                             EditGroupSection.TOPICS_TAGS  -> Icons.Default.Label
                             EditGroupSection.MEMBERS      -> Icons.Default.Group
+                            EditGroupSection.INVITE      -> Icons.Default.Link
                             EditGroupSection.SETTINGS     -> Icons.Default.Settings
                         }
                         Column(
@@ -606,9 +416,10 @@ fun EditGroup(
                 // Contenido de la sección
                 AnimatedContent(targetState = section, label = "edit_group_section") { current ->
                     when (current) {
-                        EditGroupSection.INFO        -> EditGroupSectionInfo(form, { form = it })
+                        EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
                         EditGroupSection.TOPICS_TAGS -> EditGroupSectionTopicsTags(group)
                         EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
+                        EditGroupSection.INVITE     -> EditGroupSectionInvitations(form, { form = it })
                         EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
                             onSave = { onSubmit(form); onClose() },
                             onLeave = onClose
@@ -620,35 +431,57 @@ fun EditGroup(
     }
 }
 
-// ── Sección 1: Información ────────────────────────────────────────────────────
-
 @Composable
-private fun EditGroupSectionInfo(
+fun EditGroupSectionInvitations(
     form: CreateGroupFormState,
     onFormChange: (CreateGroupFormState) -> Unit
-) {
+){
+    var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
+    var generatedCode by remember { mutableStateOf<String?>(null) }
+
+    fun generateCode(): String {
+        val chars = ('A'..'Z') + ('0'..'9')
+        return (1..8).map { chars.random() }.joinToString("")
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        StepLabel("Información del grupo")
-        TextFieldCustom(
-            value = form.groupName,
-            label = "* Nombre del grupo",
-            onValueChange = { onFormChange(form.copy(groupName = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
-        TextFieldCustom(
-            value = form.groupDescription,
-            label = "Descripción",
-            onValueChange = { onFormChange(form.copy(groupDescription = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        StepLabel("Miembros del grupo")
+
+        Row(
+            modifier = Modifier.fillMaxWidth(0.9f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                DropdownCustom(
+                    section = "Permisos",
+                    items = Privilege.entries,
+                    selection = DropdownSelection.Single(selectedPriv),
+                    onItemSelected = { selectedPriv = it },
+                    itemId = { it },
+                    itemName = { it.name }
+                )
+            }
+
+            OutlinedButton(
+                onClick = { generatedCode = generateCode() },
+                shape = RoundedCornerShape(32.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Generar código")
+            }
+
+            ShowCode(generatedCode)
+        }
     }
 }
-
-// ── Sección 2: Tópicos y Tags ─────────────────────────────────────────────────
 
 @Composable
 private fun EditGroupSectionTopicsTags(group: Group) {
@@ -809,13 +642,6 @@ private fun EditGroupSectionMembers(
     form: CreateGroupFormState,
     onFormChange: (CreateGroupFormState) -> Unit
 ) {
-    var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
-    var generatedCode by remember { mutableStateOf<String?>(null) }
-
-    fun generateCode(): String {
-        val chars = ('A'..'Z') + ('0'..'9')
-        return (1..8).map { chars.random() }.joinToString("")
-    }
 
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -851,63 +677,6 @@ private fun EditGroupSectionMembers(
                             ))
                         }
                     )
-                }
-            }
-        }
-
-        // Generar código de invitación
-        Row(
-            modifier = Modifier.fillMaxWidth(0.9f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                DropdownCustom(
-                    section = "Permisos",
-                    items = Privilege.entries,
-                    selection = DropdownSelection.Single(selectedPriv),
-                    onItemSelected = { selectedPriv = it },
-                    itemId = { it },
-                    itemName = { it.name }
-                )
-            }
-
-            OutlinedButton(
-                onClick = { generatedCode = generateCode() },
-                shape = RoundedCornerShape(32.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
-            ) {
-                Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Generar código")
-            }
-
-            generatedCode?.let { code ->
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = code,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 2.sp
-                    )
-                    IconButton(
-                        onClick = { /* clipboard */ },
-                        modifier = Modifier.size(22.dp)
-                    ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
-                            modifier = Modifier.size(15.dp),
-                            tint = MaterialTheme.colorScheme.primary)
-                    }
                 }
             }
         }
@@ -996,6 +765,39 @@ fun CodeRow(
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(16.dp)
             )
+        }
+    }
+}
+
+
+
+@Composable
+fun ShowCode(code: String?){
+    code?.let { code ->
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = code,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 2.sp
+            )
+            IconButton(
+                onClick = { /* clipboard */ },
+                modifier = Modifier.size(22.dp)
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }
