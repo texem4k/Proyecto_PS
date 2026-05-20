@@ -59,5 +59,6 @@ object CoroutineManager {
             onFinish()
         }
     }
-
 }
+
+expect fun <T> runBlocking(block: suspend () -> T): T
