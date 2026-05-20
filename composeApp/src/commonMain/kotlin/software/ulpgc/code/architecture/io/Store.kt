@@ -111,6 +111,8 @@ private object Storage {
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
     fun clearAll(){
+        groups.removeAll { it.isLocalCleared() }
+        users.removeAll { it.isLocalCleared() }
         topics.removeAll { it.isLocalCleared() }
         tags.removeAll { it.isLocalCleared() }
         tasks.removeAll { it.isLocalCleared() }
@@ -118,6 +120,8 @@ private object Storage {
     }
 
     fun cleanLists() {
+        groups.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        users.removeAll { it.isLocalCleared() && it.isCloudCleared() }
         topics.removeAll { it.isLocalCleared() && it.isCloudCleared() }
         tags.removeAll { it.isLocalCleared() && it.isCloudCleared() }
         tasks.removeAll { it.isLocalCleared() && it.isCloudCleared() }

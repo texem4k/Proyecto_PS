@@ -12,12 +12,27 @@ data class Group (
     override var localDBState: DBState = DBState.NEW,
     override var cloudDBState: DBState = DBState.NEW
 ): DBObject {
+    fun privilegeString(): String {
+        return privilegeString(this.users)
+    }
+
     companion object{
         fun privilegeString(privileges: MutableMap<Uuid, Privilege>): String{
-
+            return privileges.entries.joinToString(";") { (uuid, privilege) ->
+                "${uuid}:${privilege.name}"
+            }
         }
         fun parsePrivileges(privileges: String): MutableMap<Uuid, Privilege> {
-
+            return privileges
+                .split(";")
+                .mapNotNull { entry ->
+                    runCatching {
+                        val (uuidStr, privilegeStr) = entry.split(":")
+                        Uuid.parse(uuidStr) to Privilege.valueOf(privilegeStr)
+                    }.getOrNull()
+                }
+                .toMap()
+                .toMutableMap()
         }
     }
 }

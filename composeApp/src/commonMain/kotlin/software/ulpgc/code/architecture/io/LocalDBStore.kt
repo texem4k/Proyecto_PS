@@ -60,7 +60,7 @@ object LocalDBStore: Coroutinable {
     }
 
     override suspend fun execute() {
-        deleteRequired(dbObjects().filter { it.isLocalDeleted() })
+        deleteRequired(dbObjects().filter { it.localDBState == DBState.DELETED })
         updateRequired(dbObjects().filter { it.isLocalUpdated() })
         insertRequired(dbObjects().filter { it.isLocalNew() })
     }

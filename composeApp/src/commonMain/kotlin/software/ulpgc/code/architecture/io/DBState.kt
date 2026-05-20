@@ -11,12 +11,12 @@ enum class DBState {
 
 fun DBObject.isLocalNew()     = localDBState == NEW
 fun DBObject.isLocalUpdated() = localDBState == UPDATED
-fun DBObject.isLocalDeleted() = localDBState == DELETED
+fun DBObject.isLocalDeleted() = localDBState == DELETED || localDBState == DBState.CLEARED
 fun DBObject.isLocalUnknown() = localDBState == UNKNOWN
 fun DBObject.isLocalCleared() = localDBState == DBState.CLEARED
 
-fun DBObject.isCloudNew()     = localDBState == NEW
-fun DBObject.isCloudUpdated() = localDBState == UPDATED
-fun DBObject.isCloudDeleted() = localDBState == DELETED
-fun DBObject.isCloudUnknown() = localDBState == UNKNOWN
-fun DBObject.isCloudCleared() = localDBState == DBState.CLEARED
+fun DBObject.isCloudNew()     = cloudDBState == NEW
+fun DBObject.isCloudUpdated() = cloudDBState == UPDATED
+fun DBObject.isCloudDeleted() = cloudDBState == DELETED || cloudDBState == DBState.CLEARED
+fun DBObject.isCloudUnknown() = cloudDBState == UNKNOWN
+fun DBObject.isCloudCleared() = cloudDBState == DBState.CLEARED

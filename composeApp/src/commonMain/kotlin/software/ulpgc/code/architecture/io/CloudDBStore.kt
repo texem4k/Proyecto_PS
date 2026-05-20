@@ -56,9 +56,9 @@ object CloudDBStore: Coroutinable {
 
     override suspend fun execute() {
         if( !canUseDatabase()) return
-        deleteRequired(dbObjects().filter { it.isLocalDeleted() })
-        updateRequired(dbObjects().filter { it.isLocalUpdated() })
-        insertRequired(dbObjects().filter { it.isLocalNew() })
+        deleteRequired(dbObjects().filter { it.cloudDBState == DBState.DELETED })
+        updateRequired(dbObjects().filter { it.isCloudUpdated() })
+        insertRequired(dbObjects().filter { it.isCloudNew() })
         loadDBData()
     }
 
