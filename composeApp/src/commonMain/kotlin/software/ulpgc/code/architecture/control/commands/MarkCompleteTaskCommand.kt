@@ -3,6 +3,7 @@ package software.ulpgc.code.architecture.control.commands
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 
@@ -10,7 +11,8 @@ class MarkCompleteTaskCommand (val task: Task) : Command {
     override fun execute(): List<Command> {
         LogMaster.log("MarkCompleteTaskCommand {$task}")
         task.isCompleted = true
-        task.dbState = DBState.UPDATED
+        task.localDBState = DBState.UPDATED
+        if(!Store.currentGroup().isCloudDisabled()) task.cloudDBState = DBState.UPDATED
         setCompletionStat(task)
         return listOf(UnmarkCompleteTaskCommand(task))
     }
@@ -23,6 +25,7 @@ class MarkCompleteTaskCommand (val task: Task) : Command {
             .maxBy { it.endDate }
         stat.completed = true
         stat.endDate = Clock.System.now()
-        stat.dbState = DBState.UPDATED
+        stat.localDBState = DBState.UPDATED
+        if(!Store.currentGroup().isCloudDisabled()) stat.cloudDBState = DBState.UPDATED
     }
 }

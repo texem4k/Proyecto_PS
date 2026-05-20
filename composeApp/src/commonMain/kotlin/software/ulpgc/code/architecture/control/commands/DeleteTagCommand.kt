@@ -12,7 +12,8 @@ class DeleteTagCommand internal constructor (private val tag: Tag): Command {
 
     override fun execute(): List<Command> {
         LogMaster.log("DeleteTagCommand {$tag}")
-        tag.dbState = DBState.DELETED
+        tag.localDBState = DBState.DELETED
+        tag.cloudDBState = DBState.DELETED
         val commands = Store.tasks()
             .filter { task -> task.tags.contains(tag.id) }
             .flatMap { task -> removeTagIn(task, tag.id) }

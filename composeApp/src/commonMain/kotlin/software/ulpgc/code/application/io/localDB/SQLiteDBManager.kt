@@ -18,6 +18,7 @@ import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.User
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.db.AppDatabase
+import software.ulpgc.db.AppDatabaseQueries
 import software.ulpgc.db.AssignUserTask as DBAssignUserTask
 import software.ulpgc.db.Tag as DBTag
 import software.ulpgc.db.Task as DBTask
@@ -29,85 +30,87 @@ import software.ulpgc.db.WorkGroup as DBWorkGroup
 import software.ulpgc.db.WorkGroupUser as DBWorkGroupUser
 import kotlin.uuid.Uuid
 
-class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val seedData: DBData) : DBManager {
-    private val database = AppDatabase(
-        databaseDriverFactory.createDriver(),
-        AssignUserTaskAdapter = DBAssignUserTask.Adapter(
-            taskIdAdapter = UuidColumnAdapter,
-            userIdAdapter = UuidColumnAdapter,
-            groupIdAdapter = UuidColumnAdapter
-        ),
-        TagAdapter = DBTag.Adapter(
-            idAdapter = UuidColumnAdapter,
-            topicIdAdapter = UuidColumnAdapter,
-            nameAdapter = StringColumnAdapter
-        ),
-        TaskAdapter = DBTask.Adapter(
-            idAdapter = UuidColumnAdapter,
-            topicIdAdapter = UuidColumnAdapter,
-            groupIdAdapter = UuidColumnAdapter,
-            nameAdapter = StringColumnAdapter,
-            descriptionAdapter = StringColumnAdapter,
-            timeAdapter = TimeColumnAdapter,
-            intervalAdapter = EnumColumnAdapter(),
-            priorityAdapter = EnumColumnAdapter()
-        ),
-        TaskCompletionAdapter = DBTaskCompletion.Adapter(
-            taskIdAdapter = UuidColumnAdapter,
-            idAdapter = UuidColumnAdapter,
-            proposedDateAdapter = InstantColumnAdapter,
-            endDateAdapter = InstantColumnAdapter
-        ),
-        TaskTagAdapter = DBTaskTag.Adapter(
-            taskIdAdapter = UuidColumnAdapter,
-            tagIdAdapter = UuidColumnAdapter,
-            topicIdAdapter = UuidColumnAdapter
-        ),
-        TopicAdapter = DBTopic.Adapter(
-            idAdapter = UuidColumnAdapter,
-            groupIdAdapter = UuidColumnAdapter,
-            nameAdapter = StringColumnAdapter,
-            colorAdapter = ColorColumnAdapter
-        ),
-        UserAdapter = DBUser.Adapter(
-            idAdapter = UuidColumnAdapter,
-            nameAdapter = StringColumnAdapter
-        ),
-        WorkGroupAdapter = DBWorkGroup.Adapter(
-            idAdapter = UuidColumnAdapter,
-            nameAdapter = StringColumnAdapter,
-            descriptionAdapter = StringColumnAdapter
-        ),
-        WorkGroupUserAdapter = DBWorkGroupUser.Adapter(
-            userIdAdapter = UuidColumnAdapter,
-            groupIdAdapter = UuidColumnAdapter,
-            privilegeAdapter = EnumColumnAdapter()
-        )
-    )
-    private val dbQuery = database.appDatabaseQueries
+object SQLiteDBManager: DBManager {
+    private lateinit var database: AppDatabase
+    private lateinit var dbQuery: AppDatabaseQueries
 
-    init {
-        fillTablesIfEmpty()
+    suspend fun initialize(databaseDriverFactory: DatabaseDriverFactory, seedData: DBData) {
+        this.database = AppDatabase(
+            databaseDriverFactory.createDriver(),
+            AssignUserTaskAdapter = DBAssignUserTask.Adapter(
+                taskIdAdapter = UuidColumnAdapter,
+                userIdAdapter = UuidColumnAdapter,
+                groupIdAdapter = UuidColumnAdapter
+            ),
+            TagAdapter = DBTag.Adapter(
+                idAdapter = UuidColumnAdapter,
+                topicIdAdapter = UuidColumnAdapter,
+                nameAdapter = StringColumnAdapter
+            ),
+            TaskAdapter = DBTask.Adapter(
+                idAdapter = UuidColumnAdapter,
+                topicIdAdapter = UuidColumnAdapter,
+                groupIdAdapter = UuidColumnAdapter,
+                nameAdapter = StringColumnAdapter,
+                descriptionAdapter = StringColumnAdapter,
+                timeAdapter = TimeColumnAdapter,
+                intervalAdapter = EnumColumnAdapter(),
+                priorityAdapter = EnumColumnAdapter()
+            ),
+            TaskCompletionAdapter = DBTaskCompletion.Adapter(
+                taskIdAdapter = UuidColumnAdapter,
+                idAdapter = UuidColumnAdapter,
+                proposedDateAdapter = InstantColumnAdapter,
+                endDateAdapter = InstantColumnAdapter
+            ),
+            TaskTagAdapter = DBTaskTag.Adapter(
+                taskIdAdapter = UuidColumnAdapter,
+                tagIdAdapter = UuidColumnAdapter,
+                topicIdAdapter = UuidColumnAdapter
+            ),
+            TopicAdapter = DBTopic.Adapter(
+                idAdapter = UuidColumnAdapter,
+                groupIdAdapter = UuidColumnAdapter,
+                nameAdapter = StringColumnAdapter,
+                colorAdapter = ColorColumnAdapter
+            ),
+            UserAdapter = DBUser.Adapter(
+                idAdapter = UuidColumnAdapter,
+                nameAdapter = StringColumnAdapter
+            ),
+            WorkGroupAdapter = DBWorkGroup.Adapter(
+                idAdapter = UuidColumnAdapter,
+                nameAdapter = StringColumnAdapter,
+                descriptionAdapter = StringColumnAdapter
+            ),
+            WorkGroupUserAdapter = DBWorkGroupUser.Adapter(
+                userIdAdapter = UuidColumnAdapter,
+                groupIdAdapter = UuidColumnAdapter,
+                privilegeAdapter = EnumColumnAdapter()
+            )
+        )
+        this.dbQuery = database.appDatabaseQueries
+        fillTablesIfEmpty(seedData)
     }
 
-    fun fillTablesIfEmpty() {
+    suspend fun fillTablesIfEmpty(seedData: DBData) {
         if (dbQuery.getUsers().executeAsList().count() != 0) return
         insert(seedData.dbObjects()).getOrThrow()
     }
 
-    override fun topics(): Result<List<Topic>> = runCatching {
+    override suspend fun topics(): Result<List<Topic>> = runCatching {
         dbQuery.getTopics { id: Uuid, groupId: Uuid, name: String, color: Color ->
-            Topic(name, color, groupId, id, DBState.DEFAULT)
+            Topic(name, color, groupId, id, DBState.DEFAULT, DBState.UNKNOWN)
         }.executeAsList()
     }.mapDBException("Failed to fetch topics")
 
-    override fun tags(): Result<List<Tag>> = runCatching {
+    override suspend fun tags(): Result<List<Tag>> = runCatching {
         dbQuery.getTags { id, topicId, name ->
-            Tag(name, topicId, id, DBState.DEFAULT)
+            Tag(name, topicId, id, DBState.DEFAULT, DBState.UNKNOWN)
         }.executeAsList()
     }.mapDBException("Failed to fetch tags")
 
-    override fun tasks(): Result<List<Task>> = runCatching {
+    override suspend fun tasks(): Result<List<Task>> = runCatching {
         val raws = dbQuery.getTasks().executeAsList()
         raws.map { raw ->
             val tags = dbQuery.getTagsFor(raw.id) { _, tagId, _ ->
@@ -129,12 +132,13 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 users,
                 raw.isCompleted,
                 raw.id,
-                DBState.DEFAULT
+                DBState.DEFAULT,
+                DBState.UNKNOWN
             )
         }
     }.mapDBException("Failed to fetch tasks")
 
-    override fun groups(): Result<List<Group>> = runCatching {
+    override suspend fun groups(): Result<List<Group>> = runCatching {
         val raws = dbQuery.getGroups().executeAsList()
         raws.map { raw ->
             val users = dbQuery.getUsersInGroups().executeAsList()
@@ -145,24 +149,25 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
                 raw.description,
                 users,
                 raw.id,
-                DBState.DEFAULT
+                DBState.DEFAULT,
+                DBState.UNKNOWN
             )
         }
     }.mapDBException("Failed to fetch groups")
 
-    override fun users(): Result<List<User>> = runCatching {
+    override suspend fun users(): Result<List<User>> = runCatching {
         dbQuery.getUsers { id, name ->
-            User(name, id, DBState.DEFAULT)
+            User(name, id, DBState.DEFAULT, DBState.UNKNOWN)
         }.executeAsList()
     }.mapDBException("Failed to fetch users")
 
-    override fun completionStats(): Result<List<CompletionStat>> = runCatching {
+    override suspend fun completionStats(): Result<List<CompletionStat>> = runCatching {
         dbQuery.getTaskCompletions { id, taskId, proposedDate, endDate, completed ->
-            CompletionStat(taskId, proposedDate, completed, endDate, id, DBState.DEFAULT)
+            CompletionStat(taskId, proposedDate, completed, endDate, id, DBState.DEFAULT, DBState.UNKNOWN)
         }.executeAsList()
     }.mapDBException("Failed to fetch completion stats")
 
-    override fun insert(objects: Sequence<DBObject>): Result<Unit> = runCatching {
+    override suspend fun insert(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::insertDBObject)
         }
@@ -191,7 +196,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
         }
     }
 
-    override fun update(objects: Sequence<DBObject>): Result<Unit> = runCatching {
+    override suspend fun update(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::updateDBObject)
         }
@@ -226,7 +231,7 @@ class SQLiteDBManager(databaseDriverFactory: DatabaseDriverFactory, private val 
         }
     }
 
-    override fun delete(objects: Sequence<DBObject>): Result<Unit> = runCatching {
+    override suspend fun delete(objects: Sequence<DBObject>): Result<Unit> = runCatching {
         database.transaction {
             objects.forEach(::deleteDBObject)
         }

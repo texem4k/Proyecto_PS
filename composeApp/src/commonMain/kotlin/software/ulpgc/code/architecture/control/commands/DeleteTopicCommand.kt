@@ -11,7 +11,8 @@ class DeleteTopicCommand internal constructor (private val topic: Topic): Comman
 
     override fun execute(): List<Command> {
         LogMaster.log("DeleteTopicCommand {$topic}")
-        topic.dbState = DBState.DELETED
+        topic.localDBState = DBState.DELETED
+        topic.cloudDBState = DBState.DELETED
         val commands = Store.tasks()
             .filter { task -> task.topicId == topic.id }
             .flatMap { task -> DeleteTaskCommand(task).execute() }

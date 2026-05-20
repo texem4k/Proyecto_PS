@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.io
 
+import io.github.jan.supabase.auth.status.SessionSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,9 +13,9 @@ import kotlin.uuid.Uuid
 
 object Store {
     val ready: StateFlow<Boolean> = Storage.ready.asStateFlow()
-    fun initialize(manager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit) {
+    fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager, canUseCloudDB: () -> Boolean) {
         LocalDBStore.initialize(
-            manager,
+            localManager,
             Storage::cleanLists,
             {
                 Storage.ready.value = true
@@ -22,6 +23,12 @@ object Store {
             },
             onFailLoad,
             Storage::dbObjects
+        )
+        CloudDBStore.initialize(
+            cloudManager,
+            Storage::cleanLists,
+            Storage::dbObjects,
+            canUseCloudDB
         )
     }
     
@@ -33,44 +40,57 @@ object Store {
         Storage.currentGroup = group.id
     }
 
-    fun currentUser(): User {
-        return users().first { it.id == Storage.currentUser }
+    fun currentUser(): Uuid {
+        return Storage.currentUser
     }
 
-    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isDeleted() }.filter { it.groupId == Storage.currentGroup }
-
-    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
-
-    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
-
-    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isDeleted() }
-
-    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isDeleted() }
-
-    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isDeleted() }
-
-    fun addTopic(topic: Topic) {
-        Storage.topics.add(topic)
+    fun changeUserTo(userId: Uuid) {
+        Storage.currentUser = userId
     }
 
-    fun addTag(tag: Tag) {
-        Storage.tags.add(tag)
+    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { it.groupId == Storage.currentGroup }
+
+    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
+
+    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
+
+    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+
+    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+
+    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+
+    fun <T: DBObject> add(obj: T) {
+        when (obj) {
+            is Group -> Storage.groups.add(obj)
+            is User -> Storage.users.add(obj)
+            is Topic -> Storage.topics.add(obj)
+            is Tag -> Storage.tags.add(obj)
+            is Task -> Storage.tasks.add(obj)
+            is CompletionStat -> Storage.stats.add(obj)
+        }
     }
 
-    fun addTask(task: Task) {
-        Storage.tasks.add(task)
+    fun <T: DBObject> tryFind(obj: T): T? {
+        return when (obj) {
+            is Group -> Storage.groups.find { obj.id == it.id }
+            is User -> Storage.users.find { obj.id == it.id }
+            is Topic -> Storage.topics.find { obj.id == it.id }
+            is Tag -> Storage.tags.find { obj.id == it.id }
+            is Task -> Storage.tasks.find { obj.id == it.id }
+            is CompletionStat -> Storage.stats.find { obj.id == it.id }
+            else -> null
+        } as T?
     }
 
-    fun addGroup(group: Group) {
-        Storage.groups.add(group)
-    }
-
-    fun addUser(user: User) {
-        Storage.users.add(user)
-    }
-
-    fun addCompletionStat(completionStat: CompletionStat) {
-        Storage.stats.add(completionStat)
+    suspend fun onLogOut() {
+        Storage.restartCurrent()
+        users().filterNot { it.id == currentUser() }
+            .forEach { it.localDBState = DBState.DELETED }
+        groups().filterNot { it.id == currentGroup() }
+            .forEach { it.localDBState = DBState.DELETED }
+        LocalDBStore.execute()
+        Storage.clearAll()
     }
 }
 
@@ -89,10 +109,26 @@ private object Storage {
 
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
+    fun clearAll(){
+        groups.removeAll { it.isLocalCleared() }
+        users.removeAll { it.isLocalCleared() }
+        topics.removeAll { it.isLocalCleared() }
+        tags.removeAll { it.isLocalCleared() }
+        tasks.removeAll { it.isLocalCleared() }
+        stats.removeAll { it.isLocalCleared() }
+    }
+
     fun cleanLists() {
-        topics.removeAll { it.isDeleted() }
-        tags.removeAll { it.isDeleted() }
-        tasks.removeAll { it.isDeleted() }
-        stats.removeAll { it.isDeleted() }
+        groups.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        users.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        topics.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        tags.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        tasks.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+        stats.removeAll { it.isLocalCleared() && it.isCloudCleared() }
+    }
+
+    fun restartCurrent(){
+        this.currentGroup = Uuid.parse("00000000-0000-0000-0000-000000000000")
+        this.currentUser = Uuid.parse("00000000-0000-0000-0000-000000000000")
     }
 }

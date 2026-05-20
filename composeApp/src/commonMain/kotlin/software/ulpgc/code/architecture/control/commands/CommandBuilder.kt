@@ -3,7 +3,9 @@ package software.ulpgc.code.architecture.control.commands
 import androidx.compose.ui.graphics.Color
 import software.ulpgc.code.architecture.control.exceptions.CommandException
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Priority
+import software.ulpgc.code.architecture.model.Privilege
 import software.ulpgc.code.architecture.model.Tag
 import software.ulpgc.code.architecture.model.Topic
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -74,6 +76,23 @@ class CommandBuilder internal constructor () {
             CommandType.UNMARK_COMPLETE -> UnmarkCompleteTaskCommand(
                 task().getOrThrow()
             )
+            CommandType.CREATE_GROUP -> CreateGroupCommand(
+                name().getOrThrow(),
+                description().getOrThrow()
+            )
+            CommandType.UPDATE_GROUP -> UpdateGroupCommand(
+                group().getOrThrow(),
+                name().getOrThrow(),
+                description().getOrThrow()
+            )
+            CommandType.EXIT_GROUP -> ExitGroupCommand(
+                group().getOrThrow(),
+                userId().getOrThrow()
+            )
+            CommandType.EDIT_PRIVILEGES -> EditPrivilegesCommand(
+                group().getOrThrow(),
+                privileges().getOrThrow()
+            )
         })
     }
 
@@ -112,11 +131,20 @@ class CommandBuilder internal constructor () {
         return getOrThrow("topicId") { id -> Uuid.parse(id) }
     }
 
+    private fun userId(): Result<Uuid> = runCatching {
+        return getOrThrow("userId") { id -> Uuid.parse(id) }
+    }
+
     private fun users(): Result<MutableSet<Uuid>> = runCatching {
         return getOrThrow("users") { user ->
-            if (user == "") mutableSetOf(Store.currentUser().id)
+            if (user == "") mutableSetOf(Store.currentUser())
             else user.split(", ").map { Uuid.parse(it) }.toMutableSet()
         }
+    }
+
+    private fun group(): Result<Group> = runCatching {
+        return Result.success(Store.groups().find { id().getOrThrow() == it.id}
+            ?: throw CommandException("No existe el tag ${id()} en el store"))
     }
 
     private fun name(): Result<String> = runCatching {
@@ -140,5 +168,9 @@ class CommandBuilder internal constructor () {
 
     private fun priority(): Result<Priority> = runCatching {
         return getOrThrow("priority") { priority -> Priority.fromValue(priority.toInt()) }
+    }
+
+    private fun privileges(): Result<MutableMap<Uuid, Privilege>> = runCatching {
+        return getOrThrow("privileges") { privileges -> Group.parsePrivileges(privileges) }
     }
 }

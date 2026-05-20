@@ -71,6 +71,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.android.driver)
+            implementation("dev.jordond.connectivity:connectivity-android:1.3.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -92,6 +93,11 @@ kotlin {
             implementation(libs.ui.v1103)
             api("io.github.mirzemehdi:kmpnotifier:1.6.1")
             implementation("com.patrykandpatrick.vico:multiplatform:2.4.4")
+            implementation("io.github.jan-tennert.supabase:postgrest-kt:3.5.0")
+            implementation(libs.connectivity.core)
+            implementation(libs.connectivity.compose)
+            implementation(libs.connectivity.http)
+            implementation(libs.connectivity.compose.http)
         }
 
         commonTest.dependencies {
