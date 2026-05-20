@@ -59,7 +59,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.CalendarConstants
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Store
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.time.Clock
@@ -98,7 +97,7 @@ fun HomeCalendar(
 
     var showDialog by remember { mutableStateOf(false) }
 
-    val dayUrgencyColor by remember {
+    val dayUrgencyColor by remember(sampleEntries) {
         derivedStateOf {
             sampleEntries.mapValues { (_, entries) ->
                 urgencyColorFromEntries(entries)

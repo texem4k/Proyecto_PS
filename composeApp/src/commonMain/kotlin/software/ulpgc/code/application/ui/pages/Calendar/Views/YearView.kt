@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -50,7 +51,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.Calendar.YearHeader
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Store
 import kotlin.time.Clock
 
 @Composable
@@ -114,8 +114,8 @@ fun YearView(
                 Box(
                     modifier = Modifier
                         .border(1.dp, Color.Black)
-                        .background(Color(0xFFF5F7FB))
-                        .padding(horizontal = 1.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 1.dp),
                 ) { content() }
             },
             dayContent = { day ->
@@ -158,7 +158,8 @@ fun YearMonthHeader(month: CalendarMonth) {
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp)
+                .padding(vertical = 6.dp),
+            color = MaterialTheme.colorScheme.primary
         )
         Row(modifier = Modifier.fillMaxWidth()) {
             listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
@@ -168,7 +169,7 @@ fun YearMonthHeader(month: CalendarMonth) {
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 10.sp,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -195,7 +196,7 @@ fun YearDayCell(
             .height(50.dp)
             .padding(1.dp)
             .clip(RoundedCornerShape(6.dp))
-            .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
         contentAlignment = Alignment.TopCenter
     ) {

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,7 +59,6 @@ import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
 import software.ulpgc.code.application.ui.pages.DayDetailDialog
 import software.ulpgc.code.application.ui.pages.urgencyColorFromEntries
-import software.ulpgc.code.architecture.io.Store
 import kotlin.time.Clock
 
 @Composable
@@ -136,7 +136,7 @@ fun MonthView(
                     monthBody = { _, content ->
                         Box(
                             modifier = Modifier
-                                .background(Color(0xFFF5F7FB))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(horizontal = 2.dp)
                         ) { content() }
                     },
@@ -189,8 +189,8 @@ fun DayCell(
             .fillMaxWidth()
             .height(cellHeight)
             .padding(2.dp)
-            .border(1.dp, Color.Black)
-            .background(if (isSelected) Color(0xFF4F6EF7) else Color.Transparent)
+            .border(1.dp, MaterialTheme.colorScheme.primary)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
         contentAlignment = Alignment.TopStart
     ) {
@@ -209,7 +209,7 @@ fun DayCell(
                         color = when {
                             isSelected -> Color.White
                             day.date == today -> Color(0xFF4F6EF7)
-                            day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
+                            day.position != DayPosition.MonthDate -> MaterialTheme.colorScheme.secondary
                             else -> Color.Unspecified
                         },
                         fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,

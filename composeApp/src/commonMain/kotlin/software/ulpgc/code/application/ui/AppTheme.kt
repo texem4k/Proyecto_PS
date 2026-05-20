@@ -137,8 +137,8 @@ private val DarkColorScheme = darkColorScheme(
     surface = Color(0xFF1C1C1C),
     onSurface = Color(0xFFEAEAEA),
 
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurfaceVariant = Color(0xFFD0D0D0),
+    surfaceVariant = Color(0xFFD0D0D0),
+    onSurfaceVariant = Color(0xFF2A2A2A),
 
     inverseSurface = Color(0xFFEAEAEA),
     inverseOnSurface = Color(0xFF121212),

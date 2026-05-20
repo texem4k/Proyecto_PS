@@ -1,19 +1,17 @@
 package software.ulpgc.code.application.ui
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -23,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,7 +53,8 @@ data class FormState(
     var taskDuration: String = "",
     var taskPriority: String = "",
     var taskStartHour: String = "",
-    var taskFinalHour: String = ""
+    var taskFinalHour: String = "",
+    var taskUsers: List<Uuid> = emptyList()
 )
 
 enum class CreateMode {
@@ -81,7 +79,7 @@ fun CreateTask(
 
 
     val action = if (task != null) "Editar" else "Crear"
-    if (Store.currentUser().toString() != "root"){
+    if (Store.currentUser().name.lowercase() != "root"){
         totalSteps = 4
     }
 
@@ -91,7 +89,7 @@ fun CreateTask(
                 taskName = task.name,
                 taskDescription = task.description,
                 taskTopic = task.topicId,
-                taskPriority = task.priority.toString(),
+                taskPriority = task.priority.toString().substring(1),
                 taskStartDate = task.time.start,
                 taskStartDateString = task.time.start.toFormattedDate(TimeZone.currentSystemDefault()),
                 taskFinalDate = task.time.end,
@@ -99,6 +97,7 @@ fun CreateTask(
                 taskStartHour = task.time.start.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskFinalHour = task.time.end.toFormattedHour(TimeZone.currentSystemDefault()),
                 taskTags = task.tags.toList(),
+                taskUsers = task.users.toList(),
             )
         } else if (initialDate != null) {
             val instant = initialDate.atStartOfDayIn(TimeZone.currentSystemDefault())
@@ -107,17 +106,6 @@ fun CreateTask(
                 taskStartDateString = instant.toFormattedDate(TimeZone.currentSystemDefault()),
             )
         }
-    }
-
-    if (formError) {
-        AlertDialog(
-            onDismissRequest = { formError = false },
-            title = { Text("Error") },
-            text = { Text(messageError) },
-            confirmButton = {
-                Button(onClick = { formError = false }) { Text("Aceptar") }
-            }
-        )
     }
 
     Dialog(
@@ -131,12 +119,55 @@ fun CreateTask(
             shape = RoundedCornerShape(20.dp),
             tonalElevation = 6.dp
         ) {
+
+
+
             Column(modifier = Modifier.padding(24.dp)) {
+
+
+                if (formError) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = messageError,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { formError = false },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
                 WizardHeader(
                     title = "$action tarea",
                     step = step,
-                    totalSteps = totalSteps,
+                    steps = buildList {
+                        add(WizardStep("Básico"))
+                        add(WizardStep("Clasificación"))
+                        add(WizardStep("Fechas"))
+                        if (totalSteps > 3) add(WizardStep("Usuarios"))
+                    },
                     onClose = onClose
                 )
 
@@ -144,16 +175,6 @@ fun CreateTask(
 
                 AnimatedContent(
                     targetState = step,
-                    transitionSpec = {
-                        val direction = if (targetState > initialState) 1 else -1
-                        slideInHorizontally(
-                            initialOffsetX = { it * direction },
-                            animationSpec = tween(260)
-                        ) togetherWith slideOutHorizontally(
-                            targetOffsetX = { -it * direction },
-                            animationSpec = tween(260)
-                        )
-                    },
                     label = "wizard_step"
                 ) { currentStep ->
                     when (currentStep) {
@@ -175,6 +196,7 @@ fun CreateTask(
                             mode = mode,
                             onModeChange = { mode = it }
                         )
+                        3 -> UserInfo(form = form, onFormChange = { form = it }) // NUEVO
                     }
                 }
 
@@ -183,7 +205,7 @@ fun CreateTask(
                 WizardNavigation(
                     step = step,
                     totalSteps = totalSteps,
-                    actionLabel = action,
+                    submitLabel = "$action tarea",
                     onBack = { step-- },
                     onNext = {
                         val error = when (step) {
@@ -212,6 +234,9 @@ fun CreateTask(
                             formError = true
                             return@WizardNavigation
                         }
+
+                        val isRoot = Store.currentUser().toString().lowercase() == "root"
+
                         val builder = CommandBuilder()
                             .set("priority", form.taskPriority)
                             .set("name", form.taskName)
@@ -221,6 +246,7 @@ fun CreateTask(
                             .set("interval", form.taskInterval.toString())
                             .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
+                            .set("users", if (isRoot) "" else form.taskUsers.joinToString(", "))
 
                         val command = if (task != null) {
                             builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
@@ -291,34 +317,32 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        StepLabel("Información básica")
+        StepLabel("Asignar usuarios")
 
-        TextFieldCustom(
-            value = form.taskName,
-            label = "* Nombre tarea",
-            onValueChange = { onFormChange(form.copy(taskName = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        val currentUserGroup = Store.groups().find { group ->
+            group.users.contains(Store.currentUser().id)
+        }
 
-        TextFieldCustom(
-            value = form.taskDescription,
-            label = "Descripción",
-            onValueChange = { onFormChange(form.copy(taskDescription = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        val usersInGroup = currentUserGroup
+            ?.users
+            ?.mapNotNull { userId -> Store.users().find { it.id == userId } }
+            ?: emptyList()
 
-        TextFieldCustom(
-            value = form.taskPriority,
-            label = "* Prioridad (1–10)",
-            placeholder = "1 - 10",
-            onValueChange = { newValue ->
-                val filtered = newValue.filter { it.isDigit() }.take(2)
-                val number = filtered.toIntOrNull()
-                if (filtered.isEmpty() || (number != null && number in 1..10)) {
-                    onFormChange(form.copy(taskPriority = filtered))
-                }
+        DropdownCustom(
+            section = "Selecciona los usuarios",
+            items = usersInGroup,
+            selection = DropdownSelection.Multiple(form.taskUsers),
+            onItemSelected = { userId ->
+                onFormChange(
+                    form.copy(
+                        taskUsers = form.taskUsers.toMutableList().apply {
+                            if (contains(userId)) remove(userId) else add(userId)
+                        }
+                    )
+                )
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            itemId = { it.id },
+            itemName = { it.name }
         )
     }
 }
@@ -604,16 +628,6 @@ private fun StepDateTime(
 }
 
 @Composable
-private fun StepLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 8.dp)
-    )
-}
-
-@Composable
 private fun DuracionField(value: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
@@ -623,149 +637,6 @@ private fun DuracionField(value: String, onChange: (String) -> Unit) {
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         shape = RoundedCornerShape(32.dp)
     )
-}
-
-@Composable
-private fun WizardHeader(title: String, step: Int, totalSteps: Int, onClose: () -> Unit) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onClose) {
-                Text("✖\uFE0E", color = MaterialTheme.colorScheme.primary)
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val stepLabels = listOf("Básico", "Clasificación", "Fechas")
-            stepLabels.forEachIndexed { index, label ->
-                StepIndicator(
-                    index = index,
-                    current = step,
-                    label = label
-                )
-                if (index < stepLabels.lastIndex) {
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(1.dp)
-                            .background(
-                                if (index < step) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StepIndicator(index: Int, current: Int, label: String) {
-    val isDone = index < current
-    val isActive = index == current
-    val circleColor = when {
-        isDone || isActive -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outlineVariant
-    }
-    val textColor = when {
-        isActive -> MaterialTheme.colorScheme.primary
-        isDone -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.outlineVariant
-    }
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(72.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(if (isDone || isActive) circleColor else Color.Transparent)
-                .border(1.5.dp, circleColor, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = if (isDone) "✓" else "${index + 1}",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isDone || isActive) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.outlineVariant
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun WizardNavigation(
-    step: Int,
-    totalSteps: Int,
-    actionLabel: String,
-    onBack: () -> Unit,
-    onNext: () -> Unit,
-    onSubmit: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        if (step > 0) {
-            OutlinedButton(onClick = onBack) {
-                Text("← Anterior")
-            }
-        } else {
-            Spacer(Modifier.width(1.dp))
-        }
-
-        if (step < totalSteps - 1) {
-            Button(onClick = onNext) {
-                Text("Siguiente →")
-            }
-        } else {
-            Button(
-                onClick = onSubmit,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-            ) {
-                Text("$actionLabel tarea")
-            }
-        }
-    }
-}
-
-private fun validateStep0(form: FormState): String? {
-    if (form.taskName.isBlank()) return "El nombre de la tarea es obligatorio."
-    if (form.taskPriority.isBlank()) return "La prioridad es obligatoria (1–10)."
-    return null
-}
-
-private fun validateStep1(form: FormState): String? {
-    if (form.taskTopic == null) return "Debes seleccionar un tópico."
-    return null
 }
 
 @Composable

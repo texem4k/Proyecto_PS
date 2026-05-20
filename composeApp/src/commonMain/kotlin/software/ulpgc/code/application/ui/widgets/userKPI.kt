@@ -22,8 +22,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import software.ulpgc.code.architecture.io.Store
-import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,6 +29,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
 
 
 private val ColorSuccess = Color(0xFF1D9E75)
@@ -66,13 +65,13 @@ data class UserKpiState(
 @Composable
 fun rememberUserKpi(
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    taskStat: Sequence<CompletionStat>
 ): State<UserKpiState> {
 
     return remember(timeZone) {
         derivedStateOf {
-            val tasks = Store.tasks()
             computeUserKpi(
-                tasks = tasks.toList(),
+                tasks = taskStat.toList(),
                 now = Clock.System.now(),
                 timeZone = timeZone,
             )
@@ -81,7 +80,7 @@ fun rememberUserKpi(
 }
 
 fun computeUserKpi(
-    tasks: List<Task>,
+    tasks: List<CompletionStat>,
     now: Instant = Clock.System.now(),
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): UserKpiState {
@@ -94,16 +93,16 @@ fun computeUserKpi(
 
     fun Instant.toLocalDate() = toLocalDateTime(timeZone).date
 
-    fun Task.endDate() = time.end.toLocalDate()
+    fun CompletionStat.endDate() = endDate.toLocalDate()
 
-    fun Task.isToday()     = endDate() == today
-    fun Task.isThisWeek()  = endDate() in weekStart..weekEnd
-    fun Task.isOverdue()   = !isCompleted && time.end < now
+    fun CompletionStat.isToday()     = endDate() == today
+    fun CompletionStat.isThisWeek()  = endDate() in weekStart..weekEnd
+    fun CompletionStat.isOverdue()   = !completed && endDate < now
 
-    val completedToday    = tasks.count { it.isCompleted && it.isToday() }
-    val completedThisWeek = tasks.count { it.isCompleted && it.isThisWeek() }
+    val completedToday    = tasks.count { it.completed && it.isToday() }
+    val completedThisWeek = tasks.count { it.completed && it.isThisWeek() }
 
-    val pending = tasks.count { !it.isCompleted && !it.isOverdue() }
+    val pending = tasks.count { !it.completed && !it.isOverdue() }
     val overdue = tasks.count { it.isOverdue() }
 
     val plannedToday     = tasks.count { it.isToday() }
@@ -135,7 +134,7 @@ private fun SectionLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
         letterSpacing = 0.8.sp,
         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
     )
@@ -163,24 +162,24 @@ private fun KpiCard(
             modifier = Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp))
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.outline)
                 .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             if (progress != null) {
                 Spacer(Modifier.height(2.dp))

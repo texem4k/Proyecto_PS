@@ -1,7 +1,9 @@
 package software.ulpgc.code.application.ui
 
 import Screen
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,12 +22,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Group
+import kotlin.uuid.Uuid
 
 data class SideBarItem(
     val icon: ImageVector,
@@ -37,7 +43,15 @@ private val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
-    SideBarItem(Icons.Default.Palette, Screen.SETTINGS),
+)
+
+val gro = listOf(
+    "Grupo1asasasasas",
+    "Grupo2",
+    "Grupo3sssssssssssssssssssssss",
+    "Grupo4ssasas",
+    "Local",
+    "Tu tablero en la nube"
 )
 
 @Composable
@@ -49,6 +63,8 @@ fun SideBar(
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
+    val auth = LocalAuthState.current
+
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -57,8 +73,8 @@ fun SideBar(
             .padding(vertical = 24.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
+        var actualGroup by remember { mutableStateOf(Store.currentGroup().id) }
 
         SideBarNavItem(
             item = home,
@@ -70,24 +86,23 @@ fun SideBar(
         Spacer(modifier = Modifier.height(32.dp))
 
         topItems.forEach { item ->
-            if (item.screen == Screen.SETTINGS) {
-                SideBarNavItem(
-                    item = item,
-                    isSelected = selectedScreen == item.screen,
-                    onClick = onSettingsClick
-                )
-            } else {
-                SideBarNavItem(
-                    item = item,
-                    isSelected = selectedScreen == item.screen,
-                    onClick = { onNavigate(item.screen) }
-                )
-            }
+            SideBarNavItem(
+                item = item,
+                isSelected = selectedScreen == item.screen,
+                onClick = { onNavigate(item.screen) }
+            )
             Spacer(modifier = Modifier.height(4.dp))
         }
 
         Spacer(modifier = Modifier.weight(1f))
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.weight(0.05f))
+
+        GroupSelectorMenu(
+            groups = Store.groups().toList(),
+            selectedGroup = Store.currentGroup().id,
+            onGroupSelected = { actualGroup = it },
+        )
 
         Box(
             modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -106,8 +121,7 @@ fun SideBar(
                 onClick = { showPopup = true }
             )
 
-            if (showPopup) {
-
+            if (showPopup && auth.isAuthenticated) {
                 val density = LocalDensity.current
                 val offsetY = with(density) {
                     (-cardHeight + 250.dp.toPx()).toInt()
@@ -125,13 +139,20 @@ fun SideBar(
                     UserMenuCard(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
-                            println("DEBUG cardHeight: $cardHeight")
                         },
                         name = "Enrique Sosa",
                         role = "Invitado",
                         onDismiss = { showPopup = false }
                     )
                 }
+            } else if (showPopup && !auth.isAuthenticated) {
+                AuthFlow(
+                    onDismiss = { showPopup = false },
+                    onAuthSuccess = {
+                        auth.onLogin()
+                        showPopup = false
+                    }
+                )
             }
         }
     }
@@ -224,5 +245,87 @@ private fun ThemeButton(
         )
     ) {
         Text(text)
+    }
+}
+
+
+@Composable
+fun GroupSelectorMenu(
+    groups: List<Group>,
+    selectedGroup: Uuid,
+    onGroupSelected: (Uuid) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentGroup = groups.find { it.id == selectedGroup }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+
+        Surface(
+            modifier = Modifier
+                .width(140.dp)
+                .clickable { expanded = true },
+            shape = RoundedCornerShape(32.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            color = Color.Transparent
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if ((currentGroup?.name?.length ?: 0) > 10)
+                        "${currentGroup?.name?.take(10)}..."
+                    else
+                        currentGroup?.name ?: "Seleccionar grupo",
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f),
+                    color = Color(0xFFCDD6F4),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
+
+
+                )
+            }
+        }
+
+        Box {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                offset = DpOffset(x = 20.dp, y = (-15).dp),
+                modifier = Modifier.heightIn(max = (3 * 48).dp)
+            ) {
+                groups.forEach { group ->
+                    val isSelected = group.id == selectedGroup
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = group.name,
+                                fontSize = 14.sp,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.DarkGray
+                            )
+                        },
+                        onClick = {
+                            onGroupSelected(group.id)
+                            expanded = false
+                        },
+                        trailingIcon = {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }

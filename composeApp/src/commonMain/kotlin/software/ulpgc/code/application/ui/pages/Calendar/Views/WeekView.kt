@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -121,7 +122,7 @@ fun WeekView(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(start = TIME_COL_W)
         ) {
 
@@ -134,7 +135,7 @@ fun WeekView(
                         text = CalendarConstants.DAY_LETTERS[index],
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (date == currentDate) Color(0xFF4F6EF7) else Color.Gray
+                        color = if (date == currentDate) Color(0xFF4F6EF7) else MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
                     Box(
@@ -160,7 +161,7 @@ fun WeekView(
                             color = when {
                                 date == currentDate -> Color.White
                                 date == selectedDate -> Color(0xFF4F6EF7)
-                                else -> Color.Black
+                                else -> MaterialTheme.colorScheme.onPrimaryContainer
                             }
                         )
                     }
@@ -177,14 +178,14 @@ fun WeekView(
                 modifier = Modifier
                     .width(TIME_COL_W)
                     .height(totalHeightDp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
             ) {
                 for (h in START_HOUR..END_HOUR) {
                     val topDp = ((h - START_HOUR) * HOUR_HEIGHT.value).dp
                     Text(
                         text = if (h < 10) "0$h:00" else "$h:00",
                         fontSize = 9.sp,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier
                             .offset(y = topDp - 7.dp)
                             .fillMaxWidth()
@@ -205,7 +206,7 @@ fun WeekView(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .border(0.5.dp, Color.Black.copy(alpha = 0.15f))
+                            .border(0.5.dp, MaterialTheme.colorScheme.primary)
                             .clickable { clickedDate = date }
                     ) {
                         WeekDayColumn(
@@ -278,21 +279,16 @@ fun WeekView(
                     usePlatformDefaultWidth = false
                 )
             ) {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .fillMaxHeight(0.7f)
-                ) {
-                    CreateTask(
-                        onClose = {
-                            showCreateTask = false
-                            taskToEdit = null
-                            onEdit()
-                        },
-                        task = taskToEdit
-                    )
-                }
+
+                CreateTask(
+                    onClose = {
+                        showCreateTask = false
+                        taskToEdit = null
+                        onEdit()
+                    },
+                    task = taskToEdit
+                )
+
             }
         }
 

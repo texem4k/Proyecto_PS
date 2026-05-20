@@ -11,7 +11,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.kotlinSerialization)
-    id("com.google.gms.google-services") version "4.4.0"
+    // id("com.google.gms.google-services") version "4.4.0"
 }
 
 kotlin {
@@ -24,7 +24,6 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-
 
     sourceSets {
         commonMain {
@@ -52,19 +51,18 @@ kotlin {
         browser()
         binaries.executable()
     }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         binaries.executable()
     }
-    
+
     sourceSets {
         commonMain {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
 
-        // AÃ±ade esto:
         androidMain {
             languageSettings.optIn("kotlin.uuid.ExperimentalUuidApi")
         }
@@ -101,7 +99,6 @@ kotlin {
             implementation(libs.connectivity.http)
             implementation(libs.connectivity.compose.http)
         }
-
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -146,7 +143,6 @@ android {
 
 dependencies {
     debugImplementation(libs.compose.uiTooling)
-    implementation(compose.desktop.currentOs)
 }
 
 compose.desktop {
