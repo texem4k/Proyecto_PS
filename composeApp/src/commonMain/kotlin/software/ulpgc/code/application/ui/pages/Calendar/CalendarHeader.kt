@@ -121,15 +121,15 @@ private fun NavigationSection(
         Text(
             text = title,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontSize = 20.sp
         )
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(onClick = onPreviousClick) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
         IconButton(onClick = onNextClick) {
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }
@@ -153,7 +153,7 @@ private fun FilterAndViewMode(
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filtrar tareas",
-                    tint = MaterialTheme.colorScheme.onPrimary)
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Box {
                 Button(onClick = { expanded = true }) {
@@ -206,17 +206,17 @@ fun YearHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onPreviousYear) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior", tint = MaterialTheme.colorScheme.onPrimary)
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Año anterior", tint = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
                 Text(
                     text = year.year.value.toString(),
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontSize = 26.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
                 IconButton(onClick = onNextYear) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente", tint = MaterialTheme.colorScheme.onPrimary)
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Año siguiente", tint = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }

@@ -237,21 +237,14 @@ fun DayEntriesPanel(
                 usePlatformDefaultWidth = false
             )
         ) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .fillMaxHeight(0.7f)
-            ) {
-                CreateTask(
-                    onClose = {
-                        showCreateTask = false
-                        taskToEdit = null
-                        onEdit()
-                    },
-                    task = taskToEdit
-                )
-            }
+            CreateTask(
+                onClose = {
+                    showCreateTask = false
+                    taskToEdit = null
+                    onEdit()
+                },
+                task = taskToEdit
+            )
         }
     }
 }
@@ -300,21 +293,15 @@ fun DayDetailDialog(
                 usePlatformDefaultWidth = false
             )
         ) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .fillMaxHeight(0.7f)
-            ) {
-                CreateTask(
-                    onClose = {
-                        showCreateTask = false
-                        onTaskCreated()
-                    }
-                )
-            }
+            CreateTask(
+                onClose = {
+                    showCreateTask = false
+                    onTaskCreated()
+                }
+            )
         }
     }
+
 }
 // ── HomeCalendar ──────────────────────────────────────────────────────────────
 

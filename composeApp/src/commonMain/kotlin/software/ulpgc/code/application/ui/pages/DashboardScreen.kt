@@ -2,6 +2,7 @@ package software.ulpgc.code.application.ui.pages
 
 import Screen
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,11 +26,13 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Store
@@ -97,7 +100,7 @@ fun DashboardScreen(
                         .padding(end = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
                 ) {
 
@@ -109,7 +112,7 @@ fun DashboardScreen(
                             modifier = Modifier.width(140.dp).align(Alignment.TopStart),
                             onClick = { expanded = true }
                         ) {
-                            Text(text = modeToggle.displayName)
+                            Text(text = modeToggle.displayName, color = MaterialTheme.colorScheme.primaryContainer)
                         }
                         DropdownMenu(
                             expanded = expanded,
@@ -148,29 +151,55 @@ fun DashboardScreen(
                 }
 
                 //AQUI
-                Column (modifier = Modifier.weight(1f)) {
-                    var currentMode by remember { mutableStateOf(TypeChart.BarChart) }
-                    Row(modifier = Modifier.padding(start = 12.dp)) {
-                        TypeChart.entries.forEach { mode ->
-                            FilterChip(
-                                selected = currentMode == mode,
-                                onClick = { currentMode = mode },
-                                label = {
-                                    Text(
-                                        when (mode) {
-                                            TypeChart.BarChart -> "Diagrama de Barras"
-                                            TypeChart.DotChart -> "Diagrama de Densidad"
-                                        }
-                                    )
-                                },
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
-                        }
-                    }
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(end = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        var currentMode by remember { mutableStateOf(TypeChart.BarChart) }
+                        Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp), horizontalArrangement = Arrangement.Center) {
+                            TypeChart.entries.forEach { mode ->
+                                FilterChip(
+                                    selected = currentMode == mode,
+                                    onClick = { currentMode = mode },
+                                    label = {
+                                        Text(
+                                            when (mode) {
+                                                TypeChart.BarChart -> "Diagrama de Barras"
+                                                TypeChart.DotChart -> "Diagrama de Densidad"
+                                            }
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        // Chip NO seleccionado
+                                        containerColor = Color.Transparent,
+                                        labelColor = Color.Gray,
 
-                    when (currentMode) {
-                        TypeChart.BarChart -> BarGraph(completionStat, taskFlag, Modifier.weight(1f))
-                        TypeChart.DotChart -> HourlyDensityChart(completionStat, Modifier.weight(1f))
+                                        // Chip seleccionado
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,   // 👈 fondo
+                                        selectedLabelColor = MaterialTheme.colorScheme.primaryContainer,              // 👈 texto
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = currentMode == mode,
+                                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),          // borde sin seleccionar
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary,               // borde seleccionado
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                            }
+                        }
+
+                        when (currentMode) {
+                            TypeChart.BarChart -> BarGraph(completionStat, taskFlag, Modifier.weight(1f).padding(end = 8.dp))
+                            TypeChart.DotChart -> HourlyDensityChart(completionStat, Modifier.weight(1f).padding(8.dp))
+                        }
                     }
                 }
             }
@@ -182,7 +211,7 @@ fun DashboardScreen(
                     .padding(top = 8.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
 

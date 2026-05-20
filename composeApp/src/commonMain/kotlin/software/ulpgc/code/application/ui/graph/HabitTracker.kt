@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -116,6 +117,21 @@ fun ModeToggle(currentMode: ChartMode, onModeChange: (ChartMode) -> Unit) {
                         }
                     )
                 },
+                colors = FilterChipDefaults.filterChipColors(
+                    // Chip NO seleccionado
+                    containerColor = Color.Transparent,
+                    labelColor = Color.Gray,
+
+                    // Chip seleccionado
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,   // 👈 fondo
+                    selectedLabelColor = MaterialTheme.colorScheme.primaryContainer,              // 👈 texto
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = currentMode == mode,
+                    borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),          // borde sin seleccionar
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,               // borde seleccionado
+                ),
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
@@ -213,7 +229,7 @@ fun BarGraph(
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = 8.dp)
+            .padding(start = 8.dp, top = 8.dp, bottom = 8.dp)
     ) {
         CartesianChartHost(
             chart = rememberCartesianChart(
@@ -333,7 +349,7 @@ fun HourlyDensityChart(
         modifier = modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(start = 16.dp, top = 8.dp)
+            .padding(top = 8.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
 
