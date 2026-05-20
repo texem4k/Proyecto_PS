@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
 import software.ulpgc.code.application.ui.pages.DialMenuItem
 import kotlin.math.PI
 import kotlin.math.cos
@@ -49,8 +52,7 @@ fun DialMenu(
     onCreateTag: () -> Unit,
     onCreateGroup: () -> Unit
 ) {
-    val auth = LocalAuthState.current
-
+    val authReady = SupabaseAuth.ready.collectAsState()
     val items = buildList {
         add(DialMenuItem(
             icon = Icons.Default.Task,
@@ -70,7 +72,7 @@ fun DialMenu(
             color = Color(0xFFD85A30),
             onClick = onCreateTag
         ))
-        if (auth.isAuthenticated) {
+        if (authReady.value && isLoggedIn()) {
             add(DialMenuItem(
                 icon = Icons.Default.Group,
                 label = "Nuevo grupo",

@@ -55,11 +55,6 @@ fun App(
     var showCreateGroup by remember { mutableStateOf(false) }
     var isAuthenticated by remember { mutableStateOf(true) }
 
-    val authState = AuthState(
-        isAuthenticated = isAuthenticated,
-        onLogin = { isAuthenticated = true },
-        onLogout = { isAuthenticated = false }
-    )
 
     val themeState = ThemeState(
         current = selectedTheme,
@@ -86,7 +81,6 @@ fun App(
     val storeReady = Store.ready.collectAsState().value
 
     CompositionLocalProvider(
-        LocalAuthState provides authState,
         LocalThemeState provides themeState
     ) {
         AppTheme(theme = selectedTheme) {

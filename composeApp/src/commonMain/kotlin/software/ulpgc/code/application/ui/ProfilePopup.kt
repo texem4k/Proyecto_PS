@@ -29,7 +29,6 @@ fun UserMenuCard(
     role: String,
     onDismiss: () -> Unit,
 ) {
-    val auth = LocalAuthState.current
     val theme = LocalThemeState.current
     var manageGroups by remember { mutableStateOf(false) }
     var joinGroup by remember { mutableStateOf(false) }

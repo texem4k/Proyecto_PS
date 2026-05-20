@@ -1,5 +1,8 @@
 package software.ulpgc.code.application.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -11,6 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -44,52 +50,60 @@ fun TaskInformationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(selectedTask.name) },
+        title = { Text(text = selectedTask.name, color = MaterialTheme.colorScheme.onPrimaryContainer) },
         text = {
             Text(
-                "Descripción: ${selectedTask.description}\n" +
+                text = "Descripción: ${selectedTask.description}\n" +
                         "Tema: ${Store.topics().find { it.id == selectedTask.topicId }?.name ?: "Sin tópico"}\n" +
                         "Tags: ${tagNames.joinToString(", ")}\n" +
                         "Fecha de comienzo: ${timeData[0]} ${timeData[1]}\n" +
                         "Fecha de final: ${timeData[2]} ${timeData[3]}\n" +
                         "Prioridad: ${selectedTask.priority.text} (${selectedTask.priority.value})" +
-                        if (!isRoot && assignedUsers.isNotEmpty()) "\nUsuarios: ${assignedUsers.joinToString(", ")}" else ""
-
+                        if (!isRoot && assignedUsers.isNotEmpty()) "\nUsuarios: ${assignedUsers.joinToString(", ")}" else "",
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         },
         confirmButton = {
-                Button(onClick = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CustomButton(onClick = {
                     onEdit(selectedTask)
                     onRequestEditNavigation?.invoke()
                 }) {
                     Text("Editar tarea")
                 }
 
-                Button(onClick = { showDeleteConfirmation = true }) {
+                CustomButton(onClick = { showDeleteConfirmation = true }) {
                     Text("Eliminar tarea")
-                    if (showDeleteConfirmation) {
-                        ConfirmDeleteDialog(
-                            taskName = selectedTask.name,
-                            onConfirm = {
-                                val command = CommandBuilder()
-                                    .set("id", selectedTask.id.toString())
-                                    .build(CommandType.DELETE_TASK)
-                                command
-                                    .onSuccess { CommandLauncher.launch(it) }
-                                    .onFailure { println("error: ${it.message}") }
-                                showDeleteConfirmation = false
-                                onDeleted()
-                                onDismiss()
-                            },
-                            onDismiss = { showDeleteConfirmation = false }
-                        )
-                    }
                 }
-            Button(onClick = onDismiss) {
-                Text("Cerrar")
+
+                CustomButton(onClick = onDismiss) {
+                    Text("Cerrar")
+                }
             }
         }
     )
+
+    if (showDeleteConfirmation) {
+        ConfirmDeleteDialog(
+            taskName = selectedTask.name,
+            onConfirm = {
+                val command = CommandBuilder()
+                    .set("id", selectedTask.id.toString())
+                    .build(CommandType.DELETE_TASK)
+                command
+                    .onSuccess { CommandLauncher.launch(it) }
+                    .onFailure { println("error: ${it.message}") }
+                showDeleteConfirmation = false
+                onDeleted()
+                onDismiss()
+            },
+            onDismiss = { showDeleteConfirmation = false }
+        )
+    }
 }
 
 

@@ -206,8 +206,7 @@ fun HomeScreen(
                                             text = "${
                                                 Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
                                             } $endDate $endHour",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.bodySmall
                                         )
                                     }
                                 }

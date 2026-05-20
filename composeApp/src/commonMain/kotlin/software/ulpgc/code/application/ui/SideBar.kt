@@ -56,7 +56,6 @@ fun SideBar(
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
-    val auth = LocalAuthState.current
     val authReady = SupabaseAuth.ready.collectAsState()
 
     Column(
@@ -136,7 +135,7 @@ fun SideBar(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
                         },
-                        name = "Pinga",
+                        name = Store.users().first {u -> u.id==Store.currentUser()}.name,
                         role = "Invitado",
                         onDismiss = { showPopup = false }
                     )

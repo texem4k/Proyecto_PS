@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
 import software.ulpgc.code.architecture.io.Store
 
 @Composable
@@ -49,7 +52,8 @@ fun BottomBar(
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect(0f, 0f, 0f, 0f)) }
     var cardHeight by remember { mutableStateOf(0) }
-    val auth = LocalAuthState.current
+    val authReady = SupabaseAuth.ready.collectAsState()
+
 
     val items = listOf(
         SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
@@ -99,11 +103,14 @@ fun BottomBar(
         )
 
         Box(modifier = Modifier.size(48.dp)) {
-            GroupSelectorMenu(
-                groups = Store.groups().toList(),
-                selectedGroup = Store.currentGroup().id,
-                onGroupSelected = { },
-            )
+            if(authReady.value && isLoggedIn()) {
+                GroupSelectorMenu(
+                    groups = Store.groups().toList(),
+                    selectedGroup = Store.currentGroup().id,
+                    onGroupSelected = { },
+                )
+            }
+
         }
 
         Box(
@@ -123,7 +130,7 @@ fun BottomBar(
                 onClick = { showPopup = true }
             )
 
-            if (showPopup && auth.isAuthenticated) {
+            if (showPopup && authReady.value && isLoggedIn()) {
                 Popup(
                     alignment = Alignment.BottomEnd,
                     offset = IntOffset(x = 0, y = -cardHeight),
@@ -139,11 +146,10 @@ fun BottomBar(
                         onDismiss = { showPopup = false }
                     )
                 }
-            } else if (showPopup && !auth.isAuthenticated) {
+            } else if (showPopup && authReady.value) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
                     onAuthSuccess = {
-                        auth.onLogin()
                         showPopup = false
                     }
                 )

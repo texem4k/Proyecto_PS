@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
 import com.kizitonwose.calendar.core.CalendarYear
+import software.ulpgc.code.application.ui.DropdownCustom
+import software.ulpgc.code.application.ui.DropdownSelection
 
 @Composable
 fun CalendarHeader(
@@ -83,10 +85,15 @@ private fun LegendDropdown(scrollState: androidx.compose.foundation.ScrollState)
     }
 
     Box {
-        Button(onClick = { expanded = true }) {
-            Text(text = "Leyenda")
-        }
-        DropdownMenu(
+        DropdownCustom(
+            section = "Leyenda",
+            items = CalendarConstants.LEGEND_ITEMS_CALENDAR.toList(),
+            selection = DropdownSelection.Single<String>(id = ""),
+            onItemSelected = { },
+            itemId = { pair -> pair.first },
+            itemName = { pair -> pair.first }
+        )
+        /*DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             tonalElevation = 0.dp,
@@ -104,7 +111,7 @@ private fun LegendDropdown(scrollState: androidx.compose.foundation.ScrollState)
                     onClick = {}
                 )
             }
-        }
+        }*/
     }
 }
 
