@@ -37,6 +37,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlinx.datetime.Instant
 import software.ulpgc.code.architecture.io.Store
+import kotlin.collections.contains
 import kotlin.uuid.Uuid
 
 
@@ -79,7 +80,7 @@ fun CreateTask(
 
 
     val action = if (task != null) "Editar" else "Crear"
-    if (Store.currentUser().name.lowercase() != "root"){
+    if (Store.users().find{it.id == Store.currentUser()}?.name?.lowercase() != "root"){
         totalSteps = 4
     }
 
@@ -320,7 +321,7 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
         StepLabel("Asignar usuarios")
 
         val currentUserGroup = Store.groups().find { group ->
-            group.users.contains(Store.currentUser().id)
+            group.users.contains(Store.currentUser())
         }
 
         val usersInGroup = currentUserGroup

@@ -177,8 +177,8 @@ fun UpcomingTasksPanel(
 fun MarkTaskIcon(task: Task, onDeleted: () -> Unit) {
     IconButton(
         onClick = {
-            if (task.users.contains(Store.currentUser().id) ||
-                Store.currentGroup().users[Store.currentUser().id] in listOf(Privilege.ADMIN, Privilege.MOD)) {
+            if (task.users.contains(Store.currentUser()) ||
+                Store.currentGroup().users[Store.currentUser()] in listOf(Privilege.ADMIN, Privilege.MOD)) {
                 val command = CommandBuilder()
                     .set("id", task.id.toString())
                     .build(CommandType.MARK_COMPLETE)
@@ -202,8 +202,8 @@ fun MarkTaskIcon(task: Task, onDeleted: () -> Unit) {
 fun UncompleteTaskIcon(task: Task, onDeleted: () -> Unit){
     IconButton(
         onClick = {
-            if (task.users.contains(Store.currentUser().id) ||
-                Store.currentGroup().users[Store.currentUser().id] in listOf(Privilege.ADMIN, Privilege.MOD)) {
+            if (task.users.contains(Store.currentUser()) ||
+                Store.currentGroup().users[Store.currentUser()] in listOf(Privilege.ADMIN, Privilege.MOD)) {
                 val command = CommandBuilder()
                     .set("id", task.id.toString())
                     .build(CommandType.UNMARK_COMPLETE)
