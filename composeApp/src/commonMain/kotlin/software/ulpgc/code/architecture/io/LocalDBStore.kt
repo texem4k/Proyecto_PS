@@ -4,6 +4,13 @@ import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.control.logs.LogMaster
+import software.ulpgc.code.architecture.model.Group
+import software.ulpgc.code.architecture.model.Tag
+import software.ulpgc.code.architecture.model.Topic
+import software.ulpgc.code.architecture.model.User
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
+import software.ulpgc.code.architecture.model.tasks.Task
+import kotlin.uuid.Uuid
 
 object LocalDBStore: Coroutinable {
     lateinit var cleanLists: () -> Unit
@@ -17,7 +24,7 @@ object LocalDBStore: Coroutinable {
         this.manager = manager
         this.afterLoad = afterLoad
         this.onFailLoad = onFailLoad
-        this.dbObjects = dbObjects
+        this.dbObjects = { dbObjects().filterNot { it.isLocalDisabled() } }
         CoroutineManager.add(this)
     }
     
@@ -48,15 +55,59 @@ object LocalDBStore: Coroutinable {
 
     private suspend fun loadDBData() {
         try {
-            manager.users().getOrThrow().forEach { Store.addUser(it) }
-            manager.groups().getOrThrow().forEach { Store.addGroup(it) }
-            manager.topics().getOrThrow().forEach{ Store.addTopic(it) }
-            manager.tags().getOrThrow().forEach { Store.addTag(it) }
-            manager.tasks().getOrThrow().forEach { Store.addTask(it) }
-            manager.completionStats().getOrThrow().forEach { Store.addCompletionStat(it)}
+            manager.users().getOrThrow().forEach {
+                disableIfRoot(it)
+                Store.add(it)
+            }
+            manager.groups().getOrThrow().forEach {
+                disableIfRoot(it)
+                Store.add(it)
+            }
+            manager.topics().getOrThrow().forEach{
+                disableIfRoot(it)
+                Store.add(it)
+            }
+            manager.tags().getOrThrow().forEach {
+                disableIfRoot(it)
+                Store.add(it)
+            }
+            manager.tasks().getOrThrow().forEach {
+                disableIfRoot(it)
+                Store.add(it)
+            }
+            manager.completionStats().getOrThrow().forEach {
+                disableIfRoot(it)
+                Store.add(it)
+            }
         } catch (e: AppException) {
             onFailLoad(e)
         }
+    }
+
+    private val rootId = Uuid.parse("00000000-0000-0000-0000-000000000000")
+    private fun <T: DBObject> disableIfRoot(obj: T) {
+        when (obj) {
+            is Group -> {
+                if (obj.id == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+            is User -> {
+                if (obj.id == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+            is Topic -> {
+                if (obj.groupId == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+            is Tag -> {
+                if (Store.topics().find { it.id == obj.topicId }?.id == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+            is Task -> {
+                if (Store.topics().find { it.id == obj.topicId }?.id == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+            is CompletionStat -> {
+                val topicId = Store.tasks().find { it.id == obj.taskId }?.id
+                if (Store.topics().find { it.id == topicId }?.id == rootId) obj.cloudDBState = DBState.DISABLED
+            }
+        }
+
     }
 
     override suspend fun execute() {

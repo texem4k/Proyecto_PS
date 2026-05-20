@@ -60,28 +60,27 @@ object Store {
 
     fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
 
-    fun addTopic(topic: Topic) {
-        Storage.topics.add(topic)
+    fun <T: DBObject> add(obj: T) {
+        when (obj) {
+            is Group -> Storage.groups.add(obj)
+            is User -> Storage.users.add(obj)
+            is Topic -> Storage.topics.add(obj)
+            is Tag -> Storage.tags.add(obj)
+            is Task -> Storage.tasks.add(obj)
+            is CompletionStat -> Storage.stats.add(obj)
+        }
     }
 
-    fun addTag(tag: Tag) {
-        Storage.tags.add(tag)
-    }
-
-    fun addTask(task: Task) {
-        Storage.tasks.add(task)
-    }
-
-    fun addGroup(group: Group) {
-        Storage.groups.add(group)
-    }
-
-    fun addUser(user: User) {
-        Storage.users.add(user)
-    }
-
-    fun addCompletionStat(completionStat: CompletionStat) {
-        Storage.stats.add(completionStat)
+    fun <T: DBObject> tryFind(obj: T): T? {
+        return when (obj) {
+            is Group -> Storage.groups.find { obj.id == it.id }
+            is User -> Storage.users.find { obj.id == it.id }
+            is Topic -> Storage.topics.find { obj.id == it.id }
+            is Tag -> Storage.tags.find { obj.id == it.id }
+            is Task -> Storage.tasks.find { obj.id == it.id }
+            is CompletionStat -> Storage.stats.find { obj.id == it.id }
+            else -> null
+        } as T?
     }
 
     suspend fun onLogOut() {

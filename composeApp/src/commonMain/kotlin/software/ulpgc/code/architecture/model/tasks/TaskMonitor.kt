@@ -26,7 +26,7 @@ object TaskMonitor: Coroutinable {
         task.isCompleted = false
         task.localDBState = DBState.UPDATED
         task.cloudDBState = DBState.UPDATED
-        Store.addCompletionStat(CompletionStat(task.id, task.time.start, false, task.time.end))
+        Store.add(CompletionStat(task.id, task.time.start, false, task.time.end))
         LogMaster.log("Task ${task.name} renovada para la fecha ${task.time.start} - ${task.time.end}")
     }
 

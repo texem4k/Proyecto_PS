@@ -3,6 +3,8 @@ package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
@@ -30,7 +32,7 @@ class UpdateTaskCommand internal constructor (private val currentTask: Task, pri
         currentTask.users = newTask.users
         currentTask.isCompleted = newTask.isCompleted
         currentTask.localDBState = DBState.UPDATED
-        currentTask.cloudDBState = DBState.UPDATED
+        if(!Store.currentGroup().isCloudDisabled()) currentTask.cloudDBState = DBState.UPDATED
         return listOf(UpdateTaskCommand(currentTask, currentClone))
     }
 }

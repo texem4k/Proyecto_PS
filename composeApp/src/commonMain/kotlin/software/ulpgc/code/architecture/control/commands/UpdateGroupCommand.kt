@@ -2,6 +2,8 @@ package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.model.Group
 
 class UpdateGroupCommand(private val currentGroup: Group, private val newGroup: Group): Command {
@@ -13,7 +15,7 @@ class UpdateGroupCommand(private val currentGroup: Group, private val newGroup: 
         currentGroup.name = newGroup.name
         currentGroup.description = newGroup.description
         currentGroup.localDBState = DBState.UPDATED
-        currentGroup.cloudDBState = DBState.UPDATED
+        if(!Store.currentGroup().isCloudDisabled()) currentGroup.cloudDBState = DBState.UPDATED
         return listOf()
     }
 }

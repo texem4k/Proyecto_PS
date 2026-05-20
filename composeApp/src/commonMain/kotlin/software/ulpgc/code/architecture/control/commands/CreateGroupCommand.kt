@@ -11,7 +11,7 @@ internal constructor(name: String, description: String):
 
     override fun execute(): List<Command> {
         LogMaster.log("CreateGroupCommand {$group}")
-        Store.addGroup(group)
+        Store.add(group)
         Store.changeGroupTo(group)
         return listOf()
     }

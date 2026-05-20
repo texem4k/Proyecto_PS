@@ -75,13 +75,13 @@ data class DBData(
 
     private fun statSequence(): Sequence<DBObject> =
         this.stats.asSequence().map { (id, taskId, proposedDate, completed, endDate) -> CompletionStat(taskId, Instant.parse(proposedDate), completed,
-            Instant.parse(endDate), id, DBState.DEFAULT) }
+            Instant.parse(endDate), id) }
 
     private fun topicSequence(): Sequence<Topic> =
-        this.topics.asSequence().map { (id, name, groupId, color) -> Topic(name, Color(color), groupId, id, DBState.DEFAULT) }
+        this.topics.asSequence().map { (id, name, groupId, color) -> Topic(name, Color(color), groupId, id) }
 
     private fun tagSequence(): Sequence<Tag> =
-        this.tags.asSequence().map { (id, name, topicId) -> Tag(name, topicId, id, DBState.DEFAULT) }
+        this.tags.asSequence().map { (id, name, topicId) -> Tag(name, topicId, id) }
 
     private fun taskSequence(): Sequence<Task> =
         this.tasks.asSequence().map { (id, priority, name, users, description, interval, topicId, tags, time) ->
@@ -95,8 +95,7 @@ data class DBData(
                 tags.toMutableSet(),
                 users.toMutableSet(),
                 false,
-                id,
-                DBState.DEFAULT
+                id
             )
         }
 
@@ -106,14 +105,13 @@ data class DBData(
                 name,
                 description,
                 users.associate { it.id to it.privilege }.toMutableMap(),
-                id,
-                DBState.DEFAULT
+                id
             )
         }
 
     private fun userSequence(): Sequence<User> =
         this.users.asSequence().map { (id, name) ->
-            User(name,id, DBState.DEFAULT)
+            User(name,id)
         }
 }
 

@@ -3,6 +3,12 @@ package software.ulpgc.code.architecture.io
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.logs.LogMaster
+import software.ulpgc.code.architecture.model.Group
+import software.ulpgc.code.architecture.model.Tag
+import software.ulpgc.code.architecture.model.Topic
+import software.ulpgc.code.architecture.model.User
+import software.ulpgc.code.architecture.model.tasks.CompletionStat
+import software.ulpgc.code.architecture.model.tasks.Task
 
 object CloudDBStore: Coroutinable {
     lateinit var cleanLists: () -> Unit
@@ -18,7 +24,7 @@ object CloudDBStore: Coroutinable {
     ) {
         this.manager = manager
         this.cleanLists = cleanLists
-        this.dbObjects = dbObjects
+        this.dbObjects = { dbObjects().filterNot { it.isCloudDisabled() } }
         this.canUseDatabase = canUseDatabase
         CoroutineManager.add(this)
     }
@@ -46,13 +52,68 @@ object CloudDBStore: Coroutinable {
     }
 
     private suspend fun loadDBData() {
-        manager.groups().getOrThrow().forEach { Store.addGroup(it) }
-        manager.users().getOrThrow().forEach { Store.addUser(it) }
-        manager.topics().getOrThrow().forEach { Store.addTopic(it) }
-        manager.tags().getOrThrow().forEach { Store.addTag(it) }
-        manager.tasks().getOrThrow().forEach { Store.addTask(it) }
-        manager.completionStats().getOrThrow().forEach { Store.addCompletionStat(it) }
+        insertOrUpdate(manager.groups().getOrThrow().asSequence())
+        insertOrUpdate(manager.users().getOrThrow().asSequence())
+        insertOrUpdate(manager.topics().getOrThrow().asSequence())
+        insertOrUpdate(manager.tags().getOrThrow().asSequence())
+        insertOrUpdate(manager.tasks().getOrThrow().asSequence())
+        insertOrUpdate(manager.completionStats().getOrThrow().asSequence())
     }
+
+    private fun <T: DBObject> insertOrUpdate(objects: Sequence<T>) {
+        objects.forEach {
+            val obj = Store.tryFind(it)
+            if (obj == null) {
+                it.localDBState = DBState.NEW
+                Store.add(it)
+            }
+            else if (obj != it) update(obj, it)
+            else obj.cloudDBState = DBState.DEFAULT
+        }
+    }
+
+    private fun <T: DBObject> update(original: T, new: T) {
+        when (original) {
+            is Group -> {
+                val new = new as Group
+                original.name = new.name
+                original.description = new.description
+                original.users = new.users
+            }
+            is User -> {
+                val new = new as User
+                original.name = new.name
+            }
+            is Topic -> {
+                val new = new as Topic
+                original.name = new.name
+                original.color = new.color
+            }
+            is Tag -> {
+                val new = new as Tag
+                original.name = new.name
+            }
+            is Task -> {
+                val new = new as Task
+                original.name = new.name
+                original.description = new.description
+                original.time = new.time
+                original.interval = new.interval
+                original.priority = new.priority
+                original.tags = new.tags
+                original.users = new.users
+                original.isCompleted = new.isCompleted
+            }
+            is CompletionStat -> {
+                val new = new as CompletionStat
+                original.completed = new.completed
+                original.endDate = new.endDate
+            }
+        }
+        original.cloudDBState = DBState.DEFAULT
+        original.localDBState = DBState.UPDATED
+    }
+
 
     override suspend fun execute() {
         if( !canUseDatabase()) return
@@ -60,6 +121,7 @@ object CloudDBStore: Coroutinable {
         updateRequired(dbObjects().filter { it.isCloudUpdated() })
         insertRequired(dbObjects().filter { it.isCloudNew() })
         loadDBData()
+        deleteRequired(dbObjects().filter { it.isCloudUnknown() })
     }
 
     override suspend fun onDispose() {

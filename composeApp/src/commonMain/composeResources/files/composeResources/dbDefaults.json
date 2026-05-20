@@ -127,7 +127,7 @@
   "groups": [
     {
       "id": "00000000-0000-0000-0000-000000000000",
-      "name": "root",
+      "name": "Local",
       "description": "default work group",
       "users": [
         {

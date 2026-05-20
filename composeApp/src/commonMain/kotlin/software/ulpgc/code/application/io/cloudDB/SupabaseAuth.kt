@@ -41,7 +41,7 @@ object SupabaseAuth {
             email = userEmail
             password = userPassword
         }
-        user?.id?.let { Store.addUser(User(name, Uuid.parse(it))) }
+        user?.id?.let { Store.add(User(name, Uuid.parse(it))) }
         login(userEmail, userPassword)
         CommandBuilder().set("name", "Grupo de $name")
             .set("description", "Zona personal de trabajo")
