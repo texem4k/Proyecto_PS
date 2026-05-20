@@ -8,11 +8,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
@@ -26,6 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +42,7 @@ import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
 import kotlin.collections.component1
 import kotlin.collections.component2
+
 
 
 data class MemberInvite(
@@ -168,10 +174,11 @@ fun GroupStepMembers(
     var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
     var generatedCode by remember { mutableStateOf<String?>(null) }
     var generatedCodes by remember { mutableStateOf<Map<Privilege, String>>(emptyMap()) }
+    val clipboard = LocalClipboardManager.current
 
     fun generateCode(): String {
         val chars = ('A'..'Z') + ('0'..'9')
-        return (1..8).map { chars.random() }.joinToString("")
+        return (1..10).map { chars.random() }.joinToString("")
     }
 
     Column(
@@ -242,7 +249,8 @@ fun GroupStepMembers(
                         privilege = priv,
                         onReset = {
                             generatedCodes = generatedCodes + (priv to generateCode())
-                        }
+                        },
+                        clipboard
                     )
                 }
             }
@@ -303,7 +311,7 @@ enum class EditGroupSection { INFO, MEMBERS, INVITE,SETTINGS }
 
 @Composable
 fun EditGroup(
-    onClose: () -> Unit,
+    onDismiss: () -> Unit,
     onSubmit: (CreateGroupFormState) -> Unit = {},
     group: Group = Store.groups().first(),
 ) {
@@ -325,7 +333,7 @@ fun EditGroup(
     var section by remember { mutableStateOf(EditGroupSection.INFO) }
 
     Dialog(
-        onDismissRequest = onClose,
+        onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -344,132 +352,85 @@ fun EditGroup(
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = onClose) {
-                        Text("✖\uFE0E", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
 
-                Spacer(Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(24.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
-                        .padding(6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
-                ) {
-                    EditGroupSection.entries.forEach { s ->
-                        val selected = section == s
-                        val label = when (s) {
-                            EditGroupSection.INFO         -> "Información"
-                            EditGroupSection.MEMBERS      -> "Miembros"
-                            EditGroupSection.INVITE       -> "Invitar"
-                            EditGroupSection.SETTINGS     -> "Ajustes"
-                        }
-                        val icon = when (s) {
-                            EditGroupSection.INFO         -> Icons.Default.Info
-                            EditGroupSection.MEMBERS      -> Icons.Default.Group
-                            EditGroupSection.INVITE      -> Icons.Default.Link
-                            EditGroupSection.SETTINGS     -> Icons.Default.Settings
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(
-                                    if (selected) MaterialTheme.colorScheme.primaryContainer
-                                    else Color.Transparent
+                    Row(
+                        modifier = Modifier
+                            .weight(2f)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(24.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        EditGroupSection.entries.forEach { s ->
+                            val selected = section == s
+                            val icon = when (s) {
+                                EditGroupSection.INFO     -> Icons.Default.Info
+                                EditGroupSection.MEMBERS  -> Icons.Default.Group
+                                EditGroupSection.INVITE   -> Icons.Default.Link
+                                EditGroupSection.SETTINGS -> Icons.Default.Settings
+                            }
+                            val label = when (s) {
+                                EditGroupSection.INFO     -> "Información"
+                                EditGroupSection.MEMBERS  -> "Miembros"
+                                EditGroupSection.INVITE   -> "Invitar"
+                                EditGroupSection.SETTINGS -> "Ajustes"
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        if (selected) MaterialTheme.colorScheme.primaryContainer
+                                        else Color.Transparent
+                                    )
+                                    .clickable { section = s }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = label,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                .clickable { section = s }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = label,
-                                modifier = Modifier.size(22.dp),
-                                tint = if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = label,
-                                fontSize = 10.sp,
-                                color = if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = label,
+                                    fontSize = 9.sp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        IconButton(onClick = onDismiss) {
+                            Text("✖\uFE0E", color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
 
-                // Contenido de la sección
                 AnimatedContent(targetState = section, label = "edit_group_section") { current ->
                     when (current) {
                         EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
                         EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
-                        EditGroupSection.INVITE     -> EditGroupSectionInvitations(form, { form = it })
+                        EditGroupSection.INVITE      ->  GroupStepMembers(form,{ form = it })
                         EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
-                            onSave = { onSubmit(form); onClose() },
-                            onLeave = onClose
+                            onSave = { onSubmit(form); onDismiss() },
+                            onLeave = onDismiss
                         )
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun EditGroupSectionInvitations(
-    form: CreateGroupFormState,
-    onFormChange: (CreateGroupFormState) -> Unit
-){
-    var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
-    var generatedCode by remember { mutableStateOf<String?>(null) }
-
-    fun generateCode(): String {
-        val chars = ('A'..'Z') + ('0'..'9')
-        return (1..8).map { chars.random() }.joinToString("")
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        StepLabel("Miembros del grupo")
-
-        Row(
-            modifier = Modifier.fillMaxWidth(0.9f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                DropdownCustom(
-                    section = "Permisos",
-                    items = Privilege.entries,
-                    selection = DropdownSelection.Single(selectedPriv),
-                    onItemSelected = { selectedPriv = it },
-                    itemId = { it },
-                    itemName = { it.name }
-                )
-            }
-
-            OutlinedButton(
-                onClick = { generatedCode = generateCode() },
-                shape = RoundedCornerShape(32.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
-            ) {
-                Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Generar código")
-            }
-
-            ShowCode(generatedCode)
         }
     }
 }
@@ -559,7 +520,8 @@ private fun EditGroupSectionSettings(
 fun CodeRow(
     code: String,
     privilege: Privilege,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    clipboard: ClipboardManager
 ) {
     Row(
         modifier = Modifier
@@ -588,16 +550,14 @@ fun CodeRow(
         )
 
         IconButton(
-            onClick = { /* reset */ },
-            modifier = Modifier.size(28.dp)
+            onClick = { clipboard.setText(AnnotatedString(code)) },
+            modifier = Modifier.size(22.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Resetear código",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(16.dp)
-            )
+            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
+                modifier = Modifier.size(15.dp),
+                tint = MaterialTheme.colorScheme.primary)
         }
+
     }
 }
 
@@ -622,45 +582,151 @@ fun ShowCode(code: String?){
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 2.sp
             )
-            IconButton(
-                onClick = { /* clipboard */ },
-                modifier = Modifier.size(22.dp)
-            ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
-                    modifier = Modifier.size(15.dp),
-                    tint = MaterialTheme.colorScheme.primary)
-            }
         }
     }
 }
 
 
 @Composable
-fun JoinGroup(){
+fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
 
-    var code by remember { mutableStateOf("") }
-    Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Row(
+    var code: String by remember { mutableStateOf("") }
+
+    val isValid = code.length == 10
+    val hasError = code.isNotEmpty() && code.length < 10
+    val clipboard = LocalClipboardManager.current
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextField(value = code, onValueChange = { code = it })
-            IconButton(
-                onClick = { /* clipboard */ },
-                modifier = Modifier.size(22.dp)
+            Icon(
+                imageVector = Icons.Default.Group,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(36.dp)
+            )
+
+            Text(
+                text = "Unirse a un grupo",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = "Introduce el código",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            val containerColor = when {
+                hasError -> MaterialTheme.colorScheme.errorContainer
+                isValid  -> MaterialTheme.colorScheme.secondaryContainer
+                else     -> MaterialTheme.colorScheme.primaryContainer
+            }
+            val borderColor = when {
+                hasError -> MaterialTheme.colorScheme.error
+                isValid  -> MaterialTheme.colorScheme.secondary
+                else     -> MaterialTheme.colorScheme.primary
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(containerColor)
+                    .border(1.dp, borderColor, RoundedCornerShape(24.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
-                    modifier = Modifier.size(15.dp),
-                    tint = MaterialTheme.colorScheme.primary)
+                BasicTextField(
+                    value = code,
+                    onValueChange = { if (it.length <= 10) code = it },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 2.sp,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { inner ->
+                        if (code.isEmpty()) {
+                            Text(
+                                text = "_ _ _ _ _ _ _ _ _ _",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        inner()
+                    }
+                )
+
+                IconButton(
+                    onClick = {
+                        code = clipboard.getText()?.text?.trim()?.take(10)!!
+                    },
+                    modifier = Modifier.size(22.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ContentPaste,
+                        contentDescription = "Pegar código",
+                        modifier = Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (hasError) {
+                    Text(
+                        text = "El código debe tener 8 caracteres",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                Text(
+                    text = "${code.length} / 10",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Botones
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Cancelar")
+                }
+
+                Button(
+                    onClick = { if (isValid) onJoin(code) },
+                    enabled = isValid,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Unirse")
+                }
             }
         }
     }

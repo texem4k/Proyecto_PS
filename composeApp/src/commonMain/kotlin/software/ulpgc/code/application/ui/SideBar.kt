@@ -3,7 +3,6 @@ package software.ulpgc.code.application.ui
 import Screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,15 +42,6 @@ val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
-)
-
-val gro = listOf(
-    "Grupo1asasasasas",
-    "Grupo2",
-    "Grupo3sssssssssssssssssssssss",
-    "Grupo4ssasas",
-    "Local",
-    "Tu tablero en la nube"
 )
 
 @Composable
@@ -98,11 +88,13 @@ fun SideBar(
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.weight(0.05f))
 
-        GroupSelectorMenu(
-            groups = Store.groups().toList(),
-            selectedGroup = Store.currentGroup().id,
-            onGroupSelected = { actualGroup = it },
-        )
+        if(auth.isAuthenticated){
+            GroupSelectorMenu(
+                groups = Store.groups().toList(),
+                selectedGroup = Store.currentGroup().id,
+                onGroupSelected = { actualGroup = it },
+            )
+        }
 
         Box(
             modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -283,8 +275,6 @@ fun GroupSelectorMenu(
                     color = Color(0xFFCDD6F4),
                     maxLines = 1,
                     textAlign = TextAlign.Center
-
-
                 )
             }
         }

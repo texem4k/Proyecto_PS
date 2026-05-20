@@ -81,7 +81,7 @@ fun UserMenuCard(
     }
 
     if(joinGroup){
-        JoinGroup()
+        JoinGroup({joinGroup = false}, {""})
     }
 }
 

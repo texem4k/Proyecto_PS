@@ -31,7 +31,7 @@ fun FilterContent(
         FilterPanel(
             type = "Prioridad",
             filters = tempFilters,
-            options = Priority.entries.map { it.text },
+            options = Priority.entries.map { it.text }.distinct(),
             selected = tempFilters.priority,
             onFilterChange = { tempFilters = it }
         )

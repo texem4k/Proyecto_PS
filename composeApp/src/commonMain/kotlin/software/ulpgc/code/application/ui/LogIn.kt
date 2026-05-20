@@ -42,14 +42,14 @@ fun AuthFlow(
         DialogState.LOGIN -> LoginDialog(
             onDismiss    = { dialogState = DialogState.NONE },
             onCreateAccount = { dialogState = DialogState.REGISTER },
-            onLoginSuccess  = { email, pass ->
+            onLoginSuccess  = { _, _ ->
                 onAuthSuccess()
                 dialogState = DialogState.NONE
             }
         )
         DialogState.REGISTER -> RegisterDialog(
             onDismiss       = { dialogState = DialogState.NONE },
-            onRegisterSuccess = { email, pass, name ->
+            onRegisterSuccess = { _, _, _ ->
                 onAuthSuccess()
                 dialogState = DialogState.NONE
             }
@@ -106,25 +106,25 @@ fun LoginDialog(
             }
         },
         confirmButton = {
-                Row(horizontalArrangement = Arrangement.Center) {
-                    Button(onClick = {
-                        touch=true
-                        if(validateEmail(email)) {
-                            validEmail = true
-                        }
-                        if(validatePassword(pass)) {
-                            validPass = true
-                        }
-                        if(validEmail && validPass) {
-                            onLoginSuccess(email, pass)
-                        }
-                    })
-                    {
-                        Text("Iniciar sesión")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+
+            ) {
+                CustomButton(
+                    onClick = {
+                        touch = true
+                        if (validateEmail(email)) validEmail = true
+                        if (validatePassword(pass)) validPass = true
+                        if (validEmail && validPass) onLoginSuccess(email, pass)
                     }
-                    Button(onClick = onCreateAccount) { Text("Crear cuenta") }
-                    Button(onClick = onDismiss)       { Text("Cancelar")     }
-                }
+                ) { Text("Iniciar sesión") }
+
+                CustomButton(onClick = onCreateAccount) { Text("Crear cuenta") }
+
+                CustomButton(onClick = onDismiss) { Text("Cancelar") }
+            }
         }
     )
 }
@@ -210,14 +210,5 @@ fun validatePassword(pass: String): Boolean {
 }
 
 fun validateUsername(user: String): Boolean {
-    //Logica de buscar nombres de usuario en base de datos
     return !user.isEmpty()
 }
-
-
-
-// Modelo del usuario autenticado
-data class UserSession(
-    val email: String,
-    val name: String
-)

@@ -49,34 +49,36 @@ fun DialMenu(
     onCreateTag: () -> Unit,
     onCreateGroup: () -> Unit
 ) {
+    val auth = LocalAuthState.current
 
-    val items = listOf(
-        DialMenuItem(
+    val items = buildList {
+        add(DialMenuItem(
             icon = Icons.Default.Task,
             label = "Nueva tarea",
             color = Color(0xFF534AB7),
             onClick = onCreateTask
-        ),
-        DialMenuItem(
+        ))
+        add(DialMenuItem(
             icon = Icons.Default.Folder,
             label = "Nuevo tópico",
             color = Color(0xFF1D9E75),
             onClick = onCreateTopic
-        ),
-        DialMenuItem(
+        ))
+        add(DialMenuItem(
             icon = Icons.Default.LocalOffer,
             label = "Nuevo tag",
             color = Color(0xFFD85A30),
             onClick = onCreateTag
-        ),
-
-        DialMenuItem(
-            icon = Icons.Default.Group,
-            label = "Nuevo grupo",
-            color = Color(0xFFC8C804),
-            onClick = onCreateGroup
-        ),
-    )
+        ))
+        if (auth.isAuthenticated) {
+            add(DialMenuItem(
+                icon = Icons.Default.Group,
+                label = "Nuevo grupo",
+                color = Color(0xFFC8C804),
+                onClick = onCreateGroup
+            ))
+        }
+    }
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -98,6 +100,7 @@ fun DialMenu(
                 item = item,
                 index = index,
                 visible = expanded,
+                total = items.size,
                 onDismiss = { expanded = false }
             )
         }
@@ -126,16 +129,27 @@ fun DialMenu(
 private fun DialChildButton(
     item: DialMenuItem,
     index: Int,
+    total: Int,
     visible: Boolean,
     onDismiss: () -> Unit
 ) {
-    val angleDeg = when (index) {
-        0 -> 180.0   // izquierda
-        1 -> 115.0   // arriba izquierda
-        2 -> 65.0    // arriba derecha
-        3 -> 0.0     // derecha
-        else -> 0.0
+    val angleDeg = when (total) {
+        3 -> when (index) {
+            0 -> 180.0
+            1 -> 90.0
+            2 -> 0.0
+            else -> 0.0
+        }
+        4 -> when (index) {
+            0 -> 180.0
+            1 -> 115.0
+            2 -> 65.0
+            3 -> 0.0
+            else -> 0.0
+        }
+        else -> index * (180.0 / maxOf(total - 1, 1))
     }
+
     val angleRad = angleDeg * PI / 180.0
     val radius = 80f
 
@@ -153,7 +167,14 @@ private fun DialChildButton(
 
     Box(
         modifier = Modifier
-            .offset(if (offsetX.value < -10) offsetX + 5.dp else offsetX + 25.dp, offsetY)
+            .offset(
+                x = when {
+                    offsetX.value < -10 -> offsetX + 5.dp
+                    offsetX.value < 10  -> offsetX + 20.dp
+                    else                -> offsetX + 25.dp
+                },
+                y = offsetY
+            )
             .scale(scale)
     ) {
         Box(
@@ -176,9 +197,9 @@ private fun DialChildButton(
         }
 
         val textOffsetX = when {
-            offsetX.value > 20 -> 48.dp
+            offsetX.value > 20  -> 48.dp
             offsetX.value < -20 -> (-85).dp
-            else -> (-20).dp
+            else                -> 48.dp
         }
 
         val textOffsetY = 10.dp
