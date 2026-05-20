@@ -12,7 +12,7 @@ object SupabaseInvite {
     }
 
     suspend fun generateCode(group: Uuid, privilege: Privilege): Int {
-        val code = Uuid.random().toString().split("-").joinToString("").substring(0..9).toInt()
+        val code = Uuid.random().toULongs { _, leastSignificantBits -> leastSignificantBits }.toString().substring(0..9).toInt()
         SupabaseDBManager.setInviteCode(group, privilege, code)
         return code
     }

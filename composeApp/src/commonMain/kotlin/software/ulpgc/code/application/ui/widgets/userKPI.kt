@@ -29,6 +29,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 
 
@@ -105,8 +106,11 @@ fun computeUserKpi(
     val pending = tasks.count { !it.completed && !it.isOverdue() }
     val overdue = tasks.count { it.isOverdue() }
 
-    val plannedToday     = tasks.count { it.isToday() }
-    val plannedThisWeek  = tasks.count { it.isThisWeek() }
+    val plannedToday     = tasks.filter { it.isToday() }.count { task -> Store.tasks().find { t -> t.id == task.taskId }?.time?.end?.toLocalDate() == today }
+    val plannedThisWeek  = tasks.filter { it.isThisWeek() }.count { task ->
+        val end = Store.tasks().find { t -> t.id == task.taskId }?.time?.end?.toLocalDate()
+        end!=null && end in weekStart..weekEnd
+    }
 
     val completionRateToday = if (plannedToday > 0)
         (completedToday.toFloat() / plannedToday) * 100f
@@ -211,6 +215,7 @@ fun KpiDashboard(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),

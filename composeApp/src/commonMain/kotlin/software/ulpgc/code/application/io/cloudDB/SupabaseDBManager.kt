@@ -52,14 +52,14 @@ data class TagData(val id: Uuid, val topicId: Uuid, val name: String,){
 }
 
 @Serializable
-data class GroupUserData(val userId: Uuid, val groupId: Uuid, val privilege: Privilege){
+data class GroupUserData(val userId: Uuid, val groupId: Uuid, val privilege: Int){
     companion object {
         fun serializeFrom(group: Group): List<GroupUserData> {
-            return group.users.entries.map { GroupUserData(it.key, group.id, it.value) }
+            return group.users.entries.map { GroupUserData(it.key, group.id, it.value.ordinal) }
         }
 
         fun parse(users: List<GroupUserData>): MutableMap<Uuid, Privilege> {
-            return users.associate { it.userId to it.privilege }.toMutableMap()
+            return users.associate { it.userId to Privilege.entries[it.privilege] }.toMutableMap()
         }
     }
 }
@@ -147,6 +147,7 @@ object SupabaseDBManager: DBManager {
             is User -> postgrest.from("user").insert(UserData(obj))
             is Group -> {
                 postgrest.from("workgroup").insert(GroupData(obj))
+                println(GroupUserData.serializeFrom(obj))
                 postgrest.from("workgroupuser").insert(GroupUserData.serializeFrom(obj))
             }
             is Topic -> postgrest.from("topic").insert(TopicData(obj))
@@ -169,14 +170,17 @@ object SupabaseDBManager: DBManager {
             is User -> postgrest.from("user").update(UserData(obj)) { filter { eq("id", obj.id) } }
             is Group -> {
                 postgrest.from("workgroup").update(GroupData(obj)) { filter { eq("id", obj.id) } }
-                postgrest.from("workgroupuser").update(GroupUserData.serializeFrom(obj)) { filter { eq("groupId", obj.id) } }
+                postgrest.from("workgroupuser").delete { filter { eq("groupId", obj.id) } }
+                postgrest.from("workgroupuser").insert(GroupUserData.serializeFrom(obj)) { filter { eq("groupId", obj.id) } }
             }
             is Topic -> postgrest.from("topic").update(TopicData(obj)) { filter { eq("id", obj.id) } }
             is Tag -> postgrest.from("tag").update(TagData(obj)) { filter { eq("id", obj.id) } }
             is Task -> {
                 postgrest.from("task").update(TaskData(obj)) { filter { eq("id", obj.id) } }
-                postgrest.from("tasktag").update(TaskTagData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
-                postgrest.from("assignusertask").update(AssignuserTaskData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
+                postgrest.from("tasktag").delete { filter { eq("taskId", obj.id) } }
+                postgrest.from("assignusertask").delete { filter { eq("taskId", obj.id) } }
+                postgrest.from("tasktag").insert(TaskTagData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
+                postgrest.from("assignusertask").insert(AssignuserTaskData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
             }
             is CompletionStat -> postgrest.from("taskcompletion").update(CompletionStatData(obj)) { filter { eq("id", obj.id) } }
         }
@@ -326,6 +330,6 @@ object SupabaseDBManager: DBManager {
             }
         }.decodeAs<InvitationsData>()
         postgrest.from("workgroupuser")
-            .upsert(GroupUserData(currentUser, invite.groupId, Privilege.entries[invite.privilege]))
+            .upsert(GroupUserData(currentUser, invite.groupId, invite.privilege))
     }
 }

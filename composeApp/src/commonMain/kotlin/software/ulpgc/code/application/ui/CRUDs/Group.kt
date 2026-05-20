@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,9 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.generateCode
+import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.removeCode
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
@@ -187,13 +191,10 @@ fun GroupStepMembers(
 ) {
     var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
     var generatedCode by remember { mutableStateOf<String?>(null) }
-    var generatedCodes by remember { mutableStateOf<Map<Privilege, String>>(emptyMap()) }
+    var generatedCodes by remember { mutableStateOf<Map<Privilege, Int>>(emptyMap()) }
     val clipboard = LocalClipboardManager.current
 
-    fun generateCode(): String {
-        val chars = ('A'..'Z') + ('0'..'9')
-        return (1..10).map { chars.random() }.joinToString("")
-    }
+
 
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -218,10 +219,12 @@ fun GroupStepMembers(
                 )
             }
 
+
             OutlinedButton(
                 onClick = {
                     selectedPriv?.let { priv ->
-                        generatedCodes = generatedCodes + (priv to generateCode())
+                        val codigo = runBlocking{ generateCode(Store.currentGroup().id, priv) }
+                        generatedCodes = generatedCodes + (priv to codigo)
                     }
                 },
                 shape = RoundedCornerShape(32.dp),
@@ -262,7 +265,8 @@ fun GroupStepMembers(
                         code = code,
                         privilege = priv,
                         onReset = {
-                            generatedCodes = generatedCodes + (priv to generateCode())
+                            val codigo = runBlocking{ generateCode(Store.currentGroup().id, priv) }
+                            generatedCodes = generatedCodes + (priv to codigo)
                         },
                         clipboard
                     )
@@ -516,22 +520,23 @@ private fun EditGroupSectionSettings(
             Spacer(Modifier.width(8.dp))
             Text("Guardar configuración")
         }
+        if (Store.currentGroup().name != "local") {
+            OutlinedButton(
+                onClick = { exit = true },
+                modifier = Modifier.fillMaxWidth(0.6f),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Salir del grupo")
+            }
 
-        OutlinedButton(
-            onClick = {exit=true},
-            modifier = Modifier.fillMaxWidth(0.6f),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-        ) {
-            Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Salir del grupo")
-        }
-
-        if(exit){
-            ExitDialog(onChange={exit=false})
+            if (exit) {
+                ExitDialog(onChange = { exit = false })
+            }
         }
     }
 }
@@ -562,7 +567,7 @@ fun ExitDialog(onChange: () -> Unit) {
 
 @Composable
 fun CodeRow(
-    code: String,
+    code: Int,
     privilege: Privilege,
     onReset: () -> Unit,
     clipboard: ClipboardManager
@@ -584,7 +589,7 @@ fun CodeRow(
         )
 
         Text(
-            text = code,
+            text = code.toString(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -594,10 +599,20 @@ fun CodeRow(
         )
 
         IconButton(
-            onClick = { clipboard.setText(AnnotatedString(code)) },
+            onClick = { clipboard.setText(AnnotatedString(code.toString())) },
             modifier = Modifier.size(22.dp)
         ) {
             Icon(Icons.Default.ContentCopy, contentDescription = "Copiar",
+                modifier = Modifier.size(15.dp),
+                tint = MaterialTheme.colorScheme.primary)
+        }
+
+        IconButton(
+            onClick = { runBlocking{removeCode(Store.currentGroup().id, privilege) }},
+            modifier = Modifier.size(22.dp)
+        ) {
+
+            Icon(Icons.Outlined.Delete, contentDescription = "Copiar",
                 modifier = Modifier.size(15.dp),
                 tint = MaterialTheme.colorScheme.primary)
         }
