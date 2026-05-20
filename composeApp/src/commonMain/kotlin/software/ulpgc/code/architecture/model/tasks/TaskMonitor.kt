@@ -9,6 +9,7 @@ import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.io.isLocalDeleted
 import kotlin.time.Clock
 
@@ -25,8 +26,13 @@ object TaskMonitor: Coroutinable {
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
         task.localDBState = DBState.UPDATED
-        task.cloudDBState = DBState.UPDATED
-        Store.add(CompletionStat(task.id, task.time.start, false, task.time.end))
+        if(!Store.currentGroup().isCloudDisabled()) task.cloudDBState = DBState.UPDATED
+        if (!Store.currentGroup().isCloudDisabled()){
+            Store.add(CompletionStat(task.id, task.time.start, false, task.time.end))
+        } else{
+            Store.add(CompletionStat(task.id, task.time.start, false,
+                task.time.end, localDBState = DBState.NEW, cloudDBState = DBState.DISABLED))
+        }
         LogMaster.log("Task ${task.name} renovada para la fecha ${task.time.start} - ${task.time.end}")
     }
 

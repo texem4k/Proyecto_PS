@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import software.ulpgc.code.architecture.control.commands.CommandBuilder
+import software.ulpgc.code.architecture.control.commands.CommandLauncher
+import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
@@ -117,8 +120,18 @@ fun CreateGroup(
                     onBack      = { step-- },
                     onNext      = {
                         val error = validateGroupStep0(form)
-                        if (error != null) { errorMsg = error; formError = true }
-                        else step++
+                        if (error != null) {
+                            errorMsg = error; formError = true
+                        } else {
+                            val command = CommandBuilder()
+                                .set("name", form.groupName)
+                                .set("description", form.groupDescription)
+                                .build(CommandType.CREATE_GROUP)
+                            command
+                                .onSuccess { CommandLauncher.launch(it)}
+                                .onFailure { println("error: ${it.message}") }
+                            step++
+                        }
                     },
                     onSubmit = {
                         val error = validateGroupStep0(form)
@@ -135,6 +148,7 @@ fun CreateGroup(
         }
     }
 }
+
 
 
 @Composable
@@ -485,6 +499,8 @@ private fun EditGroupSectionSettings(
     onSave: () -> Unit,
     onLeave: () -> Unit
 ) {
+    var exit by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -502,7 +518,7 @@ private fun EditGroupSectionSettings(
         }
 
         OutlinedButton(
-            onClick = onLeave,
+            onClick = {exit=true},
             modifier = Modifier.fillMaxWidth(0.6f),
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.error
@@ -513,7 +529,35 @@ private fun EditGroupSectionSettings(
             Spacer(Modifier.width(8.dp))
             Text("Salir del grupo")
         }
+
+        if(exit){
+            ExitDialog(onChange={exit=false})
+        }
     }
+}
+
+@Composable
+fun ExitDialog(onChange: () -> Unit) {
+    Dialog(onDismissRequest = onChange, content={
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text("Salir del grupo", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
+
+
+            Text("¿Estas seguro de que desea salir del grupo?", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
+
+            Row(){
+                Button(onClick = {onChange()}) {
+                    Text("Cancelar")
+                }
+                Button(onClick = {onChange()}, colors = ButtonDefaults.filledTonalButtonColors()) {
+                    Text("Confirmar")
+                }
+            }
+
+
+        }
+
+    })
 }
 
 @Composable

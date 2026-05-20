@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.logout
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.register
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
 
 
 @Composable
@@ -70,7 +73,7 @@ fun UserMenuCard(
             MenuItemRow(Icons.Default.Palette, "Tema", onClick = { theme.onThemeClick(); onDismiss() })
             HorizontalDivider(color = Color(0xFFEEEEEE))
             MenuItemRow(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar sesión", onClick = {
-                auth.onLogout()
+                runBlocking{logout()}
                 onDismiss()
             })
         }

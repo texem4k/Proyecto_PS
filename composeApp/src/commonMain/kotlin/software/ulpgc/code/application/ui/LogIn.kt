@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.login
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.register
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
+import software.ulpgc.code.architecture.control.logs.LogMaster
 
 enum class DialogState {
     LOGIN,
@@ -34,25 +41,23 @@ fun AuthFlow(
     onAuthSuccess: () -> Unit,
 ) {
     var dialogState by remember { mutableStateOf(DialogState.LOGIN) }
+    val authReady = SupabaseAuth.ready.collectAsState()
+
 
     LaunchedEffect(dialogState) {
         if (dialogState == DialogState.NONE) onDismiss()
+    }
+
+    if(!authReady.value){
+        return
     }
     when (dialogState) {
         DialogState.LOGIN -> LoginDialog(
             onDismiss    = { dialogState = DialogState.NONE },
             onCreateAccount = { dialogState = DialogState.REGISTER },
-            onLoginSuccess  = { _, _ ->
-                onAuthSuccess()
-                dialogState = DialogState.NONE
-            }
         )
         DialogState.REGISTER -> RegisterDialog(
-            onDismiss       = { dialogState = DialogState.NONE },
-            onRegisterSuccess = { _, _, _ ->
-                onAuthSuccess()
-                dialogState = DialogState.NONE
-            }
+            onDismiss       = { dialogState = DialogState.NONE }
         )
         DialogState.NONE -> Unit
     }
@@ -63,13 +68,13 @@ fun AuthFlow(
 fun LoginDialog(
     onDismiss: () -> Unit,
     onCreateAccount: () -> Unit,
-    onLoginSuccess: (email: String, pass: String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var pass  by remember { mutableStateOf("") }
     var validEmail by remember { mutableStateOf(false) }
     var validPass by remember { mutableStateOf(false) }
     var touch by remember { mutableStateOf(false) }
+    var errLogin by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -117,7 +122,14 @@ fun LoginDialog(
                         touch = true
                         if (validateEmail(email)) validEmail = true
                         if (validatePassword(pass)) validPass = true
-                        if (validEmail && validPass) onLoginSuccess(email, pass)
+                        if (validEmail && validPass){
+                            try{
+                                runBlocking {login(email, pass)}
+                                onDismiss()
+                            } catch (e: Exception){
+                                errLogin=true
+                            }
+                        }
                     }
                 ) { Text("Iniciar sesión") }
 
@@ -127,13 +139,26 @@ fun LoginDialog(
             }
         }
     )
+
+    if(errLogin){
+        AlertDialog(
+            onDismissRequest = {errLogin=false},
+            text = {
+                Text("Datos inválidos, comprueba de nuevo o crea una cuenta nueva")
+            },
+            confirmButton = {
+                Button(onClick = {errLogin=true}){
+                    Text("Confirmar")
+                }
+            }
+        )
+    }
 }
 
 
 @Composable
 fun RegisterDialog(
-    onDismiss: () -> Unit,
-    onRegisterSuccess: (email: String, pass: String, name: String) -> Unit
+    onDismiss: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var name  by remember { mutableStateOf("") }
@@ -142,6 +167,8 @@ fun RegisterDialog(
     var validPass by remember { mutableStateOf(false) }
     var validUser by remember { mutableStateOf(false) }
     var touch by remember { mutableStateOf(false) }
+
+    var errRegister by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title   = { Text("Crear cuenta") },
@@ -189,9 +216,18 @@ fun RegisterDialog(
                 }
 
                 if(validEmail&& validPass&&validUser) {
-                    onRegisterSuccess(email, pass, name) }
+
+                    try{
+                        runBlocking{register(name, email, pass)}.getOrThrow()
+                        onDismiss()
+                    }catch(e: Exception){
+                        LogMaster.log(e.toString())
+                        LogMaster.log(e.message!!)
+                        errRegister = true
+                    }
+
                 }
-            ){
+            }){
                 Text("Crear cuenta")
             }
         },
@@ -199,6 +235,19 @@ fun RegisterDialog(
             Button(onClick = onDismiss) { Text("Cancelar") }
         }
     )
+    if(errRegister){
+        AlertDialog(
+            onDismissRequest = {errRegister=false},
+            text = {
+                Text("Datos inválidos, comprueba de nuevo o crea una cuenta nueva")
+            },
+            confirmButton = {
+                Button(onClick = {errRegister=false}){
+                    Text("Confirmar")
+                }
+            }
+        )
+    }
 }
 
 fun validateEmail(email: String): Boolean {

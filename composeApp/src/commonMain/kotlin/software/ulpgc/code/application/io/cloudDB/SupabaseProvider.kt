@@ -2,6 +2,7 @@ package software.ulpgc.code.application.io.cloudDB
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.MemorySessionManager
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -35,7 +36,9 @@ object SupabaseProvider: Coroutinable {
         val apiKey = getApiKey()
         client = createSupabaseClient(URL, apiKey) {
             install(Postgrest)
-            install(Auth)
+            install(Auth) {
+                sessionManager = MemorySessionManager()
+            }
         }
         auth = client.auth
         postgrest = client.postgrest

@@ -63,6 +63,7 @@ object CloudDBStore: Coroutinable {
     private fun <T: DBObject> insertOrUpdate(objects: Sequence<T>) {
         objects.forEach {
             val obj = Store.tryFind(it)
+            println(obj.toString())
             if (obj == null) {
                 it.localDBState = DBState.NEW
                 Store.add(it)

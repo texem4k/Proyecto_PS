@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import kotlin.uuid.Uuid
@@ -54,13 +57,14 @@ fun SideBar(
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
     val auth = LocalAuthState.current
+    val authReady = SupabaseAuth.ready.collectAsState()
 
     Column(
         modifier = Modifier
             .width(100.dp)
             .fillMaxHeight()
             .background(Color(0xFF1E1E2E))
-            .padding(vertical = 24.dp, horizontal = 12.dp),
+            .padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
@@ -88,7 +92,7 @@ fun SideBar(
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.weight(0.05f))
 
-        if(auth.isAuthenticated){
+        if(authReady.value && isLoggedIn()){
             GroupSelectorMenu(
                 groups = Store.groups().toList(),
                 selectedGroup = Store.currentGroup().id,
@@ -113,7 +117,7 @@ fun SideBar(
                 onClick = { showPopup = true }
             )
 
-            if (showPopup && auth.isAuthenticated) {
+            if (showPopup && authReady.value && isLoggedIn()) {
                 val density = LocalDensity.current
                 val offsetY = with(density) {
                     (-cardHeight + 250.dp.toPx()).toInt()
@@ -132,16 +136,15 @@ fun SideBar(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
                         },
-                        name = "Enrique Sosa",
+                        name = "Pinga",
                         role = "Invitado",
                         onDismiss = { showPopup = false }
                     )
                 }
-            } else if (showPopup && !auth.isAuthenticated) {
+            } else if (showPopup && authReady.value) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
                     onAuthSuccess = {
-                        auth.onLogin()
                         showPopup = false
                     }
                 )

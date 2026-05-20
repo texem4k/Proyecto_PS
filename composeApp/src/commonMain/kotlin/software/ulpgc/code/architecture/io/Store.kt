@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.exceptions.AppException
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -33,7 +34,10 @@ object Store {
     }
     
     fun currentGroup(): Group {
-        return groups().first { it.id == Storage.currentGroup}
+        println(Storage.currentGroup.toString())
+        println(groups().toList().toString())
+        println(Storage.groups.toList().toString())
+        return groups().first { it.id == Storage.currentGroup }
     }
 
     fun changeGroupTo(group: Group) {
@@ -85,12 +89,15 @@ object Store {
 
     suspend fun onLogOut() {
         Storage.restartCurrent()
-        users().filterNot { it.id == currentUser() }
-            .forEach { it.localDBState = DBState.DELETED }
-        groups().filterNot { it.id == currentGroup() }
-            .forEach { it.localDBState = DBState.DELETED }
+        users().filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
+            it.localDBState = DBState.DELETED
+        }
+        groups().filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
+            it.localDBState = DBState.DELETED
+        }
         LocalDBStore.execute()
         Storage.clearAll()
+        LocalDBStore.onInit()
     }
 }
 
@@ -110,12 +117,12 @@ private object Storage {
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
     fun clearAll(){
-        groups.removeAll { it.isLocalCleared() }
-        users.removeAll { it.isLocalCleared() }
-        topics.removeAll { it.isLocalCleared() }
-        tags.removeAll { it.isLocalCleared() }
-        tasks.removeAll { it.isLocalCleared() }
-        stats.removeAll { it.isLocalCleared() }
+        groups.clear()
+        users.clear()
+        topics.clear()
+        tags.clear()
+        tasks.clear()
+        stats.clear()
     }
 
     fun cleanLists() {

@@ -278,9 +278,9 @@ object SupabaseDBManager: DBManager {
 
     override suspend fun completionStats(): Result<List<CompletionStat>> = runCatching {
         return Result.success(postgrest.from("taskcompletion")
-            .select(Columns.raw("id, taskId, completed, proposedDate, endDate, task!inner(), topic!inner()")) {
+            .select(Columns.raw("id, taskId, completed, proposedDate, endDate, task!inner(topic!inner())")) {
                 filter {
-                    eq("topic.groupId", Store.currentGroup().id)
+                    eq("task.topic.groupId", Store.currentGroup().id)
                 }
             }.decodeList<CompletionStatData>()
             .map(CompletionStatData::parse))
