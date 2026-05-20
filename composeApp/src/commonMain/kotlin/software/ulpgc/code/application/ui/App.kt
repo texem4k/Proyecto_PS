@@ -8,10 +8,20 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.jordond.connectivity.Connectivity
+import dev.jordond.connectivity.Connectivity
 import software.ulpgc.code.application.control.TaskNotifier
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseDBManager
+import software.ulpgc.code.application.io.cloudDB.SupabaseProvider
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseDBManager
+import software.ulpgc.code.application.io.cloudDB.SupabaseProvider
 import software.ulpgc.code.application.io.localDB.DatabaseDriverFactory
 import software.ulpgc.code.application.io.localDB.JSONParser
 import software.ulpgc.code.application.io.localDB.SQLiteDBManager
+import software.ulpgc.code.application.io.network.NetworkMonitor
+import software.ulpgc.code.application.io.network.NetworkMonitor
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.CalendarScreen
 import software.ulpgc.code.application.ui.pages.DashboardScreen
@@ -63,11 +73,18 @@ fun App(
 
     LaunchedEffect(Unit) {
         val seedData = JSONParser().loadDBData("composeResources/dbDefaults.json")
-        Store.initialize(SQLiteDBManager(databaseDriverFactory, seedData), { error -> storeError = error }, {
+        SQLiteDBManager.initialize(databaseDriverFactory, seedData)
+        Store.initialize(SQLiteDBManager, { error -> storeError = error }, {
             TaskNotifier.initialize()
             TaskMonitor.initialize()
             TaskOptimizer.initialize()
-        })
+            SupabaseProvider.initialize()
+        }, SupabaseDBManager,
+            {
+                NetworkMonitor.state.value == Connectivity.Status.Connected(false) &&
+                        SupabaseAuth.ready.value && SupabaseAuth.isLoggedIn() &&
+                        SupabaseDBManager.ready.value
+            })
     }
 
     val storeReady = Store.ready.collectAsState().value
@@ -218,10 +235,18 @@ fun App(
 fun StoreErrorDisplay(exception: AppException) {
     AlertDialog(
         onDismissRequest = {},
-        title = { Text("Error") },
-        text = { Text(exception.message ?: "Ha ocurrido un error inesperado") },
+        title = {
+            Text("Error")
+        },
+        text = {
+            Text(
+                exception.message ?: "Ha ocurrido un error inesperado"
+            )
+        },
         confirmButton = {
-            Button(onClick = {}) { Text("Aceptar") }
+            Button(onClick = {}) {
+                Text("Aceptar")
+            }
         }
     )
 }

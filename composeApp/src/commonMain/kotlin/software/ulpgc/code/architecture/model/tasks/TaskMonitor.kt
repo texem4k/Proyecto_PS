@@ -9,7 +9,7 @@ import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
-import software.ulpgc.code.architecture.io.isDeleted
+import software.ulpgc.code.architecture.io.isLocalDeleted
 import kotlin.time.Clock
 
 object TaskMonitor: Coroutinable {
@@ -24,8 +24,9 @@ object TaskMonitor: Coroutinable {
         task.time.start = task.interval + task.time.start
         task.time.end = task.interval + task.time.end
         task.isCompleted = false
-        task.dbState = DBState.UPDATED
-        Store.addCompletionStat(CompletionStat(task.id, task.time.start, false, task.time.end))
+        task.localDBState = DBState.UPDATED
+        task.cloudDBState = DBState.UPDATED
+        Store.add(CompletionStat(task.id, task.time.start, false, task.time.end))
         LogMaster.log("Task ${task.name} renovada para la fecha ${task.time.start} - ${task.time.end}")
     }
 
@@ -38,7 +39,7 @@ object TaskMonitor: Coroutinable {
     }
 
     private fun needsRenewal(task: Task): Boolean =
-        !task.isDeleted() &&
+        !task.isLocalDeleted() &&
         task.interval != TaskInterval.NONE &&
         task.time.end <= Clock.System.now()
 

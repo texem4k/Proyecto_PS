@@ -11,6 +11,7 @@ data class CompletionStat (
     val proposedDate: Instant,
     var completed: Boolean,
     var endDate: Instant = Clock.System.now(),
-    val id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW
+    val id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ): DBObject

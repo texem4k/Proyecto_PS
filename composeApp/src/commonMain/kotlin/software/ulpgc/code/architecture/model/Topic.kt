@@ -9,8 +9,9 @@ data class Topic (
     var name: String,
     var color: Color,
     val groupId: Uuid,
-    var id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW
+    var id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ) : DBObject {
     override fun toString(): String {
         return "Topic(id=$id, groupId=$groupId, name='$name', color=$color)"

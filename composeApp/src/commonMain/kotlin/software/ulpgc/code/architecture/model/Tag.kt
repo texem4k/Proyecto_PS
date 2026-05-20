@@ -7,8 +7,9 @@ import kotlin.uuid.Uuid
 data class Tag(
     var name: String,
     var topicId: Uuid,
-    val id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW
+    val id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ) : DBObject {
     override fun toString(): String {
         return "Tag(id=$id, name='$name', topicId=$topicId)"

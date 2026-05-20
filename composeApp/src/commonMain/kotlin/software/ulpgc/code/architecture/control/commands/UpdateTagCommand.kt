@@ -2,6 +2,8 @@ package software.ulpgc.code.architecture.control.commands
 
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.model.Tag
 
 class UpdateTagCommand internal constructor (private val currentTag: Tag,private val newTag: Tag): Command {
@@ -14,7 +16,8 @@ class UpdateTagCommand internal constructor (private val currentTag: Tag,private
         LogMaster.log("UpdateTopicCommand {from=$currentTag to=$newTag}")
         val currentClone = currentTag.copy()
         currentTag.name = newTag.name
-        currentTag.dbState = DBState.UPDATED
+        currentTag.localDBState = DBState.UPDATED
+        if(!Store.currentGroup().isCloudDisabled()) currentTag.cloudDBState = DBState.UPDATED
         return listOf(UpdateTagCommand(currentTag, currentClone))
     }
 }

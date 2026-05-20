@@ -6,8 +6,9 @@ import kotlin.uuid.Uuid
 
 data class User(
     var name: String,
-    val id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW
+    val id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ): DBObject {
     override fun toString(): String {
         return "User(id=$id, name='$name')"

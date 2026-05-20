@@ -20,10 +20,11 @@ data class Task (
     var tags: MutableSet<Uuid> = mutableSetOf(),
     var users: MutableSet<Uuid> = mutableSetOf(),
     var isCompleted: Boolean = false,
-    val id: Uuid = Uuid.random(),
-    override var dbState: DBState = DBState.NEW,
+    val id: Uuid = Uuid.generateV7(),
+    override var localDBState: DBState = DBState.NEW,
+    override var cloudDBState: DBState = DBState.NEW
 ) : DBObject {
-    fun copy() = Task(topicId, name, description, time, interval,  priority, tags, users, isCompleted, id, dbState)
+    fun copy() = Task(topicId, name, description, time, interval,  priority, tags, users, isCompleted, id, localDBState, cloudDBState)
 
     fun significanceFactor(): Double {
         val hoursUntilEnd = hoursFrom(this.time.timeUntilEnd())
@@ -39,6 +40,7 @@ data class Task (
     override fun toString(): String {
         return "Task(topicId=$topicId, name='$name', description='$description'," +
                 " time=$time, interval=$interval, tags=$tags, users=$users," +
-                " priority=$priority, isCompleted=$isCompleted, id=$id, dbState=$dbState)"
+                " priority=$priority, isCompleted=$isCompleted, id=$id, localDBState=$localDBState," +
+                " cloudDBState=$cloudDBState)"
     }
 }

@@ -13,10 +13,14 @@ class DeleteTaskCommand internal constructor (private val task: Task): Command {
 
     override fun execute(): List<Command> {
         LogMaster.log("DeleteTaskCommand {$task}")
-        task.dbState = DBState.DELETED
+        task.localDBState = DBState.DELETED
+        task.cloudDBState = DBState.DELETED
         val stats = Store.completions().filter {task.id == it.taskId}.toList()
         val copyStats = copyOf(stats)
-        stats.forEach { it.dbState = DBState.DELETED }
+        stats.forEach {
+            it.localDBState = DBState.DELETED
+            it.cloudDBState = DBState.DELETED
+        }
         return listOf(CreateTaskCommand(task, copyStats))
     }
 

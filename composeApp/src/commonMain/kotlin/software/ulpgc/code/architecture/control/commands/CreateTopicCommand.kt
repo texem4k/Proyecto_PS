@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.io.isCloudDisabled
 import software.ulpgc.code.architecture.model.Topic
 
 class CreateTopicCommand internal constructor (private val topic: Topic): Command {
@@ -11,8 +12,9 @@ class CreateTopicCommand internal constructor (private val topic: Topic): Comman
 
     override fun execute(): List<Command> {
         LogMaster.log("CreateTopicCommand {$topic}")
-        topic.dbState = DBState.NEW
-        Store.addTopic(topic)
+        topic.localDBState = DBState.NEW
+        if (!Store.currentGroup().isCloudDisabled()) topic.cloudDBState = DBState.NEW
+        Store.add(topic)
         return listOf(DeleteTopicCommand(topic))
     }
 }
