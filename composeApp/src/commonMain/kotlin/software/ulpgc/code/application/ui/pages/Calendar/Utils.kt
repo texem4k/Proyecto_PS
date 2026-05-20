@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -57,22 +58,23 @@ fun WeekDayColumn(
         modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, MaterialTheme.colorScheme.onPrimaryContainer)
     ) {
         for (h in 0 until totalHours) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(0.65.dp)
+                    .height(0.75.dp)
                     .offset(y = (h * hourHeight.value).dp)
-                    .background(Color.Black.copy(alpha = 0.2f))
+                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f))
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(0.5.dp)
                     .offset(y = (h * hourHeight.value + hourHeight.value / 2).dp)
-                    .background(Color.Black.copy(alpha = 0.1f))
+                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
             )
         }
 

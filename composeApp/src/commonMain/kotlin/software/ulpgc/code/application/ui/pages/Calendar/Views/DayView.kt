@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -139,7 +140,7 @@ fun DayView(
                     Text(
                         text = if (h < 10) "0$h:00" else "$h:00",
                         fontSize = 9.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .offset(y = topDp - 7.dp)
                             .fillMaxWidth()
@@ -224,12 +225,6 @@ fun DayView(
                     usePlatformDefaultWidth = false
                 )
             ) {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .fillMaxHeight(0.7f)
-                ) {
                     CreateTask(
                         onClose = {
                             showCreateTask = false
@@ -238,7 +233,7 @@ fun DayView(
                         },
                         task = taskToEdit
                     )
-                }
+
             }
         }
 
