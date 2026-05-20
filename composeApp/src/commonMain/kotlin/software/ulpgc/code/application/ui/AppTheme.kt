@@ -25,6 +25,7 @@ private val GreenColorScheme = lightColorScheme(
     surface = Color(0xFFFFFFFF),
     onSurface = Color(0xFF1A1C1A),
     surfaceVariant = Color(0xFFD4E4D8),
+    tertiary = Color(0xFFECFFED),
     onSurfaceVariant = Color(0xFF4A6352),
     inverseSurface = Color(0xFF2D3B30),
     inverseOnSurface = Color(0xFFEFF4F0),
@@ -128,7 +129,7 @@ private val DarkColorScheme = darkColorScheme(
     secondaryContainer = Color(0xFF2A3441),
     onSecondaryContainer = Color(0xFFE3EEFF),
 
-    tertiary = Color(0xFFB0BEC5),
+    tertiary = Color(0xFF0B6479),
     onTertiary = Color(0xFF121212),
 
     background = Color(0xFF121212),
