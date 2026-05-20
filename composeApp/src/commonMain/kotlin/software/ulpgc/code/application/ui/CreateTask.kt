@@ -79,7 +79,9 @@ fun CreateTask(
 
 
     val action = if (task != null) "Editar" else "Crear"
-    if (Store.currentUser().name.lowercase() != "root"){
+    val userName = Store.users().find { it.id == Store.currentUser() }?.name ?: "Usuario"
+
+    if (userName != "root"){
         totalSteps = 4
     }
 
@@ -320,7 +322,7 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
         StepLabel("Asignar usuarios")
 
         val currentUserGroup = Store.groups().find { group ->
-            group.users.contains(Store.currentUser().id)
+            group.users.contains(Store.currentUser())
         }
 
         val usersInGroup = currentUserGroup

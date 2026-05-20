@@ -31,7 +31,10 @@ fun TaskInformationDialog(
     val timeData = remember(selectedTask) {
         selectedTask.time.mostrar().split(",")
     }
-    val isRoot = Store.currentUser().name.lowercase() == "root"
+
+    val userName = Store.users().find { it.id == Store.currentUser() }?.name ?: "Usuario"
+
+    val isRoot = userName == "root"
     val assignedUsers = remember(selectedTask) {
         if (isRoot) emptyList()
         else selectedTask.users.mapNotNull { id -> Store.users().find { it.id == id }?.name }
