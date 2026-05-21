@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,8 +74,12 @@ fun LoginDialog(
     var pass  by remember { mutableStateOf("") }
     var validEmail by remember { mutableStateOf(false) }
     var validPass by remember { mutableStateOf(false) }
-    var touch by remember { mutableStateOf(false) }
     var errLogin by remember { mutableStateOf(false) }
+
+    var emailFocused by remember { mutableStateOf(false) }
+    var emailTouched by remember { mutableStateOf(false) }
+    var passFocused  by remember { mutableStateOf(false) }
+    var passTouched  by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -90,22 +95,38 @@ fun LoginDialog(
                     label         = "Email",
                     onValueChange = { email = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (emailFocused && !focused) emailTouched = true
+                        emailFocused = focused
+                        validEmail = validateEmail(email)
+                    }
                 )
 
-                if(!validEmail&&touch){
-                    Text("El formato del email no es válido", color = Color.Red)
+                if (emailTouched && !validEmail){
+                    Text(
+                        "El formato del email no es válido",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
+
                 TextFieldCustom(
                     value         = pass,
                     label         = "Contraseña",
                     onValueChange = { pass = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = true
+                    isPassword    = true,
+                    onFocusChanged  = { focused ->
+                        if (passFocused && !focused) passTouched = true
+                        passFocused = focused
+                        validPass = validatePassword(pass)
+                    }
                 )
-                if(!validPass&&touch){
+
+                if(!validPass && passTouched){
                     Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red, textAlign = TextAlign.Center)
                 }
+
                 Spacer(Modifier.height(20.dp))
                 Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.", textAlign = TextAlign.Center)
             }
@@ -119,9 +140,6 @@ fun LoginDialog(
             ) {
                 CustomButton(
                     onClick = {
-                        touch = true
-                        if (validateEmail(email)) validEmail = true
-                        if (validatePassword(pass)) validPass = true
                         if (validEmail && validPass){
                             try{
                                 runBlocking {login(email, pass)}
@@ -168,6 +186,13 @@ fun RegisterDialog(
     var validUser by remember { mutableStateOf(false) }
     var touch by remember { mutableStateOf(false) }
 
+    var nameFocused by remember { mutableStateOf(false) }
+    var nameTouched by remember { mutableStateOf(false) }
+    var emailFocused by remember { mutableStateOf(false) }
+    var emailTouched by remember { mutableStateOf(false) }
+    var passFocused  by remember { mutableStateOf(false) }
+    var passTouched  by remember { mutableStateOf(false) }
+
     var errRegister by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -183,40 +208,58 @@ fun RegisterDialog(
                     label         = "Nombre de usuario",
                     onValueChange = { name = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (nameFocused && !focused) nameTouched = true
+                        nameFocused = focused
+                        validUser = !name.isEmpty()
+                    }
                 )
+                if (nameTouched && !validUser){
+                    Text("El nombre no puede estar vacío.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 TextFieldCustom(
                     value         = email,
                     label         = "Correo electrónico",
                     onValueChange = { email = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (emailFocused && !focused) emailTouched = true
+                        emailFocused = focused
+                        validEmail = validateEmail(email)
+                    }
                 )
+                if (emailTouched && !validEmail){
+                    Text(
+                        "El formato del email no es válido",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 TextFieldCustom(
                     value         = pass,
                     label         = "Contraseña",
                     onValueChange = { pass = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = true
+                    isPassword    = true,
+                    onFocusChanged  = { focused ->
+                        if (passFocused && !focused) passTouched = true
+                        passFocused = focused
+                        validEmail = validatePassword(pass)
+                    }
                 )
+                if (passTouched && !validPass){
+                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
-                touch=true
-                if(validateEmail(email)) {
-                    validEmail = true
-                }
-                if(validatePassword(pass)) {
-                    validPass = true
-                }
-
-                if(validateUsername(name)) {
-                    validUser = true
-                }
-
                 if(validEmail&& validPass&&validUser) {
-
                     try{
                         runBlocking{register(name, email, pass)}.getOrThrow()
                         onDismiss()
@@ -225,7 +268,6 @@ fun RegisterDialog(
                         LogMaster.log(e.message!!)
                         errRegister = true
                     }
-
                 }
             }){
                 Text("Crear cuenta")

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -174,6 +175,7 @@ fun TextFieldCustom(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     placeholder: String? = null,
     isPassword: Boolean = false,
+    onFocusChanged: (Boolean) -> Unit = {}
 ) {
 
     var passwordVisible by remember {
@@ -190,7 +192,8 @@ fun TextFieldCustom(
 
         modifier = Modifier
             .fillMaxWidth(0.5f)
-            .padding(bottom = 16.dp),
+            .padding(bottom = 16.dp)
+            .onFocusChanged { onFocusChanged(it.isFocused) },
 
         keyboardOptions =
             if (isPassword) {

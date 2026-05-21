@@ -294,6 +294,7 @@ fun DayDetailDialog(
             )
         ) {
             CreateTask(
+                initialDate = date,
                 onClose = {
                     showCreateTask = false
                     onTaskCreated()

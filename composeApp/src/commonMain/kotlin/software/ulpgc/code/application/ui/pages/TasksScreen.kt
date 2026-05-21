@@ -221,21 +221,14 @@ fun TasksScreen(
                 dismissOnClickOutside = false
             )
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                CreateTask(
-                    task = taskToEdit,
-                    onClose = {
-                        showEditTask = false
-                        onEditDone()
-                        onCreated()
-                    }
-                )
-            }
+            CreateTask(
+                task = taskToEdit,
+                onClose = {
+                    showEditTask = false
+                    onEditDone()
+                    onCreated()
+                }
+            )
         }
     }
 

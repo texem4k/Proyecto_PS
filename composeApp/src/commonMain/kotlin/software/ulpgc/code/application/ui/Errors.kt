@@ -101,3 +101,6 @@ fun validateStep1(form: FormState): String? {
     if (form.taskTopic == null) return "Debes seleccionar un tópico."
     return null
 }
+
+
+

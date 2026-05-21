@@ -106,9 +106,10 @@ fun computeUserKpi(
     val pending = tasks.count { !it.completed && !it.isOverdue() }
     val overdue = tasks.count { it.isOverdue() }
 
-    val plannedToday     = tasks.filter { it.isToday() }.count { task -> Store.tasks().find { t -> t.id == task.taskId }?.time?.end?.toLocalDate() == today }
+    val storeTask = Store.tasks().toList()
+    val plannedToday     = tasks.filter { it.isToday() }.count { task -> storeTask.find { t -> t.id == task.taskId }?.time?.end?.toLocalDate() == today }
     val plannedThisWeek  = tasks.filter { it.isThisWeek() }.count { task ->
-        val end = Store.tasks().find { t -> t.id == task.taskId }?.time?.end?.toLocalDate()
+        val end = storeTask.find { t -> t.id == task.taskId }?.time?.end?.toLocalDate()
         end!=null && end in weekStart..weekEnd
     }
 
