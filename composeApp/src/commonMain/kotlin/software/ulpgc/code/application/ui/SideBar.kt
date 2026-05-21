@@ -110,7 +110,8 @@ fun SideBar(
                     onGroupSelected = {
                         Store.changeGroupTo(Store.groups().find { g -> g.id == it }!!)
                         onRefresh()
-                    }
+                    },
+                    onDeleted = onRefresh
                 )
             }
         }
@@ -267,7 +268,8 @@ private fun ThemeButton(
 fun GroupSelectorMenu(
     groups: List<Group>,
     selectedGroup: Uuid,
-    onGroupSelected: (Uuid) -> Unit
+    onGroupSelected: (Uuid) -> Unit,
+    onDeleted: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentGroup = groups.find { it.id == selectedGroup }
@@ -304,7 +306,7 @@ fun GroupSelectorMenu(
         Box {
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
+                onDismissRequest = { expanded = false; onDeleted() },
                 offset = DpOffset(x = 20.dp, y = (-15).dp),
                 modifier = Modifier.heightIn(max = (3 * 48).dp)
             ) {

@@ -385,7 +385,8 @@ fun GroupStepMembers(
 
                             generatedCodes = generatedCodes + (priv to codigo)
                         },
-                        clipboard
+                        clipboard,
+                        onDeleted = { generatedCodes = generatedCodes - priv }
                     )
                 }
             }
@@ -730,7 +731,8 @@ fun CodeRow(
     code: Long,
     privilege: Privilege,
     onReset: () -> Unit,
-    clipboard: ClipboardManager
+    clipboard: ClipboardManager,
+    onDeleted: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -768,7 +770,11 @@ fun CodeRow(
         }
 
         IconButton(
-            onClick = { runBlocking{removeCode(Store.currentGroup().id, privilege) }},
+            onClick = { runBlocking{
+                removeCode(Store.currentGroup().id, privilege)
+                }
+                onDeleted()
+            },
             modifier = Modifier.size(22.dp)
         ) {
 

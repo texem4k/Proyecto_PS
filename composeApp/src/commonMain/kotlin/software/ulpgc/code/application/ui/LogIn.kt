@@ -249,7 +249,7 @@ fun RegisterDialog(
                     onFocusChanged  = { focused ->
                         if (passFocused && !focused) passTouched = true
                         passFocused = focused
-                        validEmail = validatePassword(pass)
+                        validPass = validatePassword(pass)
                     }
                 )
                 if (passTouched && !validPass){

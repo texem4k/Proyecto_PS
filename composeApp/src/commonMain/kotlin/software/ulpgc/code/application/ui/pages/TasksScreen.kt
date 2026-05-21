@@ -206,6 +206,7 @@ fun TasksScreen(
                     showCreateTaskcopy = false
                     onCreated()
                     onNavigate(Screen.TASKS)
+                    version++
                 }
             )
 
@@ -227,6 +228,7 @@ fun TasksScreen(
                     showEditTask = false
                     onEditDone()
                     onCreated()
+                    version++
                 }
             )
         }
@@ -237,6 +239,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTopic = false
                 onCreated()
+                version++
             }
         )
     }
@@ -246,6 +249,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTag = false
                 onCreated()
+                version++
             },
             null
         )
@@ -256,8 +260,9 @@ fun TasksScreen(
             onClose = {
                 showCreateGroup = false
                 onCreated()
+                version++
             },
-            onSubmit = { }
+            onSubmit = { version++ }
         )
     }
 }

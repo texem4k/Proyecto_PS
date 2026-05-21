@@ -30,7 +30,7 @@ object CloudDBStore: Coroutinable {
     }
 
     private suspend fun insertRequired(objects: Sequence<DBObject>) {
-        manager.insert(objects)
+        manager.insert(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
@@ -63,7 +63,6 @@ object CloudDBStore: Coroutinable {
     private fun <T: DBObject> insertOrUpdate(objects: Sequence<T>) {
         objects.forEach {
             val obj = Store.tryFind(it)
-            println(obj.toString())
             if (obj == null) {
                 it.localDBState = DBState.NEW
                 Store.add(it)
