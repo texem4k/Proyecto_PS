@@ -24,15 +24,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
+import software.ulpgc.code.application.io.network.NetworkMonitor.hasConnection
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import kotlin.uuid.Uuid
@@ -46,6 +50,7 @@ val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
+    SideBarItem(Icons.Default.Palette, Screen.SETTINGS),
 )
 
 @Composable
@@ -70,6 +75,11 @@ fun SideBar(
     val group = Store.currentGroup()
     val isLocalGroup = group.name == "local"
 
+    val currentUserRol = group.users[currentUserId]?.name ?: "Invitado"
+
+    val listGroup = remember(version) { Store.groups().toList() }
+
+
     Column(
         modifier = Modifier
             .width(100.dp)
@@ -90,11 +100,19 @@ fun SideBar(
         Spacer(modifier = Modifier.height(32.dp))
 
         topItems.forEach { item ->
-            SideBarNavItem(
-                item = item,
-                isSelected = selectedScreen == item.screen,
-                onClick = { onNavigate(item.screen) }
-            )
+            if (item.screen == Screen.SETTINGS) {
+                SideBarNavItem(
+                    item = item,
+                    isSelected = selectedScreen == item.screen,
+                    onClick = onSettingsClick
+                )
+            } else {
+                SideBarNavItem(
+                    item = item,
+                    isSelected = selectedScreen == item.screen,
+                    onClick = { onNavigate(item.screen) }
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
         }
 
@@ -105,10 +123,10 @@ fun SideBar(
         key(version) {
             if (authReady.value && isLoggedIn()) {
                 GroupSelectorMenu(
-                    groups = Store.groups().toList(),
+                    groups = listGroup,
                     selectedGroup = Store.currentGroup().id,
                     onGroupSelected = {
-                        Store.changeGroupTo(Store.groups().find { g -> g.id == it }!!)
+                        Store.changeGroupTo(listGroup.find { g -> g.id == it }!!)
                         onRefresh()
                     },
                     onDeleted = onRefresh
@@ -154,7 +172,7 @@ fun SideBar(
                             cardHeight = it.size.height
                         },
                         name = currentUserName,
-                        role = "Invitado",
+                        role = currentUserRol,
                         isLocalGroup = isLocalGroup,
                         onDismiss = { showPopup = false }
                     )
@@ -162,7 +180,61 @@ fun SideBar(
 
                 onRefresh()
 
-            } else if (showPopup && authReady.value) {
+            } else if(showPopup && !hasConnection.value){
+                Dialog(
+                    onDismissRequest = { showPopup = false },
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true
+                    ),
+                    content = {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.WifiOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp)
+                                )
+
+                                Text(
+                                    text = "Sin conexión",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Text(
+                                    text = "No hay conexión a internet.\nInténtalo más tarde.",
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Button(
+                                    onClick = { showPopup = false },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Text("Entendido")
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            else if (showPopup && authReady.value) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
                     onAuthSuccess = {
