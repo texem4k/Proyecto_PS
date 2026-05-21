@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.application.io.cloudDB.SupabaseProvider
 
 object NetworkMonitor {
-    private val _state: MutableStateFlow<Connectivity.Status> = MutableStateFlow(Connectivity.Status.Disconnected)
-    val state = _state.asStateFlow()
+    private val _state: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val hasConnection = _state.asStateFlow()
 
     private val connectivity = Connectivity {
         autoStart = true
@@ -16,8 +16,8 @@ object NetworkMonitor {
         pollingIntervalMs = 5_000
         onPollResult { response ->
             when (response) {
-                is PollResult.Error -> _state.value = Connectivity.Status.Disconnected
-                is PollResult.Response -> _state.value = Connectivity.Status.Connected(false)
+                is PollResult.Error -> _state.value = false
+                is PollResult.Response -> _state.value = true
             }
         }
     }

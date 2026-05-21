@@ -55,7 +55,6 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import software.ulpgc.code.application.ui.BottomBar
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.application.ui.MarkTaskIcon
 import software.ulpgc.code.application.ui.TaskInformationDialog
@@ -115,7 +114,8 @@ fun HomeScreen(
                     selectedScreen = Screen.HOME,
                     onNavigate = onNavigate,
                     onSettingsClick = onSettingsClick,
-                    onDeleted = onDeleted
+                    onRefresh={version++},
+                    version = version
                 )
             }
 
@@ -223,13 +223,6 @@ fun HomeScreen(
                     {onNavigate(Screen.GROUP_CREATE) },
                     modifier=Modifier.fillMaxWidth().weight(0.1f)
                 )
-                if(!isDesktop()){
-                    BottomBar(
-                        selectedScreen = Screen.HOME,
-                        onNavigate = onNavigate,
-                        onSettingsClick = onSettingsClick
-                    )
-                }
             }
 
             Column(

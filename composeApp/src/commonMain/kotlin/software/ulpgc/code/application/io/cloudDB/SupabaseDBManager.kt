@@ -101,7 +101,7 @@ data class AssignuserTaskData(val taskId: Uuid, val userId: Uuid, val groupId: U
 }
 
 @Serializable
-data class InvitationsData(val groupId: Uuid, val code: Int, val privilege: Int)
+data class InvitationsData(val groupId: Uuid, val code: Long, val privilege: Int)
 
 @Serializable
 data class TaskData(val id: Uuid, val topicId: Uuid, val groupId: Uuid,
@@ -147,7 +147,6 @@ object SupabaseDBManager: DBManager {
             is User -> postgrest.from("user").insert(UserData(obj))
             is Group -> {
                 postgrest.from("workgroup").insert(GroupData(obj))
-                println(GroupUserData.serializeFrom(obj))
                 postgrest.from("workgroupuser").insert(GroupUserData.serializeFrom(obj))
             }
             is Topic -> postgrest.from("topic").insert(TopicData(obj))
@@ -299,8 +298,13 @@ object SupabaseDBManager: DBManager {
             }.decodeList<InvitationsData>())
     }
 
-    suspend fun setInviteCode(group: Uuid, privilege: Privilege, code: Int): Result<Unit> = runCatching {
-        postgrest.from("invitations").upsert(InvitationsData(group,code,privilege.ordinal))
+    suspend fun setInviteCode(group: Uuid, privilege: Privilege, code: Long): Result<Unit> = runCatching {
+        postgrest.from("invitations").upsert(InvitationsData(group,code,privilege.ordinal)) {
+            filter {
+                eq("groupId", group)
+                eq("privilege", privilege.ordinal)
+            }
+        }
     }
 
     suspend fun removeCode(group: Uuid, privilege: Privilege): Result<Unit> = runCatching {
@@ -312,7 +316,7 @@ object SupabaseDBManager: DBManager {
         }
     }
 
-    suspend fun codeExists(code: Int): Boolean {
+    suspend fun codeExists(code: Long): Boolean {
         val invite = postgrest.from("invitations")
             .select(Columns.raw("groupId, code, privilege")) {
             filter{
@@ -322,14 +326,18 @@ object SupabaseDBManager: DBManager {
         return invite == null
     }
 
-    suspend fun useCode(code: Int, currentUser: Uuid) {
+    suspend fun useCode(code: Long, currentUser: Uuid) {
         val invite = postgrest.from("invitations")
             .select(Columns.raw("groupId, code, privilege")) {
             filter{
                 eq("code", code)
             }
-        }.decodeAs<InvitationsData>()
+        }.decodeList<InvitationsData>().first()
         postgrest.from("workgroupuser")
-            .upsert(GroupUserData(currentUser, invite.groupId, invite.privilege))
+            .upsert(GroupUserData(currentUser, invite.groupId, invite.privilege)) {
+                filter {
+                    eq("userId", currentUser)
+                }
+            }
     }
 }

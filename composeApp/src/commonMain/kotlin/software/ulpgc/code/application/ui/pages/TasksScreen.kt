@@ -81,10 +81,11 @@ fun TasksScreen(
         Row(modifier = Modifier.fillMaxSize()) {
 
             SideBar(
-                selectedScreen = Screen.TASKS,
                 onNavigate = onNavigate,
+                selectedScreen = Screen.TASKS,
                 onSettingsClick = onSettingsClick,
-                onDeleted = onDeleted
+                onRefresh = {version++},
+                version=version
             )
 
             Column(

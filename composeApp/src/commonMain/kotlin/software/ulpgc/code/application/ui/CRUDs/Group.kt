@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.generateCode
+import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.getCodes
 import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.removeCode
+import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.submitCode
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -60,8 +62,9 @@ data class MemberInvite(
 data class CreateGroupFormState(
     val groupName: String           = "",
     val groupDescription: String    = "",
-    val members: List<MemberInvite> = emptyList()
-)
+    val members: List<MemberInvite> = emptyList(),
+    val groupId: Uuid? = null)
+
 val CREATE_GROUP_WIZARD_STEPS = listOf(
     WizardStep("Info"),
     WizardStep("Miembros")
@@ -72,18 +75,35 @@ fun CreateGroup(
     onClose: () -> Unit,
     onSubmit: (CreateGroupFormState) -> Unit = {}
 ) {
-    var form      by remember { mutableStateOf(CreateGroupFormState()) }
-    var step      by remember { mutableStateOf(0) }
+
+    var form by remember { mutableStateOf(CreateGroupFormState()) }
+
+    var step by remember { mutableStateOf(0) }
+
     var formError by remember { mutableStateOf(false) }
-    var errorMsg  by remember { mutableStateOf("") }
+
+    var errorMsg by remember { mutableStateOf("") }
 
     if (formError) {
+
         AlertDialog(
             onDismissRequest = { formError = false },
-            title   = { Text("Error") },
-            text    = { Text(errorMsg) },
+
+            title = {
+                Text("Error")
+            },
+
+            text = {
+                Text(errorMsg)
+            },
+
             confirmButton = {
-                Button(onClick = { formError = false }) { Text("Aceptar") }
+
+                Button(
+                    onClick = { formError = false }
+                ) {
+                    Text("Aceptar")
+                }
             }
         )
     }
@@ -92,62 +112,132 @@ fun CreateGroup(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+
         Surface(
-            modifier       = Modifier.fillMaxWidth(0.55f).wrapContentHeight(),
-            shape          = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.55f)
+                .wrapContentHeight(),
+
+            shape = RoundedCornerShape(20.dp),
+
             tonalElevation = 6.dp
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
+
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
 
                 WizardHeader(
-                    title   = "Crear grupo",
-                    step    = step,
-                    steps   = CREATE_GROUP_WIZARD_STEPS,
+                    title = "Crear grupo",
+                    step = step,
+                    steps = CREATE_GROUP_WIZARD_STEPS,
                     onClose = onClose
                 )
 
                 Spacer(Modifier.height(20.dp))
 
-                AnimatedContent(targetState = step, label = "group_wizard_step") { current ->
+                AnimatedContent(
+                    targetState = step,
+                    label = "group_wizard_step"
+                ) { current ->
+
                     when (current) {
-                        0 -> GroupStepBasicInfo(form = form, onFormChange = { form = it })
-                        1 -> GroupStepMembers(form = form, onFormChange = { form = it })
+
+                        0 -> GroupStepBasicInfo(
+                            form = form,
+                            onFormChange = { form = it }
+                        )
+
+                        1 -> GroupStepMembers(
+                            form = form,
+                            onFormChange = { form = it }
+                        )
                     }
                 }
 
                 Spacer(Modifier.height(24.dp))
 
-                WizardNavigation(
-                    step        = step,
-                    totalSteps  = CREATE_GROUP_WIZARD_STEPS.size,
-                    submitLabel = "Crear grupo",
-                    onBack      = { step-- },
-                    onNext      = {
-                        val error = validateGroupStep0(form)
-                        if (error != null) {
-                            errorMsg = error; formError = true
-                        } else {
-                            val command = CommandBuilder()
-                                .set("name", form.groupName)
-                                .set("description", form.groupDescription)
-                                .build(CommandType.CREATE_GROUP)
-                            command
-                                .onSuccess { CommandLauncher.launch(it)}
-                                .onFailure { println("error: ${it.message}") }
-                            step++
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+
+                    CustomButton(
+                        onClick = {
+
+                            when (step) {
+
+                                0 -> {
+
+                                    val error = validateGroupStep0(form)
+
+                                    if (error != null) {
+
+                                        errorMsg = error
+                                        formError = true
+
+                                    } else {
+
+                                        val command = CommandBuilder()
+                                            .set("name", form.groupName)
+                                            .set("description", form.groupDescription)
+                                            .build(CommandType.CREATE_GROUP)
+
+                                        command
+                                            .onSuccess {
+
+                                                CommandLauncher.launch(it)
+
+                                                val createdGroup =
+                                                    Store.groups()
+                                                        .firstOrNull { group ->
+                                                            group.name == form.groupName
+                                                        }
+
+                                                if (createdGroup != null) {
+
+                                                    form = form.copy(
+                                                        groupId = createdGroup.id
+                                                    )
+
+                                                    step = 1
+
+                                                } else {
+
+                                                    errorMsg =
+                                                        "No se pudo recuperar el grupo creado"
+
+                                                    formError = true
+                                                }
+                                            }
+
+                                            .onFailure {
+
+                                                errorMsg =
+                                                    it.message ?: "Error al crear grupo"
+
+                                                formError = true
+                                            }
+                                    }
+                                }
+
+                                1 -> {
+
+                                    onSubmit(form)
+                                    onClose()
+                                }
+                            }
                         }
-                    },
-                    onSubmit = {
-                        val error = validateGroupStep0(form)
-                        if (error != null) {
-                            errorMsg = error
-                            formError = true
-                            return@WizardNavigation
-                        }
-                        onSubmit(form)
-                        onClose()
+                    ) {
+
+                        Text(
+                            when (step) {
+                                0 -> "Crear grupo"
+                                else -> "Cerrar configuración"
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
@@ -190,17 +280,23 @@ fun GroupStepMembers(
     onFormChange: (CreateGroupFormState) -> Unit
 ) {
     var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
-    var generatedCode by remember { mutableStateOf<String?>(null) }
-    var generatedCodes by remember { mutableStateOf<Map<Privilege, Int>>(emptyMap()) }
+    var generatedCodes by remember { mutableStateOf<Map<Privilege, Long>>(emptyMap()) }
+    var groupId = form.groupId
+
     val clipboard = LocalClipboardManager.current
 
-
+    LaunchedEffect(Unit) {
+        generatedCodes = getCodes(Store.currentGroup().id)
+    }
 
     Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+
         StepLabel("Invitar miembros")
 
         Row(
@@ -208,21 +304,31 @@ fun GroupStepMembers(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(modifier = Modifier.fillMaxSize(0.50f), horizontalArrangement = Arrangement.End) {
+
+            Row(
+                modifier = Modifier.fillMaxSize(0.50f),
+                horizontalArrangement = Arrangement.End
+            ) {
                 DropdownCustom(
                     section = "Permisos",
-                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },                    selection = DropdownSelection.Single(selectedPriv),
+                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },
+                    selection = DropdownSelection.Single(selectedPriv),
                     onItemSelected = { selectedPriv = it },
                     itemId = { it },
                     itemName = { it.name }
                 )
             }
 
-
             OutlinedButton(
                 onClick = {
                     selectedPriv?.let { priv ->
-                        val codigo = runBlocking{ generateCode(Store.currentGroup().id, priv) }
+                        if (form.groupId == null){
+                            groupId = Store.currentGroup().id
+                        }
+                        val codigo = runBlocking {
+                            generateCode(groupId!!, priv)
+                        }
+
                         generatedCodes = generatedCodes + (priv to codigo)
                     }
                 },
@@ -236,6 +342,7 @@ fun GroupStepMembers(
                     vertical = 16.dp
                 )
             ) {
+
                 Icon(
                     Icons.Default.Link,
                     contentDescription = null,
@@ -246,25 +353,36 @@ fun GroupStepMembers(
 
                 Text("Generar código")
             }
-
-            ShowCode(generatedCode)
         }
+
         if (generatedCodes.isNotEmpty()) {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        RoundedCornerShape(16.dp)
+                    )
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
                     .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+
                 generatedCodes.forEach { (priv, code) ->
+
                     CodeRow(
                         code = code,
                         privilege = priv,
                         onReset = {
-                            val codigo = runBlocking{ generateCode(Store.currentGroup().id, priv) }
+                            val codigo = runBlocking {
+                                generateCode(Store.currentGroup().id, priv)
+                            }
+
                             generatedCodes = generatedCodes + (priv to codigo)
                         },
                         clipboard
@@ -297,6 +415,7 @@ fun MemberRow(
         )
 
         Spacer(Modifier.width(8.dp))
+
 
         Box(modifier = Modifier.width(350.dp)) {
             DropdownCustom(
@@ -332,8 +451,6 @@ fun EditGroup(
     onSubmit: (CreateGroupFormState) -> Unit = {},
     group: Group = Store.currentGroup(),
 ) {
-
-    val isLocalGroup = Store.currentGroup().name == "local"
     var form by remember {
         mutableStateOf(
             CreateGroupFormState(
@@ -381,12 +498,7 @@ fun EditGroup(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        EditGroupSection.entries
-                            .filterNot {
-                                isLocalGroup &&
-                                        (it == EditGroupSection.MEMBERS || it == EditGroupSection.INVITE)
-                            }
-                            .forEach { s ->
+                        EditGroupSection.entries.forEach { s ->
                             val selected = section == s
                             val icon = when (s) {
                                 EditGroupSection.INFO     -> Icons.Default.Info
@@ -445,19 +557,10 @@ fun EditGroup(
 
                 AnimatedContent(targetState = section, label = "edit_group_section") { current ->
                     when (current) {
-                        EditGroupSection.INFO -> GroupStepBasicInfo(form, { form = it })
-
-                        EditGroupSection.MEMBERS -> if (!isLocalGroup)
-                            EditGroupSectionMembers(form, { form = it })
-                        else
-                            GroupStepBasicInfo(form, { form = it })
-
-                        EditGroupSection.INVITE -> if (!isLocalGroup)
-                            GroupStepMembers(form, { form = it })
-                        else
-                            GroupStepBasicInfo(form, { form = it })
-
-                        EditGroupSection.SETTINGS -> EditGroupSectionSettings(
+                        EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
+                        EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
+                        EditGroupSection.INVITE      ->  GroupStepMembers(form,{ form = it })
+                        EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
                             onSave = {
                                 val error = validateGroupStep0(form)
                                 if (error == null) {
@@ -465,13 +568,12 @@ fun EditGroup(
                                         .set("group", Store.currentGroup().toString())
                                         .set("description", form.groupDescription)
                                         .build(CommandType.UPDATE_GROUP)
-
                                     command
                                         .onSuccess { CommandLauncher.launch(it) }
                                         .onFailure { println("error: ${it.message}") }
                                 }
                                 onDismiss()
-                            },
+                             },
                             onLeave = onDismiss
                         )
                     }
@@ -529,6 +631,14 @@ private fun EditGroupSectionMembers(
                             onFormChange(form.copy(
                                 members = form.members.filter { it.email != member.email }
                             ))
+                            val command = CommandBuilder()
+                                .set("id", member.email)
+                                .set("userId", Store.currentUser().toString())
+                                .build(CommandType.EXIT_GROUP)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
+
                         }
                     )
                 }
@@ -617,7 +727,7 @@ fun ExitDialog(onChange: () -> Unit) {
 
 @Composable
 fun CodeRow(
-    code: Int,
+    code: Long,
     privilege: Privilege,
     onReset: () -> Unit,
     clipboard: ClipboardManager
@@ -667,31 +777,6 @@ fun CodeRow(
                 tint = MaterialTheme.colorScheme.primary)
         }
 
-    }
-}
-
-
-
-@Composable
-fun ShowCode(code: String?){
-    code?.let { code ->
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = code,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 2.sp
-            )
-        }
     }
 }
 
@@ -817,7 +902,6 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
                 )
             }
 
-            // Botones
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -830,7 +914,12 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
                 }
 
                 Button(
-                    onClick = { if (isValid) onJoin(code) },
+                    onClick = {
+                        if (isValid) {
+                            runBlocking{ submitCode(code.toLong()) }
+                            onJoin(code)
+                        }
+                    },
                     enabled = isValid,
                     modifier = Modifier.weight(1f)
                 ) {

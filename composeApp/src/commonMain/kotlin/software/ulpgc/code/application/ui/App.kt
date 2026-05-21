@@ -27,7 +27,6 @@ import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskMonitor
-import kotlin.uuid.Uuid
 
 val LocalThemeState = compositionLocalOf<ThemeState> { error("No ThemeState provided") }
 
@@ -72,7 +71,7 @@ fun App(
             SupabaseProvider.initialize()
         }, SupabaseDBManager,
             {
-                NetworkMonitor.state.value == Connectivity.Status.Connected(false) &&
+                NetworkMonitor.hasConnection.value &&
                         SupabaseAuth.ready.value && SupabaseAuth.isLoggedIn() &&
                         SupabaseDBManager.ready.value
             })

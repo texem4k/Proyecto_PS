@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,12 +53,22 @@ fun SideBar(
     onNavigate: (Screen) -> Unit,
     selectedScreen: Screen,
     onSettingsClick: () -> Unit,
-    onDeleted:() -> Unit
+    version: Int,
+    onRefresh: () -> Unit,
 ) {
+
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
     val authReady = SupabaseAuth.ready.collectAsState()
+
+    val currentUserId = Store.currentUser()
+
+    val currentUserName =
+        Store.users().firstOrNull { it.id == currentUserId }?.name ?: "Usuario"
+
+    val group = Store.currentGroup()
+    val isLocalGroup = group.name == "local"
 
     Column(
         modifier = Modifier
@@ -68,7 +79,6 @@ fun SideBar(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
-        var actualGroup by remember { mutableStateOf(Store.currentGroup().id) }
 
         SideBarNavItem(
             item = home,
@@ -92,15 +102,17 @@ fun SideBar(
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.weight(0.05f))
 
-        if(authReady.value && isLoggedIn()){
-            GroupSelectorMenu(
-                groups = Store.groups().toList(),
-                selectedGroup = Store.currentGroup().id,
-                onGroupSelected = {
-                    actualGroup = it
-                    onDeleted()
-                    Store.changeGroupTo(Store.groups().find{ g -> g.id==it}!!) },
-            )
+        key(version) {
+            if (authReady.value && isLoggedIn()) {
+                GroupSelectorMenu(
+                    groups = Store.groups().toList(),
+                    selectedGroup = Store.currentGroup().id,
+                    onGroupSelected = {
+                        Store.changeGroupTo(Store.groups().find { g -> g.id == it }!!)
+                        onRefresh()
+                    }
+                )
+            }
         }
 
         Box(
@@ -121,6 +133,7 @@ fun SideBar(
             )
 
             if (showPopup && authReady.value && isLoggedIn()) {
+
                 val density = LocalDensity.current
                 val offsetY = with(density) {
                     (-cardHeight + 250.dp.toPx()).toInt()
@@ -139,11 +152,15 @@ fun SideBar(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
                         },
-                        name = Store.users().first {u -> u.id==Store.currentUser()}.name,
+                        name = currentUserName,
                         role = "Invitado",
+                        isLocalGroup = isLocalGroup,
                         onDismiss = { showPopup = false }
                     )
                 }
+
+                onRefresh()
+
             } else if (showPopup && authReady.value) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
@@ -155,7 +172,6 @@ fun SideBar(
         }
     }
 }
-
 
 @Composable
 private fun SideBarNavItem(

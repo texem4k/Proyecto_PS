@@ -81,7 +81,7 @@ fun CreateTask(
     val action = if (task != null) "Editar" else "Crear"
     val userName = Store.users().find { it.id == Store.currentUser() }?.name ?: "Usuario"
 
-    if (userName != "root"){
+    if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000")){
         totalSteps = 4
     }
 

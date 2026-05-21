@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -43,7 +42,6 @@ import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.focus.FocusRequester
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
@@ -90,10 +88,11 @@ fun CalendarScreen(
         modifier = setUndoRedo(onDeleted, focusRequester)
     ) {
         SideBar(
-            selectedScreen = Screen.CALENDAR,
             onNavigate = onNavigate,
+            selectedScreen = Screen.CALENDAR,
             onSettingsClick = onSettingsClick,
-            onDeleted = onDeleted
+            onRefresh = {version++},
+            version=version
         )
 
         Box(modifier = Modifier.fillMaxSize()) {

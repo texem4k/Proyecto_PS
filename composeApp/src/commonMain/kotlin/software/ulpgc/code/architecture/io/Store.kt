@@ -1,11 +1,9 @@
 package software.ulpgc.code.architecture.io
 
-import io.github.jan.supabase.auth.status.SessionSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.exceptions.AppException
-import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -34,9 +32,6 @@ object Store {
     }
     
     fun currentGroup(): Group {
-        println(Storage.currentGroup.toString())
-        println(groups().toList().toString())
-        println(Storage.groups.toList().toString())
         return groups().first { it.id == Storage.currentGroup }
     }
 
@@ -52,17 +47,17 @@ object Store {
         Storage.currentUser = userId
     }
 
-    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { it.groupId == Storage.currentGroup }
+    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() }.filter { it.groupId == Storage.currentGroup }
 
-    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
+    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
 
-    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
+    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
 
-    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() }
 
-    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() }
 
-    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() }
 
     fun <T: DBObject> add(obj: T) {
         when (obj) {
@@ -89,10 +84,10 @@ object Store {
 
     suspend fun onLogOut() {
         Storage.restartCurrent()
-        users().filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
+        Storage.users.filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
             it.localDBState = DBState.DELETED
         }
-        groups().filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
+        Storage.groups.filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
             it.localDBState = DBState.DELETED
         }
         LocalDBStore.execute()

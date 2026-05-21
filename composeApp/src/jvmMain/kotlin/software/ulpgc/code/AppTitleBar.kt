@@ -11,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
+import kotlinx.coroutines.launch
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.logout
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
 
 val SidebarColor = Color(0xFF1E1E2E)
 
@@ -85,10 +90,14 @@ fun WindowScope.AppTitleBar(
                         modifier = Modifier.size(16.dp)
                     )
                 }
-
-                // Cerrar
+                val scope = rememberCoroutineScope()
                 IconButton(
-                    onClick = onClose,
+                    onClick = {
+                        scope.launch {
+                            logout().getOrThrow()
+                            onClose()
+                        }
+                    },
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
