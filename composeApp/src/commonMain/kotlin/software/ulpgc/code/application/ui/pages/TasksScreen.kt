@@ -83,7 +83,8 @@ fun TasksScreen(
             SideBar(
                 selectedScreen = Screen.TASKS,
                 onNavigate = onNavigate,
-                onSettingsClick = onSettingsClick
+                onSettingsClick = onSettingsClick,
+                onDeleted = onDeleted
             )
 
             Column(

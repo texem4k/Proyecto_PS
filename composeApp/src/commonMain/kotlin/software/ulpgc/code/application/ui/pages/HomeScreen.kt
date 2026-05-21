@@ -114,7 +114,8 @@ fun HomeScreen(
                 SideBar(
                     selectedScreen = Screen.HOME,
                     onNavigate = onNavigate,
-                    onSettingsClick = onSettingsClick
+                    onSettingsClick = onSettingsClick,
+                    onDeleted = onDeleted
                 )
             }
 

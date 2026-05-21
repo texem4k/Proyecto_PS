@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.control.logs.LogMaster
+import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
@@ -52,8 +53,7 @@ object SupabaseAuth {
         login(userEmail, userPassword).getOrThrow()
         val gruop = Group("Grupo de $name", "Zona personal de trabajo",
             mutableMapOf(Uuid.parse(user!!.id) to Privilege.ADMIN),
-            Uuid.parse(user.id))
-        println(gruop)
+            Uuid.parse(user.id), DBState.DISABLED)
         Store.add(gruop)
         LogMaster.log("Se ha completado el registro")
     }

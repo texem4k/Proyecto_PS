@@ -52,8 +52,12 @@ enum class TypeChart {BarChart, DotChart}
 @Composable
 fun DashboardScreen(
     onNavigate: (Screen) -> Unit,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+
 ) {
+
+    var version by remember { mutableStateOf(0) }
+    val onDeleted: () -> Unit = { version++ }
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -63,7 +67,8 @@ fun DashboardScreen(
         SideBar(
             selectedScreen = Screen.DASHBOARD,
             onNavigate = onNavigate,
-            onSettingsClick = onSettingsClick
+            onSettingsClick = onSettingsClick,
+            onDeleted = onDeleted
         )
 
         var modeToggle by remember { mutableStateOf(StatMode.ActualGroup)}

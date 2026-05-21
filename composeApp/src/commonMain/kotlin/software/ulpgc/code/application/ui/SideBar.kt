@@ -51,7 +51,8 @@ val topItems = listOf(
 fun SideBar(
     onNavigate: (Screen) -> Unit,
     selectedScreen: Screen,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onDeleted:() -> Unit
 ) {
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
@@ -97,6 +98,7 @@ fun SideBar(
                 selectedGroup = Store.currentGroup().id,
                 onGroupSelected = {
                     actualGroup = it
+                    onDeleted()
                     Store.changeGroupTo(Store.groups().find{ g -> g.id==it}!!) },
             )
         }

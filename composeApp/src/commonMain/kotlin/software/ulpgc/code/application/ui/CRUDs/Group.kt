@@ -49,7 +49,7 @@ import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Privilege
 import kotlin.collections.component1
 import kotlin.collections.component2
-
+import kotlin.uuid.Uuid
 
 
 data class MemberInvite(
@@ -211,8 +211,7 @@ fun GroupStepMembers(
             Row(modifier = Modifier.fillMaxSize(0.50f), horizontalArrangement = Arrangement.End) {
                 DropdownCustom(
                     section = "Permisos",
-                    items = Privilege.entries,
-                    selection = DropdownSelection.Single(selectedPriv),
+                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },                    selection = DropdownSelection.Single(selectedPriv),
                     onItemSelected = { selectedPriv = it },
                     itemId = { it },
                     itemName = { it.name }
@@ -333,6 +332,8 @@ fun EditGroup(
     onSubmit: (CreateGroupFormState) -> Unit = {},
     group: Group = Store.currentGroup(),
 ) {
+
+    val isLocalGroup = Store.currentGroup().name == "local"
     var form by remember {
         mutableStateOf(
             CreateGroupFormState(
@@ -380,7 +381,12 @@ fun EditGroup(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        EditGroupSection.entries.forEach { s ->
+                        EditGroupSection.entries
+                            .filterNot {
+                                isLocalGroup &&
+                                        (it == EditGroupSection.MEMBERS || it == EditGroupSection.INVITE)
+                            }
+                            .forEach { s ->
                             val selected = section == s
                             val icon = when (s) {
                                 EditGroupSection.INFO     -> Icons.Default.Info
@@ -439,10 +445,19 @@ fun EditGroup(
 
                 AnimatedContent(targetState = section, label = "edit_group_section") { current ->
                     when (current) {
-                        EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
-                        EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
-                        EditGroupSection.INVITE      ->  GroupStepMembers(form,{ form = it })
-                        EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
+                        EditGroupSection.INFO -> GroupStepBasicInfo(form, { form = it })
+
+                        EditGroupSection.MEMBERS -> if (!isLocalGroup)
+                            EditGroupSectionMembers(form, { form = it })
+                        else
+                            GroupStepBasicInfo(form, { form = it })
+
+                        EditGroupSection.INVITE -> if (!isLocalGroup)
+                            GroupStepMembers(form, { form = it })
+                        else
+                            GroupStepBasicInfo(form, { form = it })
+
+                        EditGroupSection.SETTINGS -> EditGroupSectionSettings(
                             onSave = {
                                 val error = validateGroupStep0(form)
                                 if (error == null) {
@@ -450,12 +465,13 @@ fun EditGroup(
                                         .set("group", Store.currentGroup().toString())
                                         .set("description", form.groupDescription)
                                         .build(CommandType.UPDATE_GROUP)
+
                                     command
                                         .onSuccess { CommandLauncher.launch(it) }
                                         .onFailure { println("error: ${it.message}") }
                                 }
                                 onDismiss()
-                             },
+                            },
                             onLeave = onDismiss
                         )
                     }
@@ -488,13 +504,24 @@ private fun EditGroupSectionMembers(
                     .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                form.members.forEach { member ->
+                val currentUserId = Store.currentUser()
+
+                val currentUserName =
+                    Store.users().find { it.id == currentUserId }?.name ?: "Usuario"
+
+                val visibleMembers = form.members.filter {
+                    it.email != currentUserName
+                }
+
+                visibleMembers.forEach { member ->
                     MemberRow(
                         member = member,
                         onPrivilegeChange = { newPriv ->
                             onFormChange(form.copy(
                                 members = form.members.map {
-                                    if (it.email == member.email) it.copy(privilege = newPriv) else it
+                                    if (it.email == member.email)
+                                        it.copy(privilege = newPriv)
+                                    else it
                                 }
                             ))
                         },
@@ -532,7 +559,8 @@ private fun EditGroupSectionSettings(
             Spacer(Modifier.width(8.dp))
             Text("Guardar configuración")
         }
-        if (Store.currentGroup().name != "local") {
+        if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000")
+            && Store.currentGroup().id != Store.currentUser()) {
             OutlinedButton(
                 onClick = { exit = true },
                 modifier = Modifier.fillMaxWidth(0.6f),

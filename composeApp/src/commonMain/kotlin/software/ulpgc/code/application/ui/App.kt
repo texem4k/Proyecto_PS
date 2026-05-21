@@ -185,12 +185,12 @@ fun App(
 
                             Screen.DASHBOARD -> DashboardScreen(
                                 onNavigate = { screen = it },
-                                onSettingsClick = { showThemeDialog = true }
+                                onSettingsClick = { showThemeDialog = true },
                             )
 
                             Screen.CALENDAR -> CalendarScreen(
                                 onNavigate = { screen = it },
-                                onSettingsClick = { showThemeDialog = true }
+                                onSettingsClick = { showThemeDialog = true },
                             )
 
                             else -> {}

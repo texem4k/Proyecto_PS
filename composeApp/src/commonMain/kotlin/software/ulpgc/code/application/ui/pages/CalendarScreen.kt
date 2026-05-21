@@ -92,7 +92,8 @@ fun CalendarScreen(
         SideBar(
             selectedScreen = Screen.CALENDAR,
             onNavigate = onNavigate,
-            onSettingsClick = onSettingsClick
+            onSettingsClick = onSettingsClick,
+            onDeleted = onDeleted
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
