@@ -331,7 +331,7 @@ enum class EditGroupSection { INFO, MEMBERS, INVITE,SETTINGS }
 fun EditGroup(
     onDismiss: () -> Unit,
     onSubmit: (CreateGroupFormState) -> Unit = {},
-    group: Group = Store.groups().first(),
+    group: Group = Store.currentGroup(),
 ) {
     var form by remember {
         mutableStateOf(
@@ -443,7 +443,19 @@ fun EditGroup(
                         EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
                         EditGroupSection.INVITE      ->  GroupStepMembers(form,{ form = it })
                         EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
-                            onSave = { onSubmit(form); onDismiss() },
+                            onSave = {
+                                val error = validateGroupStep0(form)
+                                if (error == null) {
+                                    val command = CommandBuilder()
+                                        .set("group", Store.currentGroup().toString())
+                                        .set("description", form.groupDescription)
+                                        .build(CommandType.UPDATE_GROUP)
+                                    command
+                                        .onSuccess { CommandLauncher.launch(it) }
+                                        .onFailure { println("error: ${it.message}") }
+                                }
+                                onDismiss()
+                             },
                             onLeave = onDismiss
                         )
                     }
@@ -544,22 +556,32 @@ private fun EditGroupSectionSettings(
 @Composable
 fun ExitDialog(onChange: () -> Unit) {
     Dialog(onDismissRequest = onChange, content={
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text("Salir del grupo", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
+        Card(modifier=Modifier.fillMaxWidth(0.5f)){
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Salir del grupo", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
 
 
-            Text("¿Estas seguro de que desea salir del grupo?", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
+                Text("¿Estas seguro de que desea salir del grupo?", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
 
-            Row(){
-                Button(onClick = {onChange()}) {
-                    Text("Cancelar")
+                Row(){
+                    Button(onClick = {onChange()}) {
+                        Text("Cancelar")
+                    }
+                    Button(onClick = {
+                        val command = CommandBuilder()
+                            .set("id", Store.currentGroup().id.toString())
+                            .set("userId", Store.currentUser().toString())
+                            .build(CommandType.EXIT_GROUP)
+                        command
+                            .onSuccess { CommandLauncher.launch(it) }
+                            .onFailure { println("error: ${it.message}") }
+                        onChange()}, colors = ButtonDefaults.filledTonalButtonColors()) {
+                        Text("Confirmar")
+                    }
                 }
-                Button(onClick = {onChange()}, colors = ButtonDefaults.filledTonalButtonColors()) {
-                    Text("Confirmar")
-                }
+
+
             }
-
-
         }
 
     })

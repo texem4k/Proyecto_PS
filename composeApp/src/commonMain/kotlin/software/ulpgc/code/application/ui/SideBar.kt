@@ -95,7 +95,9 @@ fun SideBar(
             GroupSelectorMenu(
                 groups = Store.groups().toList(),
                 selectedGroup = Store.currentGroup().id,
-                onGroupSelected = { actualGroup = it },
+                onGroupSelected = {
+                    actualGroup = it
+                    Store.changeGroupTo(Store.groups().find{ g -> g.id==it}!!) },
             )
         }
 
