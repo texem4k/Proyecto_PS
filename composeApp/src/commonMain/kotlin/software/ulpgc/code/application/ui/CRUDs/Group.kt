@@ -361,7 +361,7 @@ fun GroupStepMembers(
                 shape = RoundedCornerShape(32.dp),
                 border = BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outline
+                    MaterialTheme.colorScheme.primary
                 ),
                 contentPadding = PaddingValues(
                     horizontal = 20.dp,
@@ -372,12 +372,13 @@ fun GroupStepMembers(
                 Icon(
                     Icons.Default.Link,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
 
                 Spacer(Modifier.width(6.dp))
 
-                Text("Generar código")
+                Text("Generar código", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
 
@@ -389,7 +390,7 @@ fun GroupStepMembers(
                     .clip(RoundedCornerShape(16.dp))
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.outlineVariant,
+                        MaterialTheme.colorScheme.tertiary,
                         RoundedCornerShape(16.dp)
                     )
                     .background(
@@ -869,7 +870,7 @@ fun CodeRow(
         Text(
             text = privilege.name,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.width(100.dp)
         )
 
@@ -940,13 +941,14 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
             Text(
                 text = "Unirse a un grupo",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
             Text(
                 text = "Introduce el código",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center
             )
 
@@ -1027,7 +1029,7 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
                 Text(
                     text = "${code.length} / 10",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
 
@@ -1037,9 +1039,9 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
             ) {
                 OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
-                    Text("Cancelar")
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
 
                 Button(

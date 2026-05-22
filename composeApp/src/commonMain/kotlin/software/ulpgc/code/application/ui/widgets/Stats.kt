@@ -120,7 +120,7 @@ fun MenuTareas(onDeleted: () -> Unit, refreshFlag: Int) {
                             Text(
                                 text = Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

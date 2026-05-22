@@ -147,7 +147,7 @@ fun TasksScreen(
                     if (!Store.tasks().any { t -> !t.isCompleted }) {
                         Text(
                             "No tienes ninguna tarea ahora mismo, ¡Puedes descansar un poco \uD83D\uDE09!",
-                            fontSize = 18.sp
+                            fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     } else {
                         LazyVerticalGrid(

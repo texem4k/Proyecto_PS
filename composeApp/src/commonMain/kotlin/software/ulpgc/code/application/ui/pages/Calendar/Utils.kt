@@ -58,7 +58,7 @@ fun WeekDayColumn(
         modifier = Modifier
             .fillMaxHeight()
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.tertiary)
             .border(0.5.dp, MaterialTheme.colorScheme.onPrimaryContainer)
     ) {
         for (h in 0 until totalHours) {
@@ -168,7 +168,7 @@ fun WeekEventChip(
             .offset(y = topDp)
             .height(heightDp)
             .clip(RoundedCornerShape(5.dp))
-            .background(entry.color.copy(alpha = 0.13f))
+            .background(entry.color.copy(alpha = 0.2f))
             .border(
                 width = 2.5.dp,
                 color = entry.color,

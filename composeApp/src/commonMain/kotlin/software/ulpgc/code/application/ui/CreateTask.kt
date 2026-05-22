@@ -120,6 +120,7 @@ fun CreateTask(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxWidth(0.55f)
                 .wrapContentHeight(),
@@ -432,7 +433,7 @@ private fun StepTopicsAndPeriod(
                         if (periodicEnabled)
                             MaterialTheme.colorScheme.onPrimaryContainer
                         else
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
@@ -540,7 +541,7 @@ private fun StepDateTime(
             modifier = Modifier
                 .fillMaxWidth(0.55f)
                 .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.colorScheme.tertiary,
                     RoundedCornerShape(24.dp)
                 )
                 .border(
@@ -637,10 +638,19 @@ private fun DuracionField(value: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = { if (it.all { c -> c.isDigit() }) onChange(it) },
-        label = { Text("Duración (horas)") },
+        label = { Text("Duración (horas)", color = MaterialTheme.colorScheme.onPrimaryContainer) },
         modifier = Modifier.fillMaxWidth(0.55f),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        shape = RoundedCornerShape(32.dp)
+        shape = RoundedCornerShape(32.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     )
 }
 

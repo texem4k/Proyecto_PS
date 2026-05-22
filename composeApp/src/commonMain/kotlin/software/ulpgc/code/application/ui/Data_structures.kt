@@ -47,17 +47,17 @@ fun PickerField(
             onValueChange = {},
             readOnly = true,
             enabled = false,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
+            label = { Text(label, color = MaterialTheme.colorScheme.onPrimaryContainer) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onPrimaryContainer) },
             trailingIcon = { Icon(icon, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(32.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                disabledLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         )
 
@@ -95,6 +95,7 @@ fun DatePickerField(
         val state = rememberDatePickerState()
 
         DatePickerDialog(
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
             onDismissRequest = { showPicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -112,7 +113,29 @@ fun DatePickerField(
                 }
             }
         ) {
-            DatePicker(state = state)
+            DatePicker(state = state, colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                headlineContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                weekdayContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                dayContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                selectedDayContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                todayContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                todayDateBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                yearContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                navigationContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                subheadContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                dateTextFieldColors = OutlinedTextFieldDefaults.colors(
+                    errorTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    focusedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            ))
         }
     }
 }
@@ -148,6 +171,7 @@ fun TimePickerField(
         )
 
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.background,
             onDismissRequest = { showPicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -162,7 +186,19 @@ fun TimePickerField(
                     Text("Cancelar")
                 }
             },
-            text = { TimePicker(state = state) }
+            text = { TimePicker(
+                state = state,
+                colors = TimePickerDefaults.colors(
+                    clockDialColor = MaterialTheme.colorScheme.secondary,        // 👈 fondo del reloj
+                    clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    clockDialUnselectedContentColor = MaterialTheme.colorScheme.onPrimary, // 👈 números
+                    selectorColor = MaterialTheme.colorScheme.primary,               // 👈 aguja
+                    timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary, // 👈 caja hora seleccionada
+                    timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.secondary,
+                    timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            ) }
         )
     }
 }
@@ -183,11 +219,15 @@ fun TextFieldCustom(
     }
 
     OutlinedTextField(
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,),
         value = value,
         onValueChange = onValueChange,
 
         label = {
-            Text(label)
+            Text(label, color = MaterialTheme.colorScheme.onPrimaryContainer)
         },
 
         modifier = Modifier
@@ -205,7 +245,7 @@ fun TextFieldCustom(
             },
 
         placeholder = placeholder?.let {
-            { Text(it) }
+            { Text(it, color = MaterialTheme.colorScheme.secondary) }
         },
 
         shape = RoundedCornerShape(32.dp),
@@ -283,14 +323,19 @@ fun <T, K> DropdownCustom(
             value = displayText,
             onValueChange = {},
             readOnly = true,
-            label = { Text(section) },
+            label = { Text(section, color = MaterialTheme.colorScheme.onPrimaryContainer) },
             modifier = Modifier.menuAnchor().fillMaxWidth(0.5f),
             shape = RoundedCornerShape(32.dp),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = outlinedTextFieldColors()
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,    // 👈 texto al escribir con foco
+                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,  // 👈 texto sin foco
+            )
         )
 
         ExposedDropdownMenu(
+            containerColor = MaterialTheme.colorScheme.tertiary,
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
@@ -301,7 +346,7 @@ fun <T, K> DropdownCustom(
                     is DropdownSelection.Multiple -> id in selection.ids
                 }
                 DropdownMenuItem(
-                    text = { Text(itemName(item)) },
+                    text = { Text(itemName(item), color = MaterialTheme.colorScheme.onPrimaryContainer) },
                     onClick = {
                         onItemSelected(id)
                         if (selection is DropdownSelection.Single) expanded = false

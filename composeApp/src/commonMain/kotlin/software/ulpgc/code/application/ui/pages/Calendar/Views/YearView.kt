@@ -114,7 +114,7 @@ fun YearView(
                 Box(
                     modifier = Modifier
                         .border(1.dp, Color.Black)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(MaterialTheme.colorScheme.tertiary)
                         .padding(horizontal = 1.dp),
                 ) { content() }
             },
@@ -210,7 +210,7 @@ fun YearDayCell(
                     isSelected -> Color.White
                     day.date == today -> Color(0xFF4F6EF7)
                     day.position != DayPosition.MonthDate -> Color.Gray.copy(alpha = 0.3f)
-                    else -> Color.Unspecified
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
                 },
                 fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
                 fontSize = 12.sp,
