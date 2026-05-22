@@ -7,6 +7,7 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
@@ -91,7 +92,7 @@ data class AssignuserTaskData(val taskId: Uuid, val userId: Uuid, val groupId: U
     companion object{
         fun serializeFrom(task: Task): List<AssignuserTaskData>{
             return task.users.map { AssignuserTaskData(
-                task.id, it , Store.topics().first { topic -> topic == task.topicId }.groupId ) }
+                task.id, it , Store.topics().first { topic -> topic.id == task.topicId }.groupId ) }
         }
 
         fun parse(data: List<AssignuserTaskData>): MutableSet<Uuid>{
@@ -108,7 +109,7 @@ data class TaskData(val id: Uuid, val topicId: Uuid, val groupId: Uuid,
     val name: String, val description: String, val time: String,
     val interval: Int, val priority: Int, val isCompleted: Boolean
 ){
-    constructor(task: Task) : this(task.id,task.topicId, Store.topics().first { it == task.topicId }.groupId,
+    constructor(task: Task) : this(task.id,task.topicId, Store.topics().first { it.id == task.topicId }.groupId,
         task.name, task.description, task.time.toString(), task.interval.ordinal, task.priority.ordinal,
         task.isCompleted)
 
@@ -248,7 +249,7 @@ object SupabaseDBManager: DBManager {
                 }
             }.decodeList<AssignuserTaskData>()
             .groupBy { it.taskId }
-        return Result.success(taskData.map { it.parse(TaskTagData.parse(taskTags[it.id]!!), AssignuserTaskData.parse(taskUser[it.id]!!)) })
+        return Result.success(taskData.map { it.parse(TaskTagData.parse(taskTags[it.id]?: listOf()), AssignuserTaskData.parse(taskUser[it.id]?: listOf())) })
     }
 
     override suspend fun groups(): Result<List<Group>> = runCatching {

@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
 import software.ulpgc.code.application.ui.pages.DialMenuItem
+import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Privilege
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -53,25 +55,33 @@ fun DialMenu(
     onCreateGroup: () -> Unit
 ) {
     val authReady = SupabaseAuth.ready.collectAsState()
+
+    // Privilegio del usuario actual en el grupo
+    val currentUserId = Store.currentUser()
+    val currentUserPrivilege = Store.currentGroup().users[currentUserId]
+    val canCreateContent = currentUserPrivilege != Privilege.READER
+
     val items = buildList {
-        add(DialMenuItem(
-            icon = Icons.Default.Task,
-            label = "Nueva tarea",
-            color = Color(0xFF534AB7),
-            onClick = onCreateTask
-        ))
-        add(DialMenuItem(
-            icon = Icons.Default.Folder,
-            label = "Nuevo tópico",
-            color = Color(0xFF1D9E75),
-            onClick = onCreateTopic
-        ))
-        add(DialMenuItem(
-            icon = Icons.Default.LocalOffer,
-            label = "Nuevo tag",
-            color = Color(0xFFD85A30),
-            onClick = onCreateTag
-        ))
+        if (canCreateContent) {
+            add(DialMenuItem(
+                icon = Icons.Default.Task,
+                label = "Nueva tarea",
+                color = Color(0xFF534AB7),
+                onClick = onCreateTask
+            ))
+            add(DialMenuItem(
+                icon = Icons.Default.Folder,
+                label = "Nuevo tópico",
+                color = Color(0xFF1D9E75),
+                onClick = onCreateTopic
+            ))
+            add(DialMenuItem(
+                icon = Icons.Default.LocalOffer,
+                label = "Nuevo tag",
+                color = Color(0xFFD85A30),
+                onClick = onCreateTag
+            ))
+        }
         if (authReady.value && isLoggedIn()) {
             add(DialMenuItem(
                 icon = Icons.Default.Group,
@@ -148,6 +158,10 @@ private fun DialChildButton(
             1 -> 115.0
             2 -> 65.0
             3 -> 0.0
+            else -> 0.0
+        }
+        1 -> when (index) {
+            0 -> 90.0
             else -> 0.0
         }
         else -> index * (180.0 / maxOf(total - 1, 1))

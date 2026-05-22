@@ -7,19 +7,20 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Delete
@@ -56,6 +57,7 @@ import kotlin.uuid.Uuid
 
 data class MemberInvite(
     val email: String,
+    val userId: Uuid,
     val privilege: Privilege = Privilege.READER
 )
 
@@ -250,6 +252,12 @@ fun GroupStepBasicInfo(
     form: CreateGroupFormState,
     onFormChange: (CreateGroupFormState) -> Unit
 ) {
+    val currentUserId = Store.currentUser()
+    val currentUserPrivilege = Store.currentGroup().users[currentUserId]
+    val isCreating = form.groupId == null
+    val canEdit = isCreating || currentUserPrivilege == Privilege.ADMIN
+            || currentUserPrivilege == Privilege.MOD
+
     Column(
         modifier            = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -257,19 +265,38 @@ fun GroupStepBasicInfo(
     ) {
         StepLabel("Información del grupo")
 
-        TextFieldCustom(
-            value           = form.groupName,
-            label           = "* Nombre del grupo",
-            onValueChange   = { onFormChange(form.copy(groupName = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+        if (canEdit) {
+            TextFieldCustom(
+                value           = form.groupName,
+                label           = "* Nombre del grupo",
+                onValueChange   = { onFormChange(form.copy(groupName = it)) },
+                keyboardOptions = KeyboardOptions.Default
+            )
+            TextFieldCustom(
+                value           = form.groupDescription,
+                label           = "Descripción",
+                onValueChange   = { onFormChange(form.copy(groupDescription = it)) },
+                keyboardOptions = KeyboardOptions.Default
+            )
+        } else {
+                Text(
+                    text = "Nombre:" + form.groupName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    textAlign = TextAlign.Center,
 
-        TextFieldCustom(
-            value           = form.groupDescription,
-            label           = "Descripción",
-            onValueChange   = { onFormChange(form.copy(groupDescription = it)) },
-            keyboardOptions = KeyboardOptions.Default
-        )
+                    )
+
+                Text(
+                    text = "Descripción:" + form.groupDescription.ifEmpty { "Sin descripción" },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    textAlign = TextAlign.Center
+
+                )
+        }
     }
 }
 
@@ -386,7 +413,8 @@ fun GroupStepMembers(
 
                             generatedCodes = generatedCodes + (priv to codigo)
                         },
-                        clipboard
+                        clipboard=clipboard,
+                        onDeleted = { generatedCodes = generatedCodes - priv }
                     )
                 }
             }
@@ -400,6 +428,11 @@ fun MemberRow(
     onPrivilegeChange: (Privilege) -> Unit,
     onRemove: () -> Unit
 ) {
+    val currentUserId = Store.currentUser()
+    val currentUserPrivilege = Store.currentGroup().users[currentUserId]
+    val canEditPrivileges = currentUserPrivilege == Privilege.ADMIN
+            || currentUserPrivilege == Privilege.MOD
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -418,27 +451,48 @@ fun MemberRow(
         Spacer(Modifier.width(8.dp))
 
 
-        Box(modifier = Modifier.width(350.dp)) {
-            DropdownCustom(
-                section = "",
-                items = Privilege.entries,
-                selection = DropdownSelection.Single(member.privilege),
-                onItemSelected = { onPrivilegeChange(it) },
-                itemId = { it },
-                itemName = { it.name }
-            )
-        }
+        if (canEditPrivileges) {
 
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.size(28.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Eliminar",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(16.dp)
-            )
+            Box(modifier = Modifier.width(370.dp)) {
+
+                DropdownCustom(
+                    section = "",
+                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },
+                    selection = DropdownSelection.Single(member.privilege),
+                    onItemSelected = { onPrivilegeChange(it) },
+                    itemId = { it },
+                    itemName = { it.name }
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    val command = CommandBuilder()
+                        .set("id", Store.currentGroup().id.toString())
+                        .set("userId", member.userId.toString())
+                        .build(CommandType.EXIT_GROUP)
+                    command
+                        .onSuccess { CommandLauncher.launch(it) }
+                        .onFailure { println("error: ${it.message}") }
+                },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "Eliminar miembro")
+            }
+
+        } else {
+
+            Box(modifier = Modifier.width(350.dp)) {
+
+                Text(
+                    text = member.privilege.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(
+                        horizontal = 12.dp,
+                        vertical = 8.dp
+                    )
+                )
+            }
         }
     }
 }
@@ -458,10 +512,11 @@ fun EditGroup(
                 groupName = group.name,
                 groupDescription = group.description,
                 members = group.users.map { (userId, privilege) ->
-                    MemberInvite(
-                        email = Store.users().find { it.id == userId }?.name ?: "",
-                        privilege = privilege
-                    )
+                        MemberInvite(
+                            email = Store.users().find { it.id == userId }?.name ?: "",
+                            userId = userId,
+                            privilege = privilege
+                        )
                 }
             )
         )
@@ -574,8 +629,9 @@ fun EditGroup(
                                         .onFailure { println("error: ${it.message}") }
                                 }
                                 onDismiss()
-                             },
-                            onLeave = onDismiss
+                            },
+                            onLeave = onDismiss,
+                            form = form
                         )
                     }
                 }
@@ -618,7 +674,7 @@ private fun EditGroupSectionMembers(
 
                 visibleMembers.forEach { member ->
                     MemberRow(
-                        member = member,
+                        member = member ,
                         onPrivilegeChange = { newPriv ->
                             onFormChange(form.copy(
                                 members = form.members.map {
@@ -633,13 +689,12 @@ private fun EditGroupSectionMembers(
                                 members = form.members.filter { it.email != member.email }
                             ))
                             val command = CommandBuilder()
-                                .set("id", member.email)
-                                .set("userId", Store.currentUser().toString())
+                                .set("id", Store.currentGroup().id.toString())
+                                .set("userId", member.userId.toString())  // ← ID real del miembro
                                 .build(CommandType.EXIT_GROUP)
                             command
                                 .onSuccess { CommandLauncher.launch(it) }
                                 .onFailure { println("error: ${it.message}") }
-
                         }
                     )
                 }
@@ -650,6 +705,7 @@ private fun EditGroupSectionMembers(
 
 @Composable
 private fun EditGroupSectionSettings(
+    form: CreateGroupFormState,
     onSave: () -> Unit,
     onLeave: () -> Unit
 ) {
@@ -663,7 +719,32 @@ private fun EditGroupSectionSettings(
         StepLabel("Ajustes del grupo")
 
         Button(
-            onClick = onSave,
+            onClick = {
+                val privilegesMap = form.members.associateTo(mutableMapOf()) { it.userId to it.privilege }
+
+                val command = CommandBuilder()
+                    .set("id", Store.currentGroup().id.toString())
+                    .set("name", form.groupName)
+                    .set("description", form.groupDescription)
+                    .build(CommandType.UPDATE_GROUP)
+
+                val command2 = CommandBuilder()
+                    .set("id", Store.currentGroup().id.toString())
+                    .set("privileges", Group.privilegeString(privilegesMap))
+                    .build(CommandType.EDIT_PRIVILEGES)
+
+                command
+                    .onSuccess {
+                        CommandLauncher.launch(it)
+                        command2
+                            .onSuccess {
+                                CommandLauncher.launch(it)
+                                onSave()
+                            }
+                            .onFailure { println("error command2: ${it.message}") }
+                    }
+                    .onFailure { println("error command1: ${it.message}") }
+            },
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
             Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -686,7 +767,7 @@ private fun EditGroupSectionSettings(
             }
 
             if (exit) {
-                ExitDialog(onChange = { exit = false })
+                ExitDialog(onChange = { exit = false; onLeave() })
             }
         }
     }
@@ -694,36 +775,97 @@ private fun EditGroupSectionSettings(
 
 @Composable
 fun ExitDialog(onChange: () -> Unit) {
-    Dialog(onDismissRequest = onChange, content={
-        Card(modifier=Modifier.fillMaxWidth(0.5f)){
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Salir del grupo", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
-
-
-                Text("¿Estas seguro de que desea salir del grupo?", modifier = Modifier.padding(bottom=16.dp,top=8.dp))
-
-                Row(){
-                    Button(onClick = {onChange()}) {
-                        Text("Cancelar")
-                    }
-                    Button(onClick = {
-                        val command = CommandBuilder()
-                            .set("id", Store.currentGroup().id.toString())
-                            .set("userId", Store.currentUser().toString())
-                            .build(CommandType.EXIT_GROUP)
-                        command
-                            .onSuccess { CommandLauncher.launch(it) }
-                            .onFailure { println("error: ${it.message}") }
-                        onChange()}, colors = ButtonDefaults.filledTonalButtonColors()) {
-                        Text("Confirmar")
-                    }
+    Dialog(
+        onDismissRequest = onChange,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.4f),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
 
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Salir del grupo",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "¿Estás seguro de que deseas salir del grupo? Esta acción no se puede deshacer.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.5f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onChange,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick = {
+                            val command = CommandBuilder()
+                                .set("id", Store.currentGroup().id.toString())
+                                .set("userId", Store.currentUser().toString())
+                                .build(CommandType.EXIT_GROUP)
+                            command
+                                .onSuccess { CommandLauncher.launch(it) }
+                                .onFailure { println("error: ${it.message}") }
+                            onChange()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Confirmar salida", fontWeight = FontWeight.Medium)
+                    }
+                }
             }
         }
-
-    })
+    }
 }
 
 @Composable
@@ -731,7 +873,8 @@ fun CodeRow(
     code: Long,
     privilege: Privilege,
     onReset: () -> Unit,
-    clipboard: ClipboardManager
+    clipboard: ClipboardManager,
+    onDeleted: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -769,11 +912,15 @@ fun CodeRow(
         }
 
         IconButton(
-            onClick = { runBlocking{removeCode(Store.currentGroup().id, privilege) }},
+            onClick = { runBlocking{
+                removeCode(Store.currentGroup().id, privilege)
+                }
+                onDeleted()
+            },
             modifier = Modifier.size(22.dp)
         ) {
 
-            Icon(Icons.Outlined.Delete, contentDescription = "Copiar",
+            Icon(Icons.Outlined.Delete, contentDescription = "Eliminar",
                 modifier = Modifier.size(15.dp),
                 tint = MaterialTheme.colorScheme.primary)
         }
@@ -920,6 +1067,7 @@ fun JoinGroup(onDismiss: () -> Unit, onJoin: (String) -> Unit) {
                         if (isValid) {
                             runBlocking{ submitCode(code.toLong()) }
                             onJoin(code)
+                            onDismiss()
                         }
                     },
                     enabled = isValid,

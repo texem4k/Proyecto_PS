@@ -97,15 +97,6 @@ fun UserMenuCard(
                 onClick = onDismiss
             )
 
-            MenuItemRow(
-                Icons.Default.Palette,
-                "Tema",
-                onClick = {
-                    theme.onThemeClick()
-                    onDismiss()
-                }
-            )
-
             HorizontalDivider(color = Color(0xFFEEEEEE))
 
             MenuItemRow(
