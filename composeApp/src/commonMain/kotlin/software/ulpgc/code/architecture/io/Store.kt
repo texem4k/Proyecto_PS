@@ -85,13 +85,6 @@ object Store {
 
     suspend fun onLogOut() {
         Storage.restartCurrent()
-        Storage.users.filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
-            it.localDBState = DBState.DELETED
-        }
-        Storage.groups.filterNot { it.id == Uuid.parse("00000000-0000-0000-0000-000000000000") }.forEach {
-            it.localDBState = DBState.DELETED
-        }
-        LocalDBStore.execute()
         Storage.clearAll()
         LocalDBStore.onInit()
     }
@@ -111,6 +104,11 @@ private object Storage {
     val ready = MutableStateFlow(false)
 
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
+
+    fun clearCloud(){
+        groups.removeAll { it.id != currentGroup }
+        users.removeAll { it.id != currentUser }
+    }
 
     fun clearAll(){
         groups.clear()

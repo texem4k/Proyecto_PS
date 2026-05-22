@@ -85,7 +85,15 @@ fun TaskInformationDialog(
                     Text("Editar tarea")
                 }
 
-                CustomButton(onClick = { showDeleteConfirmation = true }) {
+                CustomButton(onClick = {
+                    if(Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
+                        Store.currentGroup().users[Store.currentUser()]?.name ==Privilege.MOD.name){
+                        showDeleteConfirmation = true
+                    }
+                    else {
+                        showWarning=true
+                    }
+                }) {
                     Text("Eliminar tarea")
                 }
 

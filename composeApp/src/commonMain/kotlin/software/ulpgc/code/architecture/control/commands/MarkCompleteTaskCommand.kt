@@ -21,7 +21,15 @@ class MarkCompleteTaskCommand (val task: Task) : Command {
     fun setCompletionStat(task: Task){
         val stat = Store.completions()
             .filter { it.taskId == task.id }
+            .map{
+                println("Medios filtros $it")
+                it
+            }
             .filterNot { it.completed }
+            .map{
+                println("Todos filtros $it")
+                it
+            }
             .maxBy { it.endDate }
         stat.completed = true
         stat.endDate = Clock.System.now()

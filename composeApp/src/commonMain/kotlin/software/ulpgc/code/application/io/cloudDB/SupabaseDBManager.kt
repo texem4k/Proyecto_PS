@@ -266,7 +266,7 @@ object SupabaseDBManager: DBManager {
                 }
             }.decodeList<GroupUserData>()
             .groupBy { it.groupId }
-        return Result.success(groupData.map { it.parse(GroupUserData.parse(groupUsersData[it.id]!!)) })
+        return Result.success(groupData.map { it.parse(GroupUserData.parse(groupUsersData[it.id]?: listOf())) })
     }
 
     override suspend fun users(): Result<List<User>> = runCatching {

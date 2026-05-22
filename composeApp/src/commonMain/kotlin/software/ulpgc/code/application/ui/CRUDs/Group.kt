@@ -431,9 +431,17 @@ fun MemberRow(
     val currentUserPrivilege = Store.currentGroup().users[currentUserId]
     val isCurrentUser = member.userId == currentUserId
     val isMemberAdmin = member.privilege == Privilege.ADMIN
+    val isMemberMod = member.privilege == Privilege.MOD
     val canEditPrivileges = (currentUserPrivilege == Privilege.ADMIN || currentUserPrivilege == Privilege.MOD)
-            && !isMemberAdmin  // ← no puedes cambiar el rol del admin
-            && !isCurrentUser  // ← no puedes cambiar tu propio rol
+            && !isMemberAdmin
+            && !isCurrentUser
+            && !(currentUserPrivilege == Privilege.MOD && isMemberMod)
+
+    val assignablePrivileges = when (currentUserPrivilege) {
+        Privilege.ADMIN -> Privilege.entries.filterNot { it == Privilege.ADMIN }
+        Privilege.MOD   -> Privilege.entries.filterNot { it == Privilege.ADMIN || it == Privilege.MOD }
+        else            -> emptyList()
+    }
 
     Row(
         modifier = Modifier
@@ -456,7 +464,7 @@ fun MemberRow(
             Box(modifier = Modifier.width(370.dp)) {
                 DropdownCustom(
                     section = "",
-                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },
+                    items = assignablePrivileges,
                     selection = DropdownSelection.Single(member.privilege),
                     onItemSelected = { onPrivilegeChange(it) },
                     itemId = { it },
@@ -489,7 +497,6 @@ fun MemberRow(
     }
 }
 
-
 enum class EditGroupSection { INFO, MEMBERS, INVITE,SETTINGS }
 
 @Composable
@@ -501,6 +508,7 @@ fun EditGroup(
     var form by remember {
         mutableStateOf(
             CreateGroupFormState(
+                groupId = group.id,
                 groupName = group.name,
                 groupDescription = group.description,
                 members = group.users.map { (userId, privilege) ->
@@ -693,6 +701,10 @@ private fun EditGroupSectionSettings(
 ) {
     var exit by remember { mutableStateOf(false) }
 
+    val currentUserId = Store.currentUser()
+    val currentUserPrivilege = Store.currentGroup().users[currentUserId]
+    val canEdit = currentUserPrivilege == Privilege.ADMIN || currentUserPrivilege == Privilege.MOD
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -700,39 +712,42 @@ private fun EditGroupSectionSettings(
     ) {
         StepLabel("Ajustes del grupo")
 
-        Button(
-            onClick = {
-                val privilegesMap = form.members.associateTo(mutableMapOf()) { it.userId to it.privilege }
+        if (canEdit) {
+            Button(
+                onClick = {
+                    val privilegesMap = form.members.associateTo(mutableMapOf()) { it.userId to it.privilege }
 
-                val command = CommandBuilder()
-                    .set("id", Store.currentGroup().id.toString())
-                    .set("name", form.groupName)
-                    .set("description", form.groupDescription)
-                    .build(CommandType.UPDATE_GROUP)
+                    val command = CommandBuilder()
+                        .set("id", Store.currentGroup().id.toString())
+                        .set("name", form.groupName)
+                        .set("description", form.groupDescription)
+                        .build(CommandType.UPDATE_GROUP)
 
-                val command2 = CommandBuilder()
-                    .set("id", Store.currentGroup().id.toString())
-                    .set("privileges", Group.privilegeString(privilegesMap))
-                    .build(CommandType.EDIT_PRIVILEGES)
+                    val command2 = CommandBuilder()
+                        .set("id", Store.currentGroup().id.toString())
+                        .set("privileges", Group.privilegeString(privilegesMap))
+                        .build(CommandType.EDIT_PRIVILEGES)
 
-                command
-                    .onSuccess {
-                        CommandLauncher.launch(it)
-                        command2
-                            .onSuccess {
-                                CommandLauncher.launch(it)
-                                onSave()
-                            }
-                            .onFailure { println("error command2: ${it.message}") }
-                    }
-                    .onFailure { println("error command1: ${it.message}") }
-            },
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Guardar configuración")
+                    command
+                        .onSuccess {
+                            CommandLauncher.launch(it)
+                            command2
+                                .onSuccess {
+                                    CommandLauncher.launch(it)
+                                    onSave()
+                                }
+                                .onFailure { println("error command2: ${it.message}") }
+                        }
+                        .onFailure { println("error command1: ${it.message}") }
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Guardar configuración")
+            }
         }
+
         if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000")
             && Store.currentGroup().id != Store.currentUser()) {
             OutlinedButton(

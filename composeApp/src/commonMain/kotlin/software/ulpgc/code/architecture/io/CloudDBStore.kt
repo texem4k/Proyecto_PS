@@ -45,7 +45,7 @@ object CloudDBStore: Coroutinable {
         cleanLists()
     }
 
-    override val delayMilis: Long = 1_000L
+    override val delayMilis: Long = 5_000L
 
     override suspend fun onInit() {
         LogMaster.log("Iniciando Cloud DB Store")
