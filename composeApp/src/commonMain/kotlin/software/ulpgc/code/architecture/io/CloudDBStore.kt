@@ -35,12 +35,12 @@ object CloudDBStore: Coroutinable {
     }
 
     private suspend fun updateRequired(objects: Sequence<DBObject>) {
-        manager.update(objects)
+        manager.update(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
     private suspend fun deleteRequired(objects: Sequence<DBObject>) {
-        manager.delete(objects)
+        manager.delete(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.CLEARED }
         cleanLists()
     }

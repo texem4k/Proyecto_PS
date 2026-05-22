@@ -256,7 +256,7 @@ fun CreateTask(
                             .set("interval", form.taskInterval.toString())
                             .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
-                            .set("users", if (isRoot) "" else form.taskUsers.joinToString(", "))
+                            .set("users", if (isRoot || form.taskUsers.isEmpty()) "" else form.taskUsers.joinToString(", "))
 
                         val command = if (task != null) {
                             builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)

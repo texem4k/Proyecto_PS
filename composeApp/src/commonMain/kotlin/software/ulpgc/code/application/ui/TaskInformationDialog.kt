@@ -21,6 +21,7 @@ import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.architecture.model.Privilege
 import software.ulpgc.code.architecture.model.tasks.Task
 
 @Composable
@@ -38,6 +39,7 @@ fun TaskInformationDialog(
         selectedTask.time.mostrar().split(",")
     }
 
+    var showWarning by remember {mutableStateOf(false)}
     val userName = Store.users().find { it.id == Store.currentUser() }?.name ?: "Usuario"
 
     val isRoot = userName == "root"
@@ -70,8 +72,15 @@ fun TaskInformationDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CustomButton(onClick = {
-                    onEdit(selectedTask)
-                    onRequestEditNavigation?.invoke()
+                    if(Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
+                        Store.currentGroup().users[Store.currentUser()]?.name ==Privilege.MOD.name){
+                        onEdit(selectedTask)
+                        onRequestEditNavigation?.invoke()
+                    }
+                    else{
+                        showWarning=true
+                    }
+
                 }) {
                     Text("Editar tarea")
                 }
@@ -86,6 +95,9 @@ fun TaskInformationDialog(
             }
         }
     )
+    if(showWarning) {
+        NoPermission(onDismiss)
+    }
 
     if (showDeleteConfirmation) {
         ConfirmDeleteDialog(

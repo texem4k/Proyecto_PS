@@ -254,7 +254,8 @@ fun GroupStepBasicInfo(
 ) {
     val currentUserId = Store.currentUser()
     val currentUserPrivilege = Store.currentGroup().users[currentUserId]
-    val canEdit = currentUserPrivilege == Privilege.ADMIN
+    val isCreating = form.groupId == null
+    val canEdit = isCreating || currentUserPrivilege == Privilege.ADMIN
             || currentUserPrivilege == Privilege.MOD
 
     Column(
@@ -278,28 +279,23 @@ fun GroupStepBasicInfo(
                 keyboardOptions = KeyboardOptions.Default
             )
         } else {
-            Text(
-                text = "Nombre:",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(0.9f)
-            )
-            Text(
-                text = form.groupName,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.fillMaxWidth(0.9f)
-            )
-            Text(
-                text = "Descripción:",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(0.9f)
-            )
-            Text(
-                text = form.groupDescription.ifEmpty { "Sin descripción" },
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.fillMaxWidth(0.9f)
-            )
+                Text(
+                    text = "Nombre:" + form.groupName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    textAlign = TextAlign.Center,
+
+                    )
+
+                Text(
+                    text = "Descripción:" + form.groupDescription.ifEmpty { "Sin descripción" },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    textAlign = TextAlign.Center
+
+                )
         }
     }
 }
@@ -456,11 +452,11 @@ fun MemberRow(
 
         if (canEditPrivileges) {
 
-            Box(modifier = Modifier.width(350.dp)) {
+            Box(modifier = Modifier.width(370.dp)) {
 
                 DropdownCustom(
                     section = "",
-                    items = Privilege.entries,
+                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },
                     selection = DropdownSelection.Single(member.privilege),
                     onItemSelected = { onPrivilegeChange(it) },
                     itemId = { it },
@@ -517,7 +513,7 @@ fun EditGroup(
                 members = group.users.map { (userId, privilege) ->
                         MemberInvite(
                             email = Store.users().find { it.id == userId }?.name ?: "",
-                            userId = userId,  // ← lo guardas aquí
+                            userId = userId,
                             privilege = privilege
                         )
                 }
@@ -770,7 +766,7 @@ private fun EditGroupSectionSettings(
             }
 
             if (exit) {
-                ExitDialog(onChange = { exit = false })
+                ExitDialog(onChange = { exit = false; onLeave() })
             }
         }
     }
