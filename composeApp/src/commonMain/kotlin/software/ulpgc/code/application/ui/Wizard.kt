@@ -82,7 +82,7 @@ fun WizardNavigation(
     ) {
         if (step > 0) {
             OutlinedButton(onClick = onBack) {
-                Text("← Anterior")
+                Text("← Anterior", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         } else {
             Spacer(Modifier.width(1.dp))
@@ -116,12 +116,12 @@ fun StepIndicator(index: Int, current: Int, label: String) {
     val isActive = index == current
     val circleColor = when {
         isDone || isActive -> MaterialTheme.colorScheme.primary
-        else               -> MaterialTheme.colorScheme.outlineVariant
+        else               -> MaterialTheme.colorScheme.primaryContainer
     }
     val textColor = when {
         isActive -> MaterialTheme.colorScheme.primary
         isDone   -> MaterialTheme.colorScheme.onSurfaceVariant
-        else     -> MaterialTheme.colorScheme.outlineVariant
+        else     -> MaterialTheme.colorScheme.primaryContainer
     }
 
     Column(
@@ -159,7 +159,7 @@ fun StepLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = Modifier.padding(bottom = 8.dp)
     )
 }

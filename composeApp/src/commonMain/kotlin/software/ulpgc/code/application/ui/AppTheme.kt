@@ -18,6 +18,7 @@ enum class AppThemeType {
 private val GreenColorScheme = lightColorScheme(
     primary = Color(0xFF3D6B4F),
     onPrimary = Color(0xFFFFFFFF),
+    secondary = Color(0xFFA8C8B0),
     primaryContainer = Color(0xFFB8D4C0),
     onPrimaryContainer = Color(0xFF1A3326),
     background = Color(0xFFEFF4F0),
@@ -83,6 +84,7 @@ private val LavandaColorScheme = lightColorScheme(
 private val BlueColorScheme = lightColorScheme(
     primary = Color(0xFF1A6B8A),
     onPrimary = Color(0xFFFFFFFF),
+    secondary = Color(0xFFA8C4D4),
     primaryContainer = Color(0xFFB8D8E8),
     onPrimaryContainer = Color(0xFF0A2F3D),
     background = Color(0xFFEDF4F8),
@@ -101,6 +103,7 @@ private val BlueColorScheme = lightColorScheme(
 private val TerracotaColorScheme = lightColorScheme(
     primary = Color(0xFF8B4A2E),
     onPrimary = Color(0xFFFFFFFF),
+    secondary = Color(0xFFD4A882),
     primaryContainer = Color(0xFFE8C4B0),
     onPrimaryContainer = Color(0xFF3D1A0A),
     background = Color(0xFFF8F0EC),
@@ -135,8 +138,8 @@ private val DarkColorScheme = darkColorScheme(
     background = Color(0xFF121212),
     onBackground = Color(0xFFEAEAEA),
 
-    surface = Color(0xFF1C1C1C),
-    onSurface = Color(0xFFEAEAEA),
+    surface = Color(0xFF2E3439),
+    onSurface =  Color(0xFFF8F5F5),
 
     surfaceVariant = Color(0xFFD0D0D0),
     onSurfaceVariant = Color(0xFF2A2A2A),

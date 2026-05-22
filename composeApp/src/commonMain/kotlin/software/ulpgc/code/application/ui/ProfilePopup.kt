@@ -68,9 +68,10 @@ fun UserMenuCard(
                     Text(
                         name,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        color = Color.Black
                     )
-                    Text(role, color = Color.Gray, fontSize = 12.sp)
+                    Text(role, color = Color.DarkGray, fontSize = 12.sp)
                 }
             }
 
@@ -142,7 +143,7 @@ fun MenuItemRow(
     ) {
         Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp), tint = Color.DarkGray)
         Spacer(Modifier.width(12.dp))
-        Text(label, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(label, fontSize = 14.sp, modifier = Modifier.weight(1f), color = Color.Black)
         if (hasArrow) {
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
         }

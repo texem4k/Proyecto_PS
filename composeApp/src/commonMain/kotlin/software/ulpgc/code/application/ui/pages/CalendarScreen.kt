@@ -43,6 +43,7 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.focus.FocusRequester
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
@@ -187,10 +188,10 @@ fun DayEntriesPanel(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(text = "Entradas para $date")
+        Text(text = "Entradas para $date", color = MaterialTheme.colorScheme.onPrimaryContainer)
 
         if (entries.isEmpty()) {
-            Text(text = "No hay eventos para este día")
+            Text(text = "No hay eventos para este día", color = MaterialTheme.colorScheme.onPrimaryContainer)
         } else {
             entries.forEach { entry ->
                 Row(
@@ -198,14 +199,14 @@ fun DayEntriesPanel(
                         .fillMaxWidth()
                         .clickable { selectedEntry = entry }
                         .background(
-                            color = Color(0xFFF5F5F5),
+                            color = MaterialTheme.colorScheme.tertiary,
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(7.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(text = entry.title)
-                        Text(text = entry.time, color = Color.Gray)
+                        Text(text = entry.title, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(text = entry.time, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -262,12 +263,14 @@ fun DayDetailDialog(
 
     if (!showCreateTask) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.background,
             onDismissRequest = onDismiss,
             title = {
                 Text(
                     text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             },
             text = {

@@ -84,16 +84,11 @@ private fun LegendDropdown(scrollState: androidx.compose.foundation.ScrollState)
         if (expanded) expanded = false
     }
 
-    Box {
-        DropdownCustom(
-            section = "Leyenda",
-            items = CalendarConstants.LEGEND_ITEMS_CALENDAR.toList(),
-            selection = DropdownSelection.Single<String>(id = ""),
-            onItemSelected = { },
-            itemId = { pair -> pair.first },
-            itemName = { pair -> pair.first }
-        )
-        /*DropdownMenu(
+    Box() {
+        Button(onClick = { expanded = true }) {
+            Text(text = "Leyenda")
+        }
+        DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             tonalElevation = 0.dp,
@@ -111,7 +106,7 @@ private fun LegendDropdown(scrollState: androidx.compose.foundation.ScrollState)
                     onClick = {}
                 )
             }
-        }*/
+        }
     }
 }
 

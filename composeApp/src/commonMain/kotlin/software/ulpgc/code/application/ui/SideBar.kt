@@ -217,8 +217,9 @@ fun ThemeDialog(
     onDismiss: () -> Unit
 ) {
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.onPrimary,
         onDismissRequest = onDismiss,
-        title = { Text("Selecciona un tema") },
+        title = { Text("Selecciona un tema", color = Color.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
@@ -318,7 +319,7 @@ fun GroupSelectorMenu(
                                 color = if (isSelected)
                                     MaterialTheme.colorScheme.primary
                                 else
-                                    Color.DarkGray
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         },
                         onClick = {

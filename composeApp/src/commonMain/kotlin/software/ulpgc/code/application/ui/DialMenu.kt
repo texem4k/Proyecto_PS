@@ -116,7 +116,8 @@ fun DialMenu(
         FloatingActionButton(
             onClick = { expanded = !expanded },
             shape = CircleShape,
-            modifier = Modifier.size(44.dp)
+            modifier = Modifier.size(44.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
         ) {
             Icon(
                 imageVector = Icons.Default.Add,

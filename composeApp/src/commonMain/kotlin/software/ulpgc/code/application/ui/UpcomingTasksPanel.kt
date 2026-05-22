@@ -73,6 +73,7 @@ fun UpcomingTasksPanel(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
@@ -89,6 +90,7 @@ fun UpcomingTasksPanel(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "Opciones",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
 
@@ -152,7 +154,7 @@ fun UpcomingTasksPanel(
                             Text(
                                 text = "${Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"} $endDate $endHour",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
