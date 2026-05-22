@@ -79,11 +79,8 @@ fun CreateGroup(
 ) {
 
     var form by remember { mutableStateOf(CreateGroupFormState()) }
-
     var step by remember { mutableStateOf(0) }
-
     var formError by remember { mutableStateOf(false) }
-
     var errorMsg by remember { mutableStateOf("") }
 
     if (formError) {
@@ -313,7 +310,9 @@ fun GroupStepMembers(
     val clipboard = LocalClipboardManager.current
 
     LaunchedEffect(Unit) {
-        generatedCodes = getCodes(Store.currentGroup().id)
+        if (form.groupId != null) {
+            generatedCodes = getCodes(form.groupId)
+        }
     }
 
     Column(
@@ -429,8 +428,11 @@ fun MemberRow(
 ) {
     val currentUserId = Store.currentUser()
     val currentUserPrivilege = Store.currentGroup().users[currentUserId]
-    val canEditPrivileges = currentUserPrivilege == Privilege.ADMIN
-            || currentUserPrivilege == Privilege.MOD
+    val isCurrentUser = member.userId == currentUserId
+    val isMemberAdmin = member.privilege == Privilege.ADMIN
+    val canEditPrivileges = (currentUserPrivilege == Privilege.ADMIN || currentUserPrivilege == Privilege.MOD)
+            && !isMemberAdmin  // ← no puedes cambiar el rol del admin
+            && !isCurrentUser  // ← no puedes cambiar tu propio rol
 
     Row(
         modifier = Modifier
@@ -442,18 +444,15 @@ fun MemberRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = member.email,
+            text = member.email + if (isCurrentUser) " (tú)" else "",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f)
         )
 
         Spacer(Modifier.width(8.dp))
 
-
         if (canEditPrivileges) {
-
             Box(modifier = Modifier.width(370.dp)) {
-
                 DropdownCustom(
                     section = "",
                     items = Privilege.entries.filterNot { it == Privilege.ADMIN },
@@ -463,7 +462,6 @@ fun MemberRow(
                     itemName = { it.name }
                 )
             }
-
             IconButton(
                 onClick = {
                     val command = CommandBuilder()
@@ -478,18 +476,12 @@ fun MemberRow(
             ) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Eliminar miembro")
             }
-
         } else {
-
             Box(modifier = Modifier.width(350.dp)) {
-
                 Text(
                     text = member.privilege.name,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(
-                        horizontal = 12.dp,
-                        vertical = 8.dp
-                    )
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
         }
@@ -644,7 +636,6 @@ private fun EditGroupSectionMembers(
     form: CreateGroupFormState,
     onFormChange: (CreateGroupFormState) -> Unit
 ) {
-
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -662,18 +653,9 @@ private fun EditGroupSectionMembers(
                     .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                val currentUserId = Store.currentUser()
-
-                val currentUserName =
-                    Store.users().find { it.id == currentUserId }?.name ?: "Usuario"
-
-                val visibleMembers = form.members.filter {
-                    it.email != currentUserName
-                }
-
-                visibleMembers.forEach { member ->
+                form.members.forEach { member ->
                     MemberRow(
-                        member = member ,
+                        member = member,
                         onPrivilegeChange = { newPriv ->
                             onFormChange(form.copy(
                                 members = form.members.map {
@@ -689,7 +671,7 @@ private fun EditGroupSectionMembers(
                             ))
                             val command = CommandBuilder()
                                 .set("id", Store.currentGroup().id.toString())
-                                .set("userId", member.userId.toString())  // ← ID real del miembro
+                                .set("userId", member.userId.toString())
                                 .build(CommandType.EXIT_GROUP)
                             command
                                 .onSuccess { CommandLauncher.launch(it) }

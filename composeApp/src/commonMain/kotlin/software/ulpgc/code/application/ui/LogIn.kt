@@ -291,15 +291,3 @@ fun RegisterDialog(
         )
     }
 }
-
-fun validateEmail(email: String): Boolean {
-    return "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex().matches(email)
-}
-
-fun validatePassword(pass: String): Boolean {
-    return "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}\$".toRegex().matches(pass)
-}
-
-fun validateUsername(user: String): Boolean {
-    return !user.isEmpty()
-}

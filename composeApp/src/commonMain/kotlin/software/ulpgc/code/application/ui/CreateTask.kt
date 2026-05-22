@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,7 +37,6 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlinx.datetime.Instant
 import software.ulpgc.code.architecture.io.Store
-import software.ulpgc.code.architecture.io.Store.currentGroup
 import kotlin.uuid.Uuid
 
 
@@ -84,7 +81,7 @@ fun CreateTask(
     val action = if (task != null) "Editar" else "Crear"
     var topics by remember { mutableStateOf(Store.topics().toList()) }
 
-    if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000")){
+    if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000") && Store.currentGroup().users.size > 1){
         totalSteps = 4
     }
 

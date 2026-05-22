@@ -80,7 +80,9 @@ fun UpcomingTasksPanel(
                     .fillMaxWidth()
             )
 
-            if (screen == Screen.TASKS) {
+            if (screen == Screen.TASKS &&
+                Store.currentGroup().users[Store.currentUser()]?.name==Privilege.ADMIN.name ||
+                Store.currentGroup().users[Store.currentUser()]?.name==Privilege.MOD.name) {
                 Box(modifier = Modifier.align(Alignment.CenterEnd)) {
                     IconButton(
                         onClick = { expandDropdown = true },

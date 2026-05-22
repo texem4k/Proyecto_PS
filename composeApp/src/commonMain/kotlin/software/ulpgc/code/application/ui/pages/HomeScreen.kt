@@ -65,6 +65,7 @@ import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.isDesktop
+import kotlin.uuid.Uuid
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -310,20 +311,25 @@ fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
         .focusRequester(focusRequest)
         .focusable()
         .onPreviewKeyEvent { event ->
-            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-            when {
-                event.isCtrlPressed && event.key == Key.Z -> {
-                    CommandLauncher.undo()
-                    onDeleted()
-                    true
+            if (Store.currentUser() == null) {
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when {
+                    event.isCtrlPressed && event.key == Key.Z -> {
+                        CommandLauncher.undo()
+                        onDeleted()
+                        true
+                    }
+
+                    event.isCtrlPressed && event.key == Key.Y -> {
+                        CommandLauncher.redo()
+                        onDeleted()
+                        true
+                    }
+
+                    else -> false
                 }
-                event.isCtrlPressed && event.key == Key.Y -> {
-                    CommandLauncher.redo()
-                    onDeleted()
-                    true
-                }
-                else -> false
             }
+            false
         }
 }
 

@@ -84,9 +84,7 @@ fun CalendarScreen(
         getFilteredEntries(filters)
     }
 
-    Row(
-        modifier = setUndoRedo(onDeleted, focusRequester)
-    ) {
+    Row(modifier = setUndoRedo(onDeleted, focusRequester)) {
         SideBar(
             onNavigate = onNavigate,
             selectedScreen = Screen.CALENDAR,

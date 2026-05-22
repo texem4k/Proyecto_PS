@@ -213,7 +213,7 @@ fun App(
             if (storeReady && showCreateGroup) {
                 CreateGroup(
                     onClose = { showCreateGroup = false },
-                    onSubmit = { }
+                    onSubmit = { showCreateGroup = false }
                 )
             }
         }
