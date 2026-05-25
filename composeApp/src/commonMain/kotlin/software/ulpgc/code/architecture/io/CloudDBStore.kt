@@ -45,7 +45,7 @@ object CloudDBStore: Coroutinable {
         cleanLists()
     }
 
-    override val delayMilis: Long = 2_000L
+    override val delayMilis: Long = 1_000L
 
     override suspend fun onInit() {
         LogMaster.log("Iniciando Cloud DB Store")
@@ -67,7 +67,10 @@ object CloudDBStore: Coroutinable {
                 it.localDBState = DBState.NEW
                 Store.add(it)
             }
-            else if (obj != it) update(obj, it)
+            else if (obj != it) {
+                update(obj, it)
+                Store.refresh()
+            }
             else obj.cloudDBState = DBState.DEFAULT
         }
     }

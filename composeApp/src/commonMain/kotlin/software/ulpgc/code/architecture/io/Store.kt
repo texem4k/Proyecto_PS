@@ -1,8 +1,13 @@
 package software.ulpgc.code.architecture.io
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import software.ulpgc.code.architecture.control.exceptions.AppException
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
@@ -12,6 +17,14 @@ import kotlin.collections.asSequence
 import kotlin.uuid.Uuid
 
 object Store {
+
+    private val _refreshFlag = MutableStateFlow(0)
+    val refreshFlag: StateFlow<Int> = _refreshFlag.asStateFlow()
+
+    fun refresh() {
+        _refreshFlag.value++
+    }
+
     val ready: StateFlow<Boolean> = Storage.ready.asStateFlow()
     fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager, canUseCloudDB: () -> Boolean) {
         LocalDBStore.initialize(
@@ -69,6 +82,8 @@ object Store {
             is Task -> Storage.tasks.add(obj)
             is CompletionStat -> Storage.stats.add(obj)
         }
+
+        refresh()
     }
 
     fun <T: DBObject> tryFind(obj: T): T? {
@@ -109,6 +124,7 @@ private object Storage {
         groups.removeAll { it.id != currentGroup }
         users.removeAll { it.id != currentUser }
     }
+
 
     fun clearAll(){
         groups.clear()
