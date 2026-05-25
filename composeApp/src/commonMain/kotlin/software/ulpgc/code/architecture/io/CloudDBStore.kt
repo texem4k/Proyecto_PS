@@ -30,17 +30,17 @@ object CloudDBStore: Coroutinable {
     }
 
     private suspend fun insertRequired(objects: Sequence<DBObject>) {
-        manager.insert(objects)
+        manager.insert(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
     private suspend fun updateRequired(objects: Sequence<DBObject>) {
-        manager.update(objects)
+        manager.update(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.DEFAULT }
     }
 
     private suspend fun deleteRequired(objects: Sequence<DBObject>) {
-        manager.delete(objects)
+        manager.delete(objects).getOrThrow()
         objects.forEach { it.cloudDBState = DBState.CLEARED }
         cleanLists()
     }
@@ -67,7 +67,10 @@ object CloudDBStore: Coroutinable {
                 it.localDBState = DBState.NEW
                 Store.add(it)
             }
-            else if (obj != it) update(obj, it)
+            else if (obj != it) {
+                update(obj, it)
+                Store.refresh()
+            }
             else obj.cloudDBState = DBState.DEFAULT
         }
     }

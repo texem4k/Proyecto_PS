@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.login
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.register
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
+import software.ulpgc.code.architecture.control.logs.LogMaster
 
 enum class DialogState {
     LOGIN,
@@ -34,25 +42,23 @@ fun AuthFlow(
     onAuthSuccess: () -> Unit,
 ) {
     var dialogState by remember { mutableStateOf(DialogState.LOGIN) }
+    val authReady = SupabaseAuth.ready.collectAsState()
+
 
     LaunchedEffect(dialogState) {
         if (dialogState == DialogState.NONE) onDismiss()
+    }
+
+    if(!authReady.value){
+        return
     }
     when (dialogState) {
         DialogState.LOGIN -> LoginDialog(
             onDismiss    = { dialogState = DialogState.NONE },
             onCreateAccount = { dialogState = DialogState.REGISTER },
-            onLoginSuccess  = { email, pass ->
-                onAuthSuccess()
-                dialogState = DialogState.NONE
-            }
         )
         DialogState.REGISTER -> RegisterDialog(
-            onDismiss       = { dialogState = DialogState.NONE },
-            onRegisterSuccess = { email, pass, name ->
-                onAuthSuccess()
-                dialogState = DialogState.NONE
-            }
+            onDismiss       = { dialogState = DialogState.NONE }
         )
         DialogState.NONE -> Unit
     }
@@ -63,13 +69,17 @@ fun AuthFlow(
 fun LoginDialog(
     onDismiss: () -> Unit,
     onCreateAccount: () -> Unit,
-    onLoginSuccess: (email: String, pass: String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var pass  by remember { mutableStateOf("") }
     var validEmail by remember { mutableStateOf(false) }
     var validPass by remember { mutableStateOf(false) }
-    var touch by remember { mutableStateOf(false) }
+    var errLogin by remember { mutableStateOf(false) }
+
+    var emailFocused by remember { mutableStateOf(false) }
+    var emailTouched by remember { mutableStateOf(false) }
+    var passFocused  by remember { mutableStateOf(false) }
+    var passTouched  by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -85,55 +95,88 @@ fun LoginDialog(
                     label         = "Email",
                     onValueChange = { email = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (emailFocused && !focused) emailTouched = true
+                        emailFocused = focused
+                        validEmail = validateEmail(email)
+                    }
                 )
 
-                if(!validEmail&&touch){
-                    Text("El formato del email no es válido", color = Color.Red)
+                if (emailTouched && !validEmail){
+                    Text(
+                        "El formato del email no es válido",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
+
                 TextFieldCustom(
                     value         = pass,
                     label         = "Contraseña",
                     onValueChange = { pass = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = true
+                    isPassword    = true,
+                    onFocusChanged  = { focused ->
+                        if (passFocused && !focused) passTouched = true
+                        passFocused = focused
+                        validPass = validatePassword(pass)
+                    }
                 )
-                if(!validPass&&touch){
+
+                if(!validPass && passTouched){
                     Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red, textAlign = TextAlign.Center)
                 }
+
                 Spacer(Modifier.height(20.dp))
                 Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.", textAlign = TextAlign.Center)
             }
         },
         confirmButton = {
-                Row(horizontalArrangement = Arrangement.Center) {
-                    Button(onClick = {
-                        touch=true
-                        if(validateEmail(email)) {
-                            validEmail = true
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+
+            ) {
+                CustomButton(
+                    onClick = {
+                        if (validEmail && validPass){
+                            try{
+                                runBlocking {login(email, pass)}
+                                onDismiss()
+                            } catch (e: Exception){
+                                errLogin=true
+                            }
                         }
-                        if(validatePassword(pass)) {
-                            validPass = true
-                        }
-                        if(validEmail && validPass) {
-                            onLoginSuccess(email, pass)
-                        }
-                    })
-                    {
-                        Text("Iniciar sesión")
                     }
-                    Button(onClick = onCreateAccount) { Text("Crear cuenta") }
-                    Button(onClick = onDismiss)       { Text("Cancelar")     }
-                }
+                ) { Text("Iniciar sesión") }
+
+                CustomButton(onClick = onCreateAccount) { Text("Crear cuenta") }
+
+                CustomButton(onClick = onDismiss) { Text("Cancelar") }
+            }
         }
     )
+
+    if(errLogin){
+        AlertDialog(
+            onDismissRequest = {errLogin=false},
+            text = {
+                Text("Datos inválidos, comprueba de nuevo o crea una cuenta nueva")
+            },
+            confirmButton = {
+                Button(onClick = {errLogin=true}){
+                    Text("Confirmar")
+                }
+            }
+        )
+    }
 }
 
 
 @Composable
 fun RegisterDialog(
-    onDismiss: () -> Unit,
-    onRegisterSuccess: (email: String, pass: String, name: String) -> Unit
+    onDismiss: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var name  by remember { mutableStateOf("") }
@@ -142,6 +185,15 @@ fun RegisterDialog(
     var validPass by remember { mutableStateOf(false) }
     var validUser by remember { mutableStateOf(false) }
     var touch by remember { mutableStateOf(false) }
+
+    var nameFocused by remember { mutableStateOf(false) }
+    var nameTouched by remember { mutableStateOf(false) }
+    var emailFocused by remember { mutableStateOf(false) }
+    var emailTouched by remember { mutableStateOf(false) }
+    var passFocused  by remember { mutableStateOf(false) }
+    var passTouched  by remember { mutableStateOf(false) }
+
+    var errRegister by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title   = { Text("Crear cuenta") },
@@ -156,42 +208,68 @@ fun RegisterDialog(
                     label         = "Nombre de usuario",
                     onValueChange = { name = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (nameFocused && !focused) nameTouched = true
+                        nameFocused = focused
+                        validUser = !name.isEmpty()
+                    }
                 )
+                if (nameTouched && !validUser){
+                    Text("El nombre no puede estar vacío.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 TextFieldCustom(
                     value         = email,
                     label         = "Correo electrónico",
                     onValueChange = { email = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = false
+                    isPassword    = false,
+                    onFocusChanged  = { focused ->
+                        if (emailFocused && !focused) emailTouched = true
+                        emailFocused = focused
+                        validEmail = validateEmail(email)
+                    }
                 )
+                if (emailTouched && !validEmail){
+                    Text(
+                        "El formato del email no es válido",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 TextFieldCustom(
                     value         = pass,
                     label         = "Contraseña",
                     onValueChange = { pass = it },
                     keyboardOptions = KeyboardOptions.Default,
-                    isPassword    = true
+                    isPassword    = true,
+                    onFocusChanged  = { focused ->
+                        if (passFocused && !focused) passTouched = true
+                        passFocused = focused
+                        validPass = validatePassword(pass)
+                    }
                 )
+                if (passTouched && !validPass){
+                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
-                touch=true
-                if(validateEmail(email)) {
-                    validEmail = true
-                }
-                if(validatePassword(pass)) {
-                    validPass = true
-                }
-
-                if(validateUsername(name)) {
-                    validUser = true
-                }
-
                 if(validEmail&& validPass&&validUser) {
-                    onRegisterSuccess(email, pass, name) }
+                    try{
+                        runBlocking{register(name, email, pass)}.getOrThrow()
+                        onDismiss()
+                    }catch(e: Exception){
+                        LogMaster.log(e.toString())
+                        LogMaster.log(e.message!!)
+                        errRegister = true
+                    }
                 }
-            ){
+            }){
                 Text("Crear cuenta")
             }
         },
@@ -199,25 +277,17 @@ fun RegisterDialog(
             Button(onClick = onDismiss) { Text("Cancelar") }
         }
     )
+    if(errRegister){
+        AlertDialog(
+            onDismissRequest = {errRegister=false},
+            text = {
+                Text("Datos inválidos, comprueba de nuevo o crea una cuenta nueva")
+            },
+            confirmButton = {
+                Button(onClick = {errRegister=false}){
+                    Text("Confirmar")
+                }
+            }
+        )
+    }
 }
-
-fun validateEmail(email: String): Boolean {
-    return "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex().matches(email)
-}
-
-fun validatePassword(pass: String): Boolean {
-    return "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}\$".toRegex().matches(pass)
-}
-
-fun validateUsername(user: String): Boolean {
-    //Logica de buscar nombres de usuario en base de datos
-    return !user.isEmpty()
-}
-
-
-
-// Modelo del usuario autenticado
-data class UserSession(
-    val email: String,
-    val name: String
-)

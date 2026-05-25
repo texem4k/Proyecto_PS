@@ -1,6 +1,5 @@
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
@@ -81,9 +80,11 @@ fun TasksScreen(
         Row(modifier = Modifier.fillMaxSize()) {
 
             SideBar(
-                selectedScreen = Screen.TASKS,
                 onNavigate = onNavigate,
-                onSettingsClick = onSettingsClick
+                selectedScreen = Screen.TASKS,
+                onSettingsClick = onSettingsClick,
+                onRefresh = {version++},
+                version=version
             )
 
             Column(
@@ -146,7 +147,7 @@ fun TasksScreen(
                     if (!Store.tasks().any { t -> !t.isCompleted }) {
                         Text(
                             "No tienes ninguna tarea ahora mismo, ¡Puedes descansar un poco \uD83D\uDE09!",
-                            fontSize = 18.sp
+                            fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     } else {
                         LazyVerticalGrid(
@@ -204,6 +205,7 @@ fun TasksScreen(
                     showCreateTaskcopy = false
                     onCreated()
                     onNavigate(Screen.TASKS)
+                    version++
                 }
             )
 
@@ -219,21 +221,15 @@ fun TasksScreen(
                 dismissOnClickOutside = false
             )
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                CreateTask(
-                    task = taskToEdit,
-                    onClose = {
-                        showEditTask = false
-                        onEditDone()
-                        onCreated()
-                    }
-                )
-            }
+            CreateTask(
+                task = taskToEdit,
+                onClose = {
+                    showEditTask = false
+                    onEditDone()
+                    onCreated()
+                    version++
+                }
+            )
         }
     }
 
@@ -242,6 +238,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTopic = false
                 onCreated()
+                version++
             }
         )
     }
@@ -251,6 +248,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTag = false
                 onCreated()
+                version++
             },
             null
         )
@@ -261,8 +259,9 @@ fun TasksScreen(
             onClose = {
                 showCreateGroup = false
                 onCreated()
+                version++
             },
-            onSubmit = { }
+            onSubmit = { version++ }
         )
     }
 }

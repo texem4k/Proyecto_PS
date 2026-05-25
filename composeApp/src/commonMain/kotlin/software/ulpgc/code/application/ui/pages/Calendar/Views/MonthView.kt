@@ -136,7 +136,7 @@ fun MonthView(
                     monthBody = { _, content ->
                         Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
                                 .padding(horizontal = 2.dp)
                         ) { content() }
                     },
@@ -190,7 +190,7 @@ fun DayCell(
             .height(cellHeight)
             .padding(2.dp)
             .border(1.dp, MaterialTheme.colorScheme.primary)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary)
             .clickable(enabled = day.position == DayPosition.MonthDate, onClick = onClick),
         contentAlignment = Alignment.TopStart
     ) {
@@ -199,7 +199,7 @@ fun DayCell(
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().height(24.dp)) {
                 Box(
                     modifier = Modifier
-                        .size(25.dp)
+                        .size(27.dp)
                         .fillMaxHeight()
                         .padding(bottom = 2.dp, start = 4.dp),
                     contentAlignment = Alignment.Center
@@ -210,18 +210,18 @@ fun DayCell(
                             isSelected -> Color.White
                             day.date == today -> Color(0xFF4F6EF7)
                             day.position != DayPosition.MonthDate -> MaterialTheme.colorScheme.secondary
-                            else -> Color.Unspecified
+                            else -> MaterialTheme.colorScheme.onPrimaryContainer
                         },
                         fontWeight = if (isSelected || day.date == today) FontWeight.SemiBold else FontWeight.Normal,
-                        fontSize = 15.sp,
-                        lineHeight = 15.sp
+                        fontSize = 20.sp,
+                        lineHeight = 22.sp
                     )
                 }
                 Box(
                     Modifier
                         .padding(start = 4.dp)
                         .weight(1f)
-                        .height(20.dp)
+                        .height(22.dp)
                         .background(urgencyColor)
                         .fillMaxHeight()
                 )

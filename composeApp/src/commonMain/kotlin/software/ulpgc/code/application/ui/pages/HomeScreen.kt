@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,6 +65,8 @@ import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.toFormattedHour
 import software.ulpgc.code.architecture.io.Store
+import software.ulpgc.code.isDesktop
+
 
 data class DialMenuItem(
     val icon: ImageVector,
@@ -93,26 +96,29 @@ fun HomeScreen(
 
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var selectedDate by remember { mutableStateOf(today) }
-    var version by remember { mutableStateOf(0) }
 
 
-
-    val sampleEntries = remember(version) {
+    val refreshFlag by Store.refreshFlag.collectAsState()
+    val sampleEntries = remember(refreshFlag) {
         getFilteredEntries(TaskFilters(true, setOf("No completadas")))
     }
 
-    val priorityTask = remember (version) { TaskOptimizer.sortedTasks.toList() }
+    val priorityTask = remember (refreshFlag) { TaskOptimizer.sortedTasks.toList() }
 
     Box(
-        modifier = setUndoRedo({ version++; onDeleted() } , focusRequester)
+        modifier = setUndoRedo({ Store.refresh(); onDeleted() } , focusRequester)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            SideBar(
-                selectedScreen = Screen.HOME,
-                onNavigate = onNavigate,
-                onSettingsClick = onSettingsClick
-            )
+            if(isDesktop()){
+                SideBar(
+                    selectedScreen = Screen.HOME,
+                    onNavigate = onNavigate,
+                    onSettingsClick = onSettingsClick,
+                    onRefresh={ Store.refresh() },
+                    version = refreshFlag
+                )
+            }
 
             Column(
                 modifier = Modifier
@@ -184,7 +190,7 @@ fun HomeScreen(
 
                                     MarkTaskIcon(task, onDeleted = {
                                         onDeleted()
-                                        version++
+                                        Store.refresh()
                                         focusRequester.requestFocus()
                                     })
                                     Column(modifier = Modifier.weight(1f)) {
@@ -202,8 +208,7 @@ fun HomeScreen(
                                             text = "${
                                                 Store.topics().find { it.id == task.topicId }?.name ?: "Sin tópico"
                                             } $endDate $endHour",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.bodySmall
                                         )
                                     }
                                 }
@@ -217,8 +222,8 @@ fun HomeScreen(
                     { onNavigate(Screen.TOPIC_CREATE) },
                     { onNavigate(Screen.TAG_CREATE) },
                     {onNavigate(Screen.GROUP_CREATE) },
-                    modifier=Modifier.fillMaxWidth().weight(0.1f))
-
+                    modifier=Modifier.fillMaxWidth().weight(0.1f)
+                )
             }
 
             Column(
@@ -243,9 +248,9 @@ fun HomeScreen(
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
                             onNavigate = onNavigate,
-                            onTaskCreated = { version++ },
-                            onDeleted = { version-- },
-                            onEdit = { version++ }
+                            onTaskCreated = { Store.refresh() },
+                            onDeleted = { Store.refresh() },
+                            onEdit = { Store.refresh() }
                         )
                     }
                 }
@@ -253,11 +258,11 @@ fun HomeScreen(
                 ShowNearAndCompleteTasks(
                     modifier = Modifier.weight(1f),
                     onDeleted = {
-                        version++
+                        Store.refresh()
                         onDeleted()
                         focusRequester.requestFocus()
                     },
-                    refreshFlag = version
+                    refreshFlag = refreshFlag
                 )
             }
         }
@@ -267,7 +272,7 @@ fun HomeScreen(
             selectedTask = selectedTask!!,
             onDismiss = { selectedTask = null },
             onDeleted = {
-                version++
+                Store.refresh()
                 selectedTask = null
             },
             onEdit = {
@@ -306,6 +311,7 @@ fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
         .focusRequester(focusRequest)
         .focusable()
         .onPreviewKeyEvent { event ->
+
             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
             when {
                 event.isCtrlPressed && event.key == Key.Z -> {
@@ -313,11 +319,13 @@ fun setUndoRedo(onDeleted: () -> Unit, focusRequest: FocusRequester): Modifier{
                     onDeleted()
                     true
                 }
+
                 event.isCtrlPressed && event.key == Key.Y -> {
                     CommandLauncher.redo()
                     onDeleted()
                     true
                 }
+
                 else -> false
             }
         }

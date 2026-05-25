@@ -7,13 +7,13 @@ import kotlin.uuid.Uuid
 object SupabaseInvite {
     val ready = SupabaseDBManager.ready
 
-    suspend fun getCodes(group: Uuid): Map<Privilege, Int> {
+    suspend fun getCodes(group: Uuid): Map<Privilege, Long> {
         return SupabaseDBManager.getInviteCodes(group).getOrThrow().associate { Privilege.entries[it.privilege] to it.code }
     }
 
-    suspend fun generateCode(group: Uuid, privilege: Privilege): Int {
-        val code = Uuid.random().toString().split("-").joinToString("").substring(0..9).toInt()
-        SupabaseDBManager.setInviteCode(group, privilege, code)
+    suspend fun generateCode(group: Uuid, privilege: Privilege): Long {
+        val code = Uuid.random().toULongs { _, leastSignificantBits -> leastSignificantBits }.toString().substring(0..9).toLong()
+        SupabaseDBManager.setInviteCode(group, privilege, code).getOrThrow()
         return code
     }
 
@@ -21,7 +21,7 @@ object SupabaseInvite {
         SupabaseDBManager.removeCode(group, privilege)
     }
 
-    suspend fun submitCode(code: Int): Boolean {
+    suspend fun submitCode(code: Long): Boolean {
         if (SupabaseDBManager.codeExists(code)) {
             SupabaseDBManager.useCode(code, Store.currentUser())
             return true

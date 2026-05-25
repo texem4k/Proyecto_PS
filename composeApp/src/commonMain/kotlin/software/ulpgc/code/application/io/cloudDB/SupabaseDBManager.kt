@@ -7,6 +7,7 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
@@ -52,14 +53,14 @@ data class TagData(val id: Uuid, val topicId: Uuid, val name: String,){
 }
 
 @Serializable
-data class GroupUserData(val userId: Uuid, val groupId: Uuid, val privilege: Privilege){
+data class GroupUserData(val userId: Uuid, val groupId: Uuid, val privilege: Int){
     companion object {
         fun serializeFrom(group: Group): List<GroupUserData> {
-            return group.users.entries.map { GroupUserData(it.key, group.id, it.value) }
+            return group.users.entries.map { GroupUserData(it.key, group.id, it.value.ordinal) }
         }
 
         fun parse(users: List<GroupUserData>): MutableMap<Uuid, Privilege> {
-            return users.associate { it.userId to it.privilege }.toMutableMap()
+            return users.associate { it.userId to Privilege.entries[it.privilege] }.toMutableMap()
         }
     }
 }
@@ -91,7 +92,7 @@ data class AssignuserTaskData(val taskId: Uuid, val userId: Uuid, val groupId: U
     companion object{
         fun serializeFrom(task: Task): List<AssignuserTaskData>{
             return task.users.map { AssignuserTaskData(
-                task.id, it , Store.topics().first { topic -> topic == task.topicId }.groupId ) }
+                task.id, it , Store.topics().first { topic -> topic.id == task.topicId }.groupId ) }
         }
 
         fun parse(data: List<AssignuserTaskData>): MutableSet<Uuid>{
@@ -101,14 +102,14 @@ data class AssignuserTaskData(val taskId: Uuid, val userId: Uuid, val groupId: U
 }
 
 @Serializable
-data class InvitationsData(val groupId: Uuid, val code: Int, val privilege: Int)
+data class InvitationsData(val groupId: Uuid, val code: Long, val privilege: Int)
 
 @Serializable
 data class TaskData(val id: Uuid, val topicId: Uuid, val groupId: Uuid,
     val name: String, val description: String, val time: String,
     val interval: Int, val priority: Int, val isCompleted: Boolean
 ){
-    constructor(task: Task) : this(task.id,task.topicId, Store.topics().first { it == task.topicId }.groupId,
+    constructor(task: Task) : this(task.id,task.topicId, Store.topics().first { it.id == task.topicId }.groupId,
         task.name, task.description, task.time.toString(), task.interval.ordinal, task.priority.ordinal,
         task.isCompleted)
 
@@ -169,14 +170,17 @@ object SupabaseDBManager: DBManager {
             is User -> postgrest.from("user").update(UserData(obj)) { filter { eq("id", obj.id) } }
             is Group -> {
                 postgrest.from("workgroup").update(GroupData(obj)) { filter { eq("id", obj.id) } }
-                postgrest.from("workgroupuser").update(GroupUserData.serializeFrom(obj)) { filter { eq("groupId", obj.id) } }
+                postgrest.from("workgroupuser").delete { filter { eq("groupId", obj.id) } }
+                postgrest.from("workgroupuser").insert(GroupUserData.serializeFrom(obj)) { filter { eq("groupId", obj.id) } }
             }
             is Topic -> postgrest.from("topic").update(TopicData(obj)) { filter { eq("id", obj.id) } }
             is Tag -> postgrest.from("tag").update(TagData(obj)) { filter { eq("id", obj.id) } }
             is Task -> {
                 postgrest.from("task").update(TaskData(obj)) { filter { eq("id", obj.id) } }
-                postgrest.from("tasktag").update(TaskTagData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
-                postgrest.from("assignusertask").update(AssignuserTaskData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
+                postgrest.from("tasktag").delete { filter { eq("taskId", obj.id) } }
+                postgrest.from("assignusertask").delete { filter { eq("taskId", obj.id) } }
+                postgrest.from("tasktag").insert(TaskTagData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
+                postgrest.from("assignusertask").insert(AssignuserTaskData.serializeFrom(obj)) { filter { eq("taskId", obj.id) } }
             }
             is CompletionStat -> postgrest.from("taskcompletion").update(CompletionStatData(obj)) { filter { eq("id", obj.id) } }
         }
@@ -245,7 +249,7 @@ object SupabaseDBManager: DBManager {
                 }
             }.decodeList<AssignuserTaskData>()
             .groupBy { it.taskId }
-        return Result.success(taskData.map { it.parse(TaskTagData.parse(taskTags[it.id]!!), AssignuserTaskData.parse(taskUser[it.id]!!)) })
+        return Result.success(taskData.map { it.parse(TaskTagData.parse(taskTags[it.id]?: listOf()), AssignuserTaskData.parse(taskUser[it.id]?: listOf())) })
     }
 
     override suspend fun groups(): Result<List<Group>> = runCatching {
@@ -262,7 +266,7 @@ object SupabaseDBManager: DBManager {
                 }
             }.decodeList<GroupUserData>()
             .groupBy { it.groupId }
-        return Result.success(groupData.map { it.parse(GroupUserData.parse(groupUsersData[it.id]!!)) })
+        return Result.success(groupData.map { it.parse(GroupUserData.parse(groupUsersData[it.id]?: listOf())) })
     }
 
     override suspend fun users(): Result<List<User>> = runCatching {
@@ -278,9 +282,9 @@ object SupabaseDBManager: DBManager {
 
     override suspend fun completionStats(): Result<List<CompletionStat>> = runCatching {
         return Result.success(postgrest.from("taskcompletion")
-            .select(Columns.raw("id, taskId, completed, proposedDate, endDate, task!inner(), topic!inner()")) {
+            .select(Columns.raw("id, taskId, completed, proposedDate, endDate, task!inner(topic!inner())")) {
                 filter {
-                    eq("topic.groupId", Store.currentGroup().id)
+                    eq("task.topic.groupId", Store.currentGroup().id)
                 }
             }.decodeList<CompletionStatData>()
             .map(CompletionStatData::parse))
@@ -295,8 +299,13 @@ object SupabaseDBManager: DBManager {
             }.decodeList<InvitationsData>())
     }
 
-    suspend fun setInviteCode(group: Uuid, privilege: Privilege, code: Int): Result<Unit> = runCatching {
-        postgrest.from("invitations").upsert(InvitationsData(group,code,privilege.ordinal))
+    suspend fun setInviteCode(group: Uuid, privilege: Privilege, code: Long): Result<Unit> = runCatching {
+        postgrest.from("invitations").upsert(InvitationsData(group,code,privilege.ordinal)) {
+            filter {
+                eq("groupId", group)
+                eq("privilege", privilege.ordinal)
+            }
+        }
     }
 
     suspend fun removeCode(group: Uuid, privilege: Privilege): Result<Unit> = runCatching {
@@ -308,7 +317,7 @@ object SupabaseDBManager: DBManager {
         }
     }
 
-    suspend fun codeExists(code: Int): Boolean {
+    suspend fun codeExists(code: Long): Boolean {
         val invite = postgrest.from("invitations")
             .select(Columns.raw("groupId, code, privilege")) {
             filter{
@@ -318,14 +327,18 @@ object SupabaseDBManager: DBManager {
         return invite == null
     }
 
-    suspend fun useCode(code: Int, currentUser: Uuid) {
+    suspend fun useCode(code: Long, currentUser: Uuid) {
         val invite = postgrest.from("invitations")
             .select(Columns.raw("groupId, code, privilege")) {
             filter{
                 eq("code", code)
             }
-        }.decodeAs<InvitationsData>()
+        }.decodeList<InvitationsData>().first()
         postgrest.from("workgroupuser")
-            .upsert(GroupUserData(currentUser, invite.groupId, Privilege.entries[invite.privilege]))
+            .upsert(GroupUserData(currentUser, invite.groupId, invite.privilege)) {
+                filter {
+                    eq("userId", currentUser)
+                }
+            }
     }
 }

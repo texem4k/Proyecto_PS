@@ -17,6 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.logout
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.register
+import software.ulpgc.code.architecture.control.coroutines.runBlocking
+import software.ulpgc.code.architecture.io.Store
+import kotlin.uuid.Uuid
 
 
 @Composable
@@ -24,11 +29,12 @@ fun UserMenuCard(
     modifier: Modifier,
     name: String,
     role: String,
+    isLocalGroup: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val auth = LocalAuthState.current
     val theme = LocalThemeState.current
     var manageGroups by remember { mutableStateOf(false) }
+    var joinGroup by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -55,31 +61,63 @@ fun UserMenuCard(
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                 }
+
                 Spacer(Modifier.width(12.dp))
+
                 Column {
-                    Text(name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 14.sp)
-                    Text(role, color = Color.Gray, fontSize = 12.sp)
+                    Text(
+                        name,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Text(role, color = Color.DarkGray, fontSize = 12.sp)
                 }
             }
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
-            MenuItemRow(Icons.Default.Group, "Gestión de grupos", onClick = { manageGroups = true })
-            MenuItemRow(Icons.Default.Settings, "Configuración", onClick = onDismiss)
-            MenuItemRow(Icons.Default.Palette, "Tema", onClick = { theme.onThemeClick(); onDismiss() })
+
+            if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000")){
+                MenuItemRow(
+                    Icons.Default.Group,
+                    "Gestión de grupos",
+                    onClick = { manageGroups = true }
+                )
+            }
+
+            MenuItemRow(
+                Icons.Default.GroupWork,
+                "Unirse a un grupo",
+                onClick = { joinGroup = true }
+            )
+
+            MenuItemRow(
+                Icons.Default.Settings,
+                "Configuración",
+                onClick = onDismiss
+            )
+
             HorizontalDivider(color = Color(0xFFEEEEEE))
-            MenuItemRow(Icons.AutoMirrored.Filled.ExitToApp, "Cerrar sesión", onClick = {
-                auth.onLogout()
-                onDismiss()
-            })
+
+            MenuItemRow(
+                Icons.AutoMirrored.Filled.ExitToApp,
+                "Cerrar sesión",
+                onClick = {
+                    runBlocking { logout() }
+                    onDismiss()
+                }
+            )
         }
     }
 
     if (manageGroups) {
         EditGroup({ manageGroups = false }, onSubmit = {})
     }
+
+    if (joinGroup) {
+        JoinGroup({ joinGroup = false }, { "" })
+    }
 }
-
-
 @Composable
 fun MenuItemRow(
     icon: ImageVector,
@@ -96,7 +134,7 @@ fun MenuItemRow(
     ) {
         Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp), tint = Color.DarkGray)
         Spacer(Modifier.width(12.dp))
-        Text(label, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(label, fontSize = 14.sp, modifier = Modifier.weight(1f), color = Color.Black)
         if (hasArrow) {
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
         }

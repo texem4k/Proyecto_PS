@@ -341,7 +341,6 @@ fun HourlyDensityChart(
 
     val yAxisWidth  = 32.dp
     val xAxisHeight = 20.dp
-    val chartHeight = 180.dp
 
     Surface(
         color = Color(0xFF0D0D0D),
@@ -365,12 +364,12 @@ fun HourlyDensityChart(
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(chartHeight + xAxisHeight)
+                    .fillMaxHeight()
             ) {
                 val yAxisPx = yAxisWidth.toPx()
                 val xAxisPx = xAxisHeight.toPx()
                 val chartW  = size.width - yAxisPx
-                val chartH  = chartHeight.toPx()
+                val chartH  = size.height - xAxisHeight.toPx()
 
                 fun xOf(i: Int)     = yAxisPx + i * chartW / 240f
                 fun xOfHour(h: Int) = yAxisPx + h * chartW / 24f

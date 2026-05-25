@@ -54,11 +54,6 @@ fun App(
     var showCreateGroup by remember { mutableStateOf(false) }
     var isAuthenticated by remember { mutableStateOf(true) }
 
-    val authState = AuthState(
-        isAuthenticated = isAuthenticated,
-        onLogin = { isAuthenticated = true },
-        onLogout = { isAuthenticated = false }
-    )
 
     val themeState = ThemeState(
         current = selectedTheme,
@@ -76,7 +71,7 @@ fun App(
             SupabaseProvider.initialize()
         }, SupabaseDBManager,
             {
-                NetworkMonitor.state.value == Connectivity.Status.Connected(false) &&
+                NetworkMonitor.hasConnection.value &&
                         SupabaseAuth.ready.value && SupabaseAuth.isLoggedIn() &&
                         SupabaseDBManager.ready.value
             })
@@ -85,7 +80,6 @@ fun App(
     val storeReady = Store.ready.collectAsState().value
 
     CompositionLocalProvider(
-        LocalAuthState provides authState,
         LocalThemeState provides themeState
     ) {
         AppTheme(theme = selectedTheme) {
@@ -190,12 +184,12 @@ fun App(
 
                             Screen.DASHBOARD -> DashboardScreen(
                                 onNavigate = { screen = it },
-                                onSettingsClick = { showThemeDialog = true }
+                                onSettingsClick = { showThemeDialog = true },
                             )
 
                             Screen.CALENDAR -> CalendarScreen(
                                 onNavigate = { screen = it },
-                                onSettingsClick = { showThemeDialog = true }
+                                onSettingsClick = { showThemeDialog = true },
                             )
 
                             else -> {}
@@ -219,7 +213,7 @@ fun App(
             if (storeReady && showCreateGroup) {
                 CreateGroup(
                     onClose = { showCreateGroup = false },
-                    onSubmit = { }
+                    onSubmit = { showCreateGroup = false }
                 )
             }
         }
@@ -230,18 +224,10 @@ fun App(
 fun StoreErrorDisplay(exception: AppException) {
     AlertDialog(
         onDismissRequest = {},
-        title = {
-            Text("Error")
-        },
-        text = {
-            Text(
-                exception.message ?: "Ha ocurrido un error inesperado"
-            )
-        },
+        title = { Text("Error") },
+        text = { Text(exception.message ?: "Ha ocurrido un error inesperado") },
         confirmButton = {
-            Button(onClick = {}) {
-                Text("Aceptar")
-            }
+            Button(onClick = {}) { Text("Aceptar") }
         }
     )
 }

@@ -8,16 +8,17 @@ import kotlin.uuid.Uuid
 
 class ExitGroupCommand(private val group: Group, private val userId: Uuid): Command {
     override fun execute(): List<Command> {
+        val condition = group.id == Store.currentGroup().id
+        if (group.users[userId] == Privilege.ADMIN) setNextUserToAdmin(group, userId)
         group.users = group.users.minus(userId).toMutableMap()
-        if (group.users[userId] == Privilege.ADMIN) setNextUserToAdmin(group)
         group.localDBState = DBState.DELETED
         group.cloudDBState = DBState.UPDATED
-        if (group.id == Store.currentGroup().id) Store.changeGroupTo(Store.groups().first())
+        if (condition) Store.changeGroupTo(Store.groups().first())
         return listOf()
     }
 
-    private fun setNextUserToAdmin(group: Group) {
-        val user = group.users.entries.minByOrNull { it.value.ordinal }
+    private fun setNextUserToAdmin(group: Group, userId: Uuid) {
+        val user = group.users.filterNot { it.key == userId }.entries.minByOrNull { it.value.ordinal }
         if (user != null) group.users[user.key] = Privilege.ADMIN
         else {
             group.localDBState = DBState.DELETED

@@ -19,6 +19,7 @@ import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.application.ui.DropdownCustom
 import software.ulpgc.code.application.ui.DropdownSelection
+import software.ulpgc.code.application.ui.TopicsNotExists
 import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
 
@@ -36,6 +37,11 @@ fun CreateTagDialog(
         )
     }
     var name by remember { mutableStateOf("") }
+
+    if(Store.topics().toList().isEmpty()){
+        TopicsNotExists(onClose)
+        return
+    }
 
     AlertDialog(
         onDismissRequest = onClose,

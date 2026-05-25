@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.io
 
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.architecture.control.coroutines.Coroutinable
 import software.ulpgc.code.architecture.control.coroutines.CoroutineManager
 import software.ulpgc.code.architecture.control.exceptions.AppException
@@ -111,6 +112,7 @@ object LocalDBStore: Coroutinable {
     }
 
     override suspend fun execute() {
+        if (SupabaseAuth.ready.value && SupabaseAuth.isLoggedIn()) return
         deleteRequired(dbObjects().filter { it.localDBState == DBState.DELETED })
         updateRequired(dbObjects().filter { it.isLocalUpdated() })
         insertRequired(dbObjects().filter { it.isLocalNew() })

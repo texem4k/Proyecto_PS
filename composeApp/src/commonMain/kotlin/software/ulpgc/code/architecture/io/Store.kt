@@ -1,10 +1,15 @@
 package software.ulpgc.code.architecture.io
 
-import io.github.jan.supabase.auth.status.SessionSource
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import software.ulpgc.code.architecture.control.exceptions.AppException
+import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -12,6 +17,14 @@ import kotlin.collections.asSequence
 import kotlin.uuid.Uuid
 
 object Store {
+
+    private val _refreshFlag = MutableStateFlow(0)
+    val refreshFlag: StateFlow<Int> = _refreshFlag.asStateFlow()
+
+    fun refresh() {
+        _refreshFlag.value++
+    }
+
     val ready: StateFlow<Boolean> = Storage.ready.asStateFlow()
     fun initialize(localManager: DBManager, onFailLoad: (AppException) -> Unit, afterLoad: () -> Unit, cloudManager: DBManager, canUseCloudDB: () -> Boolean) {
         LocalDBStore.initialize(
@@ -33,7 +46,7 @@ object Store {
     }
     
     fun currentGroup(): Group {
-        return groups().first { it.id == Storage.currentGroup}
+        return groups().first { it.id == Storage.currentGroup }
     }
 
     fun changeGroupTo(group: Group) {
@@ -48,17 +61,17 @@ object Store {
         Storage.currentUser = userId
     }
 
-    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { it.groupId == Storage.currentGroup }
+    fun topics(): Sequence<Topic> = Storage.topics.asSequence().filterNot { it.isLocalDeleted() }.filter { it.groupId == Storage.currentGroup }
 
-    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
+    fun tags(): Sequence<Tag> = Storage.tags.asSequence().filterNot { it.isLocalDeleted() }.filter { tag -> topics().any{ it.id == tag.topicId} }
 
-    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
+    fun tasks(): Sequence<Task> = Storage.tasks.asSequence().filterNot { it.isLocalDeleted() }.filter { tasks -> topics().any{ it.id == tasks.topicId} }
 
-    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun groups(): Sequence<Group> = Storage.groups.asSequence().filterNot { it.isLocalDeleted() }
 
-    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun users(): Sequence<User> = Storage.users.asSequence().filterNot { it.isLocalDeleted() }
 
-    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() || it.isCloudDeleted() }
+    fun completions(): Sequence<CompletionStat> = Storage.stats.asSequence().filterNot { it.isLocalDeleted() }
 
     fun <T: DBObject> add(obj: T) {
         when (obj) {
@@ -69,6 +82,8 @@ object Store {
             is Task -> Storage.tasks.add(obj)
             is CompletionStat -> Storage.stats.add(obj)
         }
+
+        refresh()
     }
 
     fun <T: DBObject> tryFind(obj: T): T? {
@@ -85,12 +100,8 @@ object Store {
 
     suspend fun onLogOut() {
         Storage.restartCurrent()
-        users().filterNot { it.id == currentUser() }
-            .forEach { it.localDBState = DBState.DELETED }
-        groups().filterNot { it.id == currentGroup() }
-            .forEach { it.localDBState = DBState.DELETED }
-        LocalDBStore.execute()
         Storage.clearAll()
+        LocalDBStore.onInit()
     }
 }
 
@@ -109,13 +120,19 @@ private object Storage {
 
     fun dbObjects(): Sequence<DBObject> = users.asSequence() + groups.asSequence() + topics.asSequence() + tags.asSequence() + tasks.asSequence() + stats.asSequence()
 
+    fun clearCloud(){
+        groups.removeAll { it.id != currentGroup }
+        users.removeAll { it.id != currentUser }
+    }
+
+
     fun clearAll(){
-        groups.removeAll { it.isLocalCleared() }
-        users.removeAll { it.isLocalCleared() }
-        topics.removeAll { it.isLocalCleared() }
-        tags.removeAll { it.isLocalCleared() }
-        tasks.removeAll { it.isLocalCleared() }
-        stats.removeAll { it.isLocalCleared() }
+        groups.clear()
+        users.clear()
+        topics.clear()
+        tags.clear()
+        tasks.clear()
+        stats.clear()
     }
 
     fun cleanLists() {

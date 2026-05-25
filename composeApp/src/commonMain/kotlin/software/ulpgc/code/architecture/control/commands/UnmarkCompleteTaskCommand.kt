@@ -20,7 +20,15 @@ class UnmarkCompleteTaskCommand (val task: Task) : Command {
     private fun setCompletionStat(task: Task){
         val stat = Store.completions()
             .filter { it.taskId == task.id }
+            .map{
+                println("Medios filtros $it")
+                it
+            }
             .filter { it.completed }
+            .map{
+                println("Todos filtros $it")
+                it
+            }
             .maxBy { it.endDate }
         stat.completed = false
         stat.endDate = task.time.end

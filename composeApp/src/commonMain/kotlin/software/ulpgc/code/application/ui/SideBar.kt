@@ -3,7 +3,6 @@ package software.ulpgc.code.application.ui
 import Screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,7 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -23,13 +24,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
+import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
+import software.ulpgc.code.application.io.network.NetworkMonitor.hasConnection
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import kotlin.uuid.Uuid
@@ -39,42 +46,49 @@ data class SideBarItem(
     val screen: Screen,
 )
 
-private val topItems = listOf(
+val topItems = listOf(
     SideBarItem(Icons.Default.CalendarToday, Screen.CALENDAR),
     SideBarItem(Icons.Default.Ballot, Screen.TASKS),
     SideBarItem(Icons.Default.BarChart, Screen.DASHBOARD),
-)
-
-val gro = listOf(
-    "Grupo1asasasasas",
-    "Grupo2",
-    "Grupo3sssssssssssssssssssssss",
-    "Grupo4ssasas",
-    "Local",
-    "Tu tablero en la nube"
+    SideBarItem(Icons.Default.Palette, Screen.SETTINGS),
 )
 
 @Composable
 fun SideBar(
     onNavigate: (Screen) -> Unit,
     selectedScreen: Screen,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    version: Int,
+    onRefresh: () -> Unit,
 ) {
+
     var showPopup by remember { mutableStateOf(false) }
     var buttonBounds by remember { mutableStateOf(Rect.Zero) }
     var cardHeight by remember { mutableStateOf(0) }
-    val auth = LocalAuthState.current
+    val authReady = SupabaseAuth.ready.collectAsState()
+
+    val currentUserId = Store.currentUser()
+
+    val currentUserName =
+        Store.users().firstOrNull { it.id == currentUserId }?.name ?: "Usuario"
+
+    val group = Store.currentGroup()
+    val isLocalGroup = group.name == "local"
+
+    val currentUserRol = group.users[currentUserId]?.name ?: "Invitado"
+
+    val listGroup = remember(version) { Store.groups().toList() }
+
 
     Column(
         modifier = Modifier
             .width(100.dp)
             .fillMaxHeight()
             .background(Color(0xFF1E1E2E))
-            .padding(vertical = 24.dp, horizontal = 12.dp),
+            .padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val home = SideBarItem(Icons.Default.Home, Screen.HOME)
-        var actualGroup by remember { mutableStateOf(Store.currentGroup().id) }
 
         SideBarNavItem(
             item = home,
@@ -86,11 +100,19 @@ fun SideBar(
         Spacer(modifier = Modifier.height(32.dp))
 
         topItems.forEach { item ->
-            SideBarNavItem(
-                item = item,
-                isSelected = selectedScreen == item.screen,
-                onClick = { onNavigate(item.screen) }
-            )
+            if (item.screen == Screen.SETTINGS) {
+                SideBarNavItem(
+                    item = item,
+                    isSelected = selectedScreen == item.screen,
+                    onClick = onSettingsClick
+                )
+            } else {
+                SideBarNavItem(
+                    item = item,
+                    isSelected = selectedScreen == item.screen,
+                    onClick = { onNavigate(item.screen) }
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
         }
 
@@ -98,11 +120,19 @@ fun SideBar(
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.weight(0.05f))
 
-        GroupSelectorMenu(
-            groups = Store.groups().toList(),
-            selectedGroup = Store.currentGroup().id,
-            onGroupSelected = { actualGroup = it },
-        )
+        key(version) {
+            if (authReady.value && isLoggedIn()) {
+                GroupSelectorMenu(
+                    groups = listGroup,
+                    selectedGroup = Store.currentGroup().id,
+                    onGroupSelected = {
+                        Store.changeGroupTo(listGroup.find { g -> g.id == it }!!)
+                        onRefresh()
+                    },
+                    onDeleted = onRefresh
+                )
+            }
+        }
 
         Box(
             modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -121,7 +151,8 @@ fun SideBar(
                 onClick = { showPopup = true }
             )
 
-            if (showPopup && auth.isAuthenticated) {
+            if (showPopup && authReady.value && isLoggedIn()) {
+
                 val density = LocalDensity.current
                 val offsetY = with(density) {
                     (-cardHeight + 250.dp.toPx()).toInt()
@@ -140,16 +171,73 @@ fun SideBar(
                         modifier = Modifier.onGloballyPositioned {
                             cardHeight = it.size.height
                         },
-                        name = "Enrique Sosa",
-                        role = "Invitado",
+                        name = currentUserName,
+                        role = currentUserRol,
+                        isLocalGroup = isLocalGroup,
                         onDismiss = { showPopup = false }
                     )
                 }
-            } else if (showPopup && !auth.isAuthenticated) {
+
+                onRefresh()
+
+            } else if(showPopup && !hasConnection.value){
+                Dialog(
+                    onDismissRequest = { showPopup = false },
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = true
+                    ),
+                    content = {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.WifiOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp)
+                                )
+
+                                Text(
+                                    text = "Sin conexión",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Text(
+                                    text = "No hay conexión a internet.\nInténtalo más tarde.",
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Button(
+                                    onClick = { showPopup = false },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Text("Entendido")
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            else if (showPopup && authReady.value) {
                 AuthFlow(
                     onDismiss = { showPopup = false },
                     onAuthSuccess = {
-                        auth.onLogin()
                         showPopup = false
                     }
                 )
@@ -157,7 +245,6 @@ fun SideBar(
         }
     }
 }
-
 
 @Composable
 private fun SideBarNavItem(
@@ -203,8 +290,9 @@ fun ThemeDialog(
     onDismiss: () -> Unit
 ) {
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.onPrimary,
         onDismissRequest = onDismiss,
-        title = { Text("Selecciona un tema") },
+        title = { Text("Selecciona un tema", color = Color.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
@@ -253,7 +341,8 @@ private fun ThemeButton(
 fun GroupSelectorMenu(
     groups: List<Group>,
     selectedGroup: Uuid,
-    onGroupSelected: (Uuid) -> Unit
+    onGroupSelected: (Uuid) -> Unit,
+    onDeleted: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentGroup = groups.find { it.id == selectedGroup }
@@ -283,8 +372,6 @@ fun GroupSelectorMenu(
                     color = Color(0xFFCDD6F4),
                     maxLines = 1,
                     textAlign = TextAlign.Center
-
-
                 )
             }
         }
@@ -292,7 +379,7 @@ fun GroupSelectorMenu(
         Box {
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
+                onDismissRequest = { expanded = false; onDeleted() },
                 offset = DpOffset(x = 20.dp, y = (-15).dp),
                 modifier = Modifier.heightIn(max = (3 * 48).dp)
             ) {
@@ -306,7 +393,7 @@ fun GroupSelectorMenu(
                                 color = if (isSelected)
                                     MaterialTheme.colorScheme.primary
                                 else
-                                    Color.DarkGray
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         },
                         onClick = {

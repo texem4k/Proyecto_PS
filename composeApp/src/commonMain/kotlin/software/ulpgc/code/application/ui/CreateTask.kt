@@ -37,7 +37,6 @@ import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlinx.datetime.Instant
 import software.ulpgc.code.architecture.io.Store
-import kotlin.collections.contains
 import kotlin.uuid.Uuid
 
 
@@ -80,7 +79,9 @@ fun CreateTask(
 
 
     val action = if (task != null) "Editar" else "Crear"
-    if (Store.users().find{it.id == Store.currentUser()}?.name?.lowercase() != "root"){
+    var topics by remember { mutableStateOf(Store.topics().toList()) }
+
+    if (Store.currentGroup().id != Uuid.parse("00000000-0000-0000-0000-000000000000") && Store.currentGroup().users.size > 1){
         totalSteps = 4
     }
 
@@ -109,11 +110,17 @@ fun CreateTask(
         }
     }
 
+
+    if (topics.isEmpty()) {
+        TopicsNotExists(onClose)
+        return
+    }
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxWidth(0.55f)
                 .wrapContentHeight(),
@@ -247,7 +254,7 @@ fun CreateTask(
                             .set("interval", form.taskInterval.toString())
                             .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
-                            .set("users", if (isRoot) "" else form.taskUsers.joinToString(", "))
+                            .set("users", if (isRoot || form.taskUsers.isEmpty()) "" else form.taskUsers.joinToString(", "))
 
                         val command = if (task != null) {
                             builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
@@ -324,11 +331,9 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
             group.users.contains(Store.currentUser())
         }
 
-        val usersInGroup = currentUserGroup
-            ?.users
-            ?.mapNotNull { userId -> Store.users().find { it.id == userId } }
-            ?: emptyList()
-
+        val usersInGroup = Store.currentGroup().users.keys.mapNotNull { id ->
+            Store.users().find { it.id == id }
+        }
         DropdownCustom(
             section = "Selecciona los usuarios",
             items = usersInGroup,
@@ -428,7 +433,7 @@ private fun StepTopicsAndPeriod(
                         if (periodicEnabled)
                             MaterialTheme.colorScheme.onPrimaryContainer
                         else
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
@@ -536,7 +541,7 @@ private fun StepDateTime(
             modifier = Modifier
                 .fillMaxWidth(0.55f)
                 .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.colorScheme.tertiary,
                     RoundedCornerShape(24.dp)
                 )
                 .border(
@@ -633,10 +638,19 @@ private fun DuracionField(value: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = { if (it.all { c -> c.isDigit() }) onChange(it) },
-        label = { Text("Duración (horas)") },
+        label = { Text("Duración (horas)", color = MaterialTheme.colorScheme.onPrimaryContainer) },
         modifier = Modifier.fillMaxWidth(0.55f),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        shape = RoundedCornerShape(32.dp)
+        shape = RoundedCornerShape(32.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     )
 }
 

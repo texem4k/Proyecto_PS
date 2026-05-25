@@ -8,6 +8,9 @@ import java.util.Properties
 
 class JavaDatabaseDriverFactory : DatabaseDriverFactory {
     override fun createDriver(): SqlDriver {
-        return JdbcSqliteDriver("jdbc:sqlite:app.db", Properties(), AppDatabase.Schema)
+        val properties = Properties().apply {
+            put("foreign_keys", "true")
+        }
+        return JdbcSqliteDriver("jdbc:sqlite:app.db", properties, AppDatabase.Schema)
     }
 }

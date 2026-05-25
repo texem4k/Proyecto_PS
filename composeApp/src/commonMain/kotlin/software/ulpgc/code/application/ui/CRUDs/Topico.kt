@@ -65,7 +65,9 @@ fun CreateTopicDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (Store.topics().any { it.name == name }) {
+                if (name.isEmpty()) {
+                    error = "Tópico debe tener un nombre"
+                } else if (Store.topics().any { it.name == name }) {
                     error = "Ya existe un tópico"
                 } else {
                     val command = CommandBuilder().set("name", name).set("color", chosenColor.toArgb().toString()).build(CommandType.CREATE_TOPIC)
