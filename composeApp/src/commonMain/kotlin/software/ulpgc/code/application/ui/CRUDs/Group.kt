@@ -315,110 +315,110 @@ fun GroupStepMembers(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-
-        StepLabel("Invitar miembros")
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
 
+            StepLabel("Invitar miembros")
+
             Row(
-                modifier = Modifier.fillMaxSize(0.50f),
-                horizontalArrangement = Arrangement.End
-            ) {
-                DropdownCustom(
-                    section = "Permisos",
-                    items = Privilege.entries.filterNot { it == Privilege.ADMIN },
-                    selection = DropdownSelection.Single(selectedPriv),
-                    onItemSelected = { selectedPriv = it },
-                    itemId = { it },
-                    itemName = { it.name }
-                )
-            }
-
-            OutlinedButton(
-                onClick = {
-                    selectedPriv?.let { priv ->
-                        if (form.groupId == null){
-                            groupId = Store.currentGroup().id
-                        }
-                        val codigo = runBlocking {
-                            generateCode(groupId!!, priv)
-                        }
-
-                        generatedCodes = generatedCodes + (priv to codigo)
-                    }
-                },
-                shape = RoundedCornerShape(32.dp),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.primary
-                ),
-                contentPadding = PaddingValues(
-                    horizontal = 20.dp,
-                    vertical = 16.dp
-                )
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                Icon(
-                    Icons.Default.Link,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(Modifier.width(6.dp))
-
-                Text("Generar código", color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
-
-        if (generatedCodes.isNotEmpty()) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.tertiary,
-                        RoundedCornerShape(16.dp)
+                Row(
+                    modifier = Modifier.fillMaxSize(0.50f),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    DropdownCustom(
+                        section = "Permisos",
+                        items = Privilege.entries.filterNot { it == Privilege.ADMIN },
+                        selection = DropdownSelection.Single(selectedPriv),
+                        onItemSelected = { selectedPriv = it },
+                        itemId = { it },
+                        itemName = { it.name }
                     )
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+                }
 
-                generatedCodes.forEach { (priv, code) ->
-
-                    CodeRow(
-                        code = code,
-                        privilege = priv,
-                        onReset = {
+                OutlinedButton(
+                    onClick = {
+                        selectedPriv?.let { priv ->
+                            if (form.groupId == null) {
+                                groupId = Store.currentGroup().id
+                            }
                             val codigo = runBlocking {
-                                generateCode(Store.currentGroup().id, priv)
+                                generateCode(groupId!!, priv)
                             }
 
                             generatedCodes = generatedCodes + (priv to codigo)
-                        },
-                        clipboard=clipboard,
-                        onDeleted = { generatedCodes = generatedCodes - priv }
+                        }
+                    },
+                    shape = RoundedCornerShape(32.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary
+                    ),
+                    contentPadding = PaddingValues(
+                        horizontal = 20.dp,
+                        vertical = 16.dp
                     )
+                ) {
+
+                    Icon(
+                        Icons.Default.Link,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.width(6.dp))
+
+                    Text("Generar código", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+
+            if (generatedCodes.isNotEmpty()) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.tertiary,
+                            RoundedCornerShape(16.dp)
+                        )
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        )
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+
+                    generatedCodes.forEach { (priv, code) ->
+
+                        CodeRow(
+                            code = code,
+                            privilege = priv,
+                            onReset = {
+                                val codigo = runBlocking {
+                                    generateCode(Store.currentGroup().id, priv)
+                                }
+
+                                generatedCodes = generatedCodes + (priv to codigo)
+                            },
+                            clipboard = clipboard,
+                            onDeleted = { generatedCodes = generatedCodes - priv }
+                        )
+                    }
                 }
             }
         }
-    }
 }
 
 @Composable
@@ -651,9 +651,7 @@ private fun EditGroupSectionMembers(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         StepLabel("Miembros del grupo")
-
-        if (form.members.isNotEmpty()) {
-            Column(
+         Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .clip(RoundedCornerShape(16.dp))
@@ -691,7 +689,6 @@ private fun EditGroupSectionMembers(
             }
         }
     }
-}
 
 @Composable
 private fun EditGroupSectionSettings(
