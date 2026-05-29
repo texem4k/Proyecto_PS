@@ -100,13 +100,13 @@ object SQLiteDBManager: DBManager {
 
     override suspend fun topics(): Result<List<Topic>> = runCatching {
         dbQuery.getTopics { id: Uuid, groupId: Uuid, name: String, color: Color ->
-            Topic(name, color, groupId, id, DBState.DEFAULT, DBState.UNKNOWN)
+            Topic(name, color, groupId, id, DBState.DEFAULT, DBState.DISABLED)
         }.executeAsList()
     }.mapDBException("Failed to fetch topics")
 
     override suspend fun tags(): Result<List<Tag>> = runCatching {
         dbQuery.getTags { id, topicId, name ->
-            Tag(name, topicId, id, DBState.DEFAULT, DBState.UNKNOWN)
+            Tag(name, topicId, id, DBState.DEFAULT, DBState.DISABLED)
         }.executeAsList()
     }.mapDBException("Failed to fetch tags")
 
@@ -133,7 +133,7 @@ object SQLiteDBManager: DBManager {
                 raw.isCompleted,
                 raw.id,
                 DBState.DEFAULT,
-                DBState.UNKNOWN
+                DBState.DISABLED
             )
         }
     }.mapDBException("Failed to fetch tasks")
@@ -150,20 +150,20 @@ object SQLiteDBManager: DBManager {
                 users,
                 raw.id,
                 DBState.DEFAULT,
-                DBState.UNKNOWN
+                DBState.DISABLED
             )
         }
     }.mapDBException("Failed to fetch groups")
 
     override suspend fun users(): Result<List<User>> = runCatching {
         dbQuery.getUsers { id, name ->
-            User(name, id, DBState.DEFAULT, DBState.UNKNOWN)
+            User(name, id, DBState.DEFAULT, DBState.DISABLED)
         }.executeAsList()
     }.mapDBException("Failed to fetch users")
 
     override suspend fun completionStats(): Result<List<CompletionStat>> = runCatching {
         dbQuery.getTaskCompletions { id, taskId, proposedDate, endDate, completed ->
-            CompletionStat(taskId, proposedDate, completed, endDate, id, DBState.DEFAULT, DBState.UNKNOWN)
+            CompletionStat(taskId, proposedDate, completed, endDate, id, DBState.DEFAULT, DBState.DISABLED)
         }.executeAsList()
     }.mapDBException("Failed to fetch completion stats")
 

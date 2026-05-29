@@ -65,7 +65,7 @@ import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
 import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
 import software.ulpgc.code.architecture.io.Store
-import software.ulpgc.code.isDesktop
+
 
 
 data class DialMenuItem(
@@ -110,15 +110,15 @@ fun HomeScreen(
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
 
-            if(isDesktop()){
-                SideBar(
-                    selectedScreen = Screen.HOME,
-                    onNavigate = onNavigate,
-                    onSettingsClick = onSettingsClick,
-                    onRefresh={ Store.refresh() },
-                    version = refreshFlag
-                )
-            }
+
+            SideBar(
+                selectedScreen = Screen.HOME,
+                onNavigate = onNavigate,
+                onSettingsClick = onSettingsClick,
+                onRefresh={ Store.refresh() },
+                version = refreshFlag
+            )
+
 
             Column(
                 modifier = Modifier
@@ -247,7 +247,6 @@ fun HomeScreen(
                             sampleEntries = sampleEntries,
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
-                            onNavigate = onNavigate,
                             onTaskCreated = { Store.refresh() },
                             onDeleted = { Store.refresh() },
                             onEdit = { Store.refresh() }

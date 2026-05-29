@@ -64,12 +64,14 @@ object CloudDBStore: Coroutinable {
         objects.forEach {
             val obj = Store.tryFind(it)
             if (obj == null) {
-                it.localDBState = DBState.NEW
                 Store.add(it)
+                println("puta base de dwatos añade")
             }
             else if (obj != it) {
+                println(obj != it)
                 update(obj, it)
-                Store.refresh()
+                println(obj)
+                println(it)
             }
             else obj.cloudDBState = DBState.DEFAULT
         }
@@ -114,7 +116,8 @@ object CloudDBStore: Coroutinable {
             }
         }
         original.cloudDBState = DBState.DEFAULT
-        original.localDBState = DBState.UPDATED
+        original.localDBState = DBState.UNKNOWN
+        Store.refresh()
     }
 
 
@@ -124,7 +127,6 @@ object CloudDBStore: Coroutinable {
         updateRequired(dbObjects().filter { it.isCloudUpdated() })
         insertRequired(dbObjects().filter { it.isCloudNew() })
         loadDBData()
-        deleteRequired(dbObjects().filter { it.isCloudUnknown() })
     }
 
     override suspend fun onDispose() {

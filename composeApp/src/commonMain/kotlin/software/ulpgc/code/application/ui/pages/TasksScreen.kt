@@ -50,7 +50,8 @@ fun TasksScreen(
     var showCreateTag by remember { mutableStateOf(false) }
     var showEditTask by remember { mutableStateOf(false) }
     var showCreateGroup by remember { mutableStateOf(false) }
-    var version by remember { mutableStateOf(0) }
+    val version by Store.refreshFlag.collectAsState()
+
     val taskList = remember(version) {
         Store.tasks().toList()
     }
@@ -84,7 +85,7 @@ fun TasksScreen(
                 onNavigate = onNavigate,
                 selectedScreen = Screen.TASKS,
                 onSettingsClick = onSettingsClick,
-                onRefresh = {version++},
+                onRefresh = {Store.refresh()},
                 version=version
             )
 
@@ -169,7 +170,7 @@ fun TasksScreen(
                                         showEditTask = true
                                     },
                                     onDeleted = {
-                                        version++
+                                        Store.refresh()
                                         onDeleted()
                                     },
                                     screen = Screen.TASKS
@@ -205,7 +206,7 @@ fun TasksScreen(
                     showCreateTaskcopy = false
                     onCreated()
                     onNavigate(Screen.TASKS)
-                    version++
+                    Store.refresh()
                 }
             )
 
@@ -227,7 +228,7 @@ fun TasksScreen(
                     showEditTask = false
                     onEditDone()
                     onCreated()
-                    version++
+                    Store.refresh()
                 }
             )
         }
@@ -238,7 +239,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTopic = false
                 onCreated()
-                version++
+                Store.refresh()
             }
         )
     }
@@ -248,7 +249,7 @@ fun TasksScreen(
             onClose = {
                 showCreateTag = false
                 onCreated()
-                version++
+                Store.refresh()
             },
             null
         )
@@ -259,9 +260,9 @@ fun TasksScreen(
             onClose = {
                 showCreateGroup = false
                 onCreated()
-                version++
+                Store.refresh()
             },
-            onSubmit = { version++ }
+            onSubmit = { Store.refresh() }
         )
     }
 }

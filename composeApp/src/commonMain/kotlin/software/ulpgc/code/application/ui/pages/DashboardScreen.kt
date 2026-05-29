@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +55,7 @@ fun DashboardScreen(
 
 ) {
 
-    var version by remember { mutableStateOf(0) }
+    val version by Store.refreshFlag.collectAsState()
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -65,7 +66,7 @@ fun DashboardScreen(
             onNavigate = onNavigate,
             selectedScreen = Screen.DASHBOARD,
             onSettingsClick = onSettingsClick,
-            onRefresh = {version++},
+            onRefresh = {Store.refresh()},
             version = version
         )
 

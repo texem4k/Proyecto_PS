@@ -1,5 +1,6 @@
 package software.ulpgc.code.architecture.model.times
 
+import io.ktor.util.reflect.instanceOf
 import kotlinx.datetime.TimeZone
 import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
@@ -37,5 +38,18 @@ abstract class Time internal constructor(
 
     fun timeUntilEnd(): Duration {
         return end - Clock.System.now()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return this.toString() == other.toString()
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + start.hashCode()
+        result = 31 * result + end.hashCode()
+        result = 31 * result + type
+        result = 31 * result + priorityModifier.hashCode()
+        return result
     }
 }
