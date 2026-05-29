@@ -36,18 +36,17 @@ import software.ulpgc.code.architecture.model.Priority
 import kotlin.sequences.forEach
 import kotlin.time.Clock
 
-public val HOUR_HEIGHT = 64.dp
+val HOUR_HEIGHT = 64.dp
 
-public val TIME_COL_W = 52.dp
-public val START_HOUR = 0
-public val END_HOUR = 24
+val TIME_COL_W = 52.dp
+const val START_HOUR = 0
+const val END_HOUR = 24
 
 @Composable
 fun WeekDayColumn(
     date: LocalDate,
     entries: List<SampleEntry>,
     isToday: Boolean,
-    isSelected: Boolean,
     hourHeight: Dp,
     onEntryClick: (SampleEntry) -> Unit,
     urgencyColor: Color? = null
@@ -159,7 +158,7 @@ fun WeekEventChip(
 ) {
     val topDp = ((startHour - START_HOUR) * hourHeight.value).dp
     val heightDp = ((endHour - startHour) * hourHeight.value).dp.coerceAtLeast(20.dp)
-    val timeData = entry.task!!.time!!.mostrar().split(",")
+    val timeData = entry.task!!.time.mostrar().split(",")
 
     Box(
         modifier = Modifier

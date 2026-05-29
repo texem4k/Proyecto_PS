@@ -69,8 +69,6 @@ import kotlin.time.Clock
 @Composable
 fun DayView(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
     onTaskCreated: () -> Unit,
@@ -106,7 +104,7 @@ fun DayView(
     Column(modifier = Modifier.fillMaxSize()) {
 
         CalendarHeader(
-            title = "${CalendarConstants.DAY_NAMES_ES[currentDay.dayOfWeek.ordinal]} ${currentDay.dayOfMonth} de ${CalendarConstants.MONTH_NAMES_ES[currentDay.month.ordinal]} ${currentDay.year}",
+            title = "${CalendarConstants.DAY_NAMES_ES[currentDay.dayOfWeek.ordinal]} ${currentDay.day} de ${CalendarConstants.MONTH_NAMES_ES[currentDay.month.ordinal]} ${currentDay.year}",
             onPreviousClick = { dayOffset-- },
             onNextClick = { dayOffset++ },
             viewMode = viewMode,
@@ -162,7 +160,6 @@ fun DayView(
                     date = currentDay,
                     entries = timedEntries,
                     isToday = currentDay == today,
-                    isSelected = true,
                     hourHeight = HOUR_HEIGHT,
                     onEntryClick = { entry -> selectedEntry = entry },
                     urgencyColor = urgencyColor

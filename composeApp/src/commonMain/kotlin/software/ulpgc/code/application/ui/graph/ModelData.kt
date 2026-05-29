@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui.graph
 
-import androidx.compose.runtime.remember
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone

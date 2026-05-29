@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +55,6 @@ fun DashboardScreen(
 ) {
 
     var version by remember { mutableStateOf(0) }
-    val onDeleted: () -> Unit = { version++ }
     Row(
         modifier = Modifier
             .fillMaxSize()

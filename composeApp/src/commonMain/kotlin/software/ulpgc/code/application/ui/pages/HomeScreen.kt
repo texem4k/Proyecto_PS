@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -21,8 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -150,7 +150,7 @@ fun HomeScreen(
                         "Tareas Prioritarias",
                         fontSize = 24.sp,
                         color = MaterialTheme.colorScheme.onBackground)
-                    Divider(
+                    HorizontalDivider(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth(0.5f)

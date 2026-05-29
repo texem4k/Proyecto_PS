@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui.CRUDs
+package software.ulpgc.code.application.ui.cruds
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -129,8 +129,7 @@ fun EditTopic(topicName: String, onDismiss: () -> Unit, onDeleted: () -> Unit = 
                     exists -> topicData = topicData.copy(error = "Ya existe un tópico con ese nombre")
                     topicData.name.isBlank() -> topicData =
                         topicData.copy(error = "El nombre no puede estar vacío")
-                    chosenColor===null -> topicData.copy(error="Debes seleccionar un color para el tópico")
-
+                    chosenColor == null -> topicData = topicData.copy(error = "Debes seleccionar un color para el tópico")
                     else -> {
 
                         val command = CommandBuilder().set("id", currentTopic?.id.toString()).set("name", topicData.name).set("color", chosenColor!!.toArgb().toString()).build(CommandType.UPDATE_TOPIC)

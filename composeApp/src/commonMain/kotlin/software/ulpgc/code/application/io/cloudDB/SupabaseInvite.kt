@@ -5,7 +5,6 @@ import software.ulpgc.code.architecture.model.Privilege
 import kotlin.uuid.Uuid
 
 object SupabaseInvite {
-    val ready = SupabaseDBManager.ready
 
     suspend fun getCodes(group: Uuid): Map<Privilege, Long> {
         return SupabaseDBManager.getInviteCodes(group).getOrThrow().associate { Privilege.entries[it.privilege] to it.code }

@@ -14,7 +14,6 @@ import software.ulpgc.code.architecture.model.Priority
 @Composable
 fun FilterContent(
     onApply: (TaskFilters) -> Unit,
-    onDismiss: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var tempFilters by remember { mutableStateOf(TaskFilters()) }

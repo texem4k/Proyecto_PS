@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.widgets
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -76,7 +76,6 @@ fun SideBar(
         Store.users().firstOrNull { it.id == currentUserId }?.name ?: "Usuario"
 
     val group = Store.currentGroup()
-    val isLocalGroup = group.name == "local"
 
     val currentUserRol = group.users[currentUserId]?.name ?: "Invitado"
 

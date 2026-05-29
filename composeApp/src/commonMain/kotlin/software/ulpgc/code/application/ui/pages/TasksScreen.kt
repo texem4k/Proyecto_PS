@@ -1,3 +1,5 @@
+package software.ulpgc.code.application.ui.pages
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material.icons.Icons
@@ -13,15 +15,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import software.ulpgc.code.application.ui.widgets.SideBar
-import software.ulpgc.code.application.ui.CRUDs.CreateTagDialog
-import software.ulpgc.code.application.ui.CRUDs.CreateTopicDialog
+import software.ulpgc.code.application.ui.cruds.CreateTagDialog
+import software.ulpgc.code.application.ui.cruds.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.dialogs.CreateTask
-import software.ulpgc.code.application.ui.CreateGroup
-import software.ulpgc.code.application.ui.pages.SearchBar
-import software.ulpgc.code.application.ui.pages.ShowDialMenu
-import software.ulpgc.code.application.ui.pages.setUndoRedo
+import software.ulpgc.code.application.ui.cruds.CreateGroup
+import software.ulpgc.code.application.ui.dataStructure.AutoOpen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import software.ulpgc.code.application.ui.reutilizableComponents.UpcomingTasksPanel
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -132,7 +133,6 @@ fun TasksScreen(
                                 showFilters = false
                                 onShowResults(true)
                             },
-                            onDismiss = { showFilters = false }
                         )
                     }
                 }

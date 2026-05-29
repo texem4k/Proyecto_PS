@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui.pages.Calendar.Views
 
-import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,7 +58,6 @@ fun YearView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
-    onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
@@ -98,7 +96,6 @@ fun YearView(
             yearHeader = { year ->
                 YearHeader(
                     year = year,
-                    yearState = yearState,
                     viewMode = viewMode,
                     onViewModeChange = onViewModeChange,
                     onPreviousYear = { visibleYear = visibleYear.minusYears(1) },
@@ -205,7 +202,7 @@ fun YearDayCell(
             modifier = Modifier.fillMaxSize()
         ) {
             Text(
-                text = day.date.dayOfMonth.toString(),
+                text = day.date.day.toString(),
                 color = when {
                     isSelected -> Color.White
                     day.date == today -> Color(0xFF4F6EF7)

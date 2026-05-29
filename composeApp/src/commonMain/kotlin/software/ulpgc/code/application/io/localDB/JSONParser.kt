@@ -6,7 +6,6 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import proyecto_ps.composeapp.generated.resources.Res
 import software.ulpgc.code.architecture.io.DBObject
-import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.model.Group
 import software.ulpgc.code.architecture.model.Priority
 import software.ulpgc.code.architecture.model.Privilege

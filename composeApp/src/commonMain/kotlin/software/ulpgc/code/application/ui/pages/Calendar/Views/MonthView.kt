@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui.pages.Calendar.Views
 
-import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,7 +66,6 @@ fun MonthView(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     viewMode: CalendarViewMode,
-    onNavigate: (Screen) -> Unit,
     onViewModeChange: (CalendarViewMode) -> Unit,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
@@ -179,9 +177,6 @@ fun DayCell(
     cellHeight: Dp
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val tasks = entries.mapNotNull { it.task }
-    val priorities = tasks.map { it.priority }
-
     val urgencyColor: Color = urgencyColorFromEntries(entries)
 
     BoxWithConstraints (
@@ -205,7 +200,7 @@ fun DayCell(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = day.date.dayOfMonth.toString(),
+                        text = day.date.day.toString(),
                         color = when {
                             isSelected -> Color.White
                             day.date == today -> Color(0xFF4F6EF7)

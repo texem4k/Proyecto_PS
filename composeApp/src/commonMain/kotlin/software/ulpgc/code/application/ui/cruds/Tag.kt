@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui.CRUDs
+package software.ulpgc.code.application.ui.cruds
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

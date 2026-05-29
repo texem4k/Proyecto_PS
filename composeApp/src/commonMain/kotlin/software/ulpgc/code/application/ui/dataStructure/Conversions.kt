@@ -34,7 +34,7 @@ fun createInstantFromDateAndHour(dateInstant: Instant, hora: String): Instant {
     return LocalDateTime(
         year = localDate.year,
         month = localDate.month,
-        dayOfMonth = localDate.dayOfMonth,
+        day = localDate.day,
         hour = hour,
         minute = minute,
         second = 0,

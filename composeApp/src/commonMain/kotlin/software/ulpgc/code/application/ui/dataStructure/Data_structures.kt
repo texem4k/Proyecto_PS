@@ -22,7 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 
 
@@ -322,13 +322,11 @@ fun <T, K> DropdownCustom(
             onValueChange = {},
             readOnly = true,
             label = { Text(section, color = MaterialTheme.colorScheme.onPrimaryContainer) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(0.5f),
-            shape = RoundedCornerShape(32.dp),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(0.5f),            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = OutlinedTextFieldDefaults.colors(
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
-                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,    // 👈 texto al escribir con foco
-                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,  // 👈 texto sin foco
+                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         )
 

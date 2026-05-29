@@ -1,3 +1,5 @@
+package software.ulpgc.code.application.ui.dataStructure
+
 enum class Screen {
     HOME,
     RESULTS,

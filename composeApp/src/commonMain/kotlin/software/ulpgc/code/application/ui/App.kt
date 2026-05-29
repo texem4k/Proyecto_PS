@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui
 
-import TasksScreen
+import software.ulpgc.code.application.ui.pages.TasksScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -16,6 +16,9 @@ import software.ulpgc.code.application.io.localDB.DatabaseDriverFactory
 import software.ulpgc.code.application.io.localDB.JSONParser
 import software.ulpgc.code.application.io.localDB.SQLiteDBManager
 import software.ulpgc.code.application.io.network.NetworkMonitor
+import software.ulpgc.code.application.ui.cruds.CreateGroup
+import software.ulpgc.code.application.ui.dataStructure.AutoOpen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import software.ulpgc.code.application.ui.theme.AppTheme
 import software.ulpgc.code.application.ui.theme.AppThemeType
 import software.ulpgc.code.application.ui.filters.TaskFilters

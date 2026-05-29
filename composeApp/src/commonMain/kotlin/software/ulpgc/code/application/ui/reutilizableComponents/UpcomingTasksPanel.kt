@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.reutilizableComponents
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
@@ -18,11 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
-import software.ulpgc.code.application.ui.CRUDs.CreateTagDialog
-import software.ulpgc.code.application.ui.CRUDs.DeleteTopic
-import software.ulpgc.code.application.ui.CRUDs.EditTag
-import software.ulpgc.code.application.ui.CRUDs.EditTopic
-import software.ulpgc.code.application.ui.CRUDs.RemoveTag
+import software.ulpgc.code.application.ui.cruds.CreateTagDialog
+import software.ulpgc.code.application.ui.cruds.DeleteTopic
+import software.ulpgc.code.application.ui.cruds.EditTag
+import software.ulpgc.code.application.ui.cruds.EditTopic
+import software.ulpgc.code.application.ui.cruds.RemoveTag
 import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
 import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
 import software.ulpgc.code.application.ui.dialogs.TaskInformationDialog

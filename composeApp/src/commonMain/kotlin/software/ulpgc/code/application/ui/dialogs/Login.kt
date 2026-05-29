@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,13 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.login
 import software.ulpgc.code.application.ui.dataStructure.CustomButton
-import software.ulpgc.code.application.ui.dataStructure.TextFieldCustom
 import software.ulpgc.code.application.ui.validators.validateEmail
 import software.ulpgc.code.application.ui.validators.validatePassword
 import software.ulpgc.code.architecture.control.coroutines.runBlocking
@@ -70,7 +66,7 @@ fun LoginDialog(
     onDismiss: () -> Unit,
     onCreateAccount: () -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
+    var loginEmail by remember { mutableStateOf("") }
     var pass  by remember { mutableStateOf("") }
     var validEmail by remember { mutableStateOf(false) }
     var validPass by remember { mutableStateOf(false) }
@@ -90,42 +86,29 @@ fun LoginDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextFieldCustom(
-                    value = email,
-                    label = "Email",
-                    onValueChange = { email = it },
-                    keyboardOptions = KeyboardOptions.Default,
-                    isPassword = false,
+                EmailField(
+                    email = loginEmail,
+                    onEmailChange = { loginEmail = it },
+                    touched = emailTouched,
+                    valid = validEmail,
                     onFocusChanged = { focused ->
                         if (emailFocused && !focused) emailTouched = true
                         emailFocused = focused
-                        validEmail = validateEmail(email)
+                        validEmail = validateEmail(loginEmail)
                     }
                 )
 
-                if (emailTouched && !validEmail){
-                    Text(
-                        "El formato del email no es válido",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                TextFieldCustom(
-                    value = pass,
-                    label = "Contraseña",
-                    onValueChange = { pass = it },
-                    keyboardOptions = KeyboardOptions.Default,
-                    isPassword = true,
+                PasswordField(
+                    pass = pass,
+                    onPassChange = { pass = it },
+                    touched = passTouched,
+                    valid = validPass,
                     onFocusChanged = { focused ->
                         if (passFocused && !focused) passTouched = true
                         passFocused = focused
                         validPass = validatePassword(pass)
                     }
                 )
-
-                if(!validPass && passTouched){
-                    Text("El formato de la contraseña no es válida\nDebe contener mínimo 8 carácteres, con un dígito y una mayúscula.", color = Color.Red, textAlign = TextAlign.Center)
-                }
 
                 Spacer(Modifier.height(20.dp))
                 Text("¿No tienes cuenta? Pulsa en Crear cuenta para registrarte.", textAlign = TextAlign.Center)
@@ -136,15 +119,14 @@ fun LoginDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-
             ) {
                 CustomButton(
                     onClick = {
                         if (validEmail && validPass) {
                             try {
-                                runBlocking { login(email, pass) }
+                                runBlocking { login(loginEmail, pass) }
                                 onDismiss()
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 errLogin = true
                             }
                         }
@@ -158,14 +140,14 @@ fun LoginDialog(
         }
     )
 
-    if(errLogin){
+    if (errLogin) {
         AlertDialog(
-            onDismissRequest = {errLogin=false},
+            onDismissRequest = { errLogin = false },
             text = {
                 Text("Datos inválidos, comprueba de nuevo o crea una cuenta nueva")
             },
             confirmButton = {
-                Button(onClick = {errLogin=true}){
+                Button(onClick = { errLogin = false }) {
                     Text("Confirmar")
                 }
             }

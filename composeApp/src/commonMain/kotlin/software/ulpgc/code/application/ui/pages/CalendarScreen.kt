@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
@@ -102,7 +102,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
@@ -111,8 +110,6 @@ fun CalendarScreen(
 
                 CalendarViewMode.DIA -> DayView(
                     sampleEntries = filteredEntries,
-                    selectedDate = selectedDate,
-                    onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
                     onTaskCreated = onTaskCreated,
@@ -139,7 +136,6 @@ fun CalendarScreen(
                     onDateSelected = { selectedDate = it },
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
-                    onNavigate = onNavigate,
                     onTaskCreated = onTaskCreated,
                     onDeleted = onDeleted,
                     onEdit = onEdit,
@@ -161,7 +157,6 @@ fun CalendarScreen(
                             )
                             showFilters = false
                         },
-                        onDismiss = { showFilters = false }
                     )
                 }
             }
@@ -265,7 +260,7 @@ fun DayDetailDialog(
             onDismissRequest = onDismiss,
             title = {
                 Text(
-                    text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}",
+                    text = "${date.day}/${date.month}/${date.year}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer

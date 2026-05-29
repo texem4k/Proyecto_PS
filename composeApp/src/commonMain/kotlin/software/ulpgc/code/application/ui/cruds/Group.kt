@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.cruds
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
@@ -43,6 +43,14 @@ import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.generateCode
 import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.getCodes
 import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.removeCode
 import software.ulpgc.code.application.io.cloudDB.SupabaseInvite.submitCode
+import software.ulpgc.code.application.ui.dataStructure.CustomButton
+import software.ulpgc.code.application.ui.dataStructure.DropdownCustom
+import software.ulpgc.code.application.ui.dataStructure.DropdownSelection
+import software.ulpgc.code.application.ui.dataStructure.TextFieldCustom
+import software.ulpgc.code.application.ui.validators.validateGroupStep0
+import software.ulpgc.code.application.ui.wizard.StepLabel
+import software.ulpgc.code.application.ui.wizard.WizardHeader
+import software.ulpgc.code.application.ui.wizard.WizardStep
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -149,7 +157,6 @@ fun CreateGroup(
 
                         1 -> GroupStepMembers(
                             form = form,
-                            onFormChange = { form = it }
                         )
                     }
                 }
@@ -300,8 +307,7 @@ fun GroupStepBasicInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupStepMembers(
-    form: CreateGroupFormState,
-    onFormChange: (CreateGroupFormState) -> Unit
+    form: CreateGroupFormState
 ) {
     var selectedPriv by remember { mutableStateOf<Privilege?>(Privilege.READER) }
     var generatedCodes by remember { mutableStateOf<Map<Privilege, Long>>(emptyMap()) }
@@ -405,13 +411,6 @@ fun GroupStepMembers(
                         CodeRow(
                             code = code,
                             privilege = priv,
-                            onReset = {
-                                val codigo = runBlocking {
-                                    generateCode(Store.currentGroup().id, priv)
-                                }
-
-                                generatedCodes = generatedCodes + (priv to codigo)
-                            },
                             clipboard = clipboard,
                             onDeleted = { generatedCodes = generatedCodes - priv }
                         )
@@ -425,7 +424,6 @@ fun GroupStepMembers(
 fun MemberRow(
     member: MemberInvite,
     onPrivilegeChange: (Privilege) -> Unit,
-    onRemove: () -> Unit
 ) {
     val currentUserId = Store.currentUser()
     val currentUserPrivilege = Store.currentGroup().users[currentUserId]
@@ -502,7 +500,6 @@ enum class EditGroupSection { INFO, MEMBERS, INVITE,SETTINGS }
 @Composable
 fun EditGroup(
     onDismiss: () -> Unit,
-    onSubmit: (CreateGroupFormState) -> Unit = {},
     group: Group = Store.currentGroup(),
 ) {
     var form by remember {
@@ -615,7 +612,7 @@ fun EditGroup(
                     when (current) {
                         EditGroupSection.INFO        -> GroupStepBasicInfo(form, { form = it })
                         EditGroupSection.MEMBERS     -> EditGroupSectionMembers(form, { form = it })
-                        EditGroupSection.INVITE      ->  GroupStepMembers(form,{ form = it })
+                        EditGroupSection.INVITE      ->  GroupStepMembers(form)
                         EditGroupSection.SETTINGS    -> EditGroupSectionSettings(
                             onSave = {
                                 val error = validateGroupStep0(form)
@@ -671,18 +668,6 @@ private fun EditGroupSectionMembers(
                                     else it
                                 }
                             ))
-                        },
-                        onRemove = {
-                            onFormChange(form.copy(
-                                members = form.members.filter { it.email != member.email }
-                            ))
-                            val command = CommandBuilder()
-                                .set("id", Store.currentGroup().id.toString())
-                                .set("userId", member.userId.toString())
-                                .build(CommandType.EXIT_GROUP)
-                            command
-                                .onSuccess { CommandLauncher.launch(it) }
-                                .onFailure { println("error: ${it.message}") }
                         }
                     )
                 }
@@ -726,7 +711,7 @@ private fun EditGroupSectionSettings(
                         .build(CommandType.EDIT_PRIVILEGES)
 
                     command
-                        .onSuccess {
+                        .onSuccess { it ->
                             CommandLauncher.launch(it)
                             command2
                                 .onSuccess {
@@ -866,7 +851,6 @@ fun ExitDialog(onChange: () -> Unit) {
 fun CodeRow(
     code: Long,
     privilege: Privilege,
-    onReset: () -> Unit,
     clipboard: ClipboardManager,
     onDeleted: () -> Unit
 ) {

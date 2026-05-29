@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.pages
 
-import Screen
+import software.ulpgc.code.application.ui.dataStructure.Screen
 import software.ulpgc.code.application.ui.reutilizableComponents.UpcomingTasksPanel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

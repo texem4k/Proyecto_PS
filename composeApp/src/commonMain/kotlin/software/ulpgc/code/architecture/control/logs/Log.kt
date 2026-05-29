@@ -5,6 +5,6 @@ import kotlinx.datetime.LocalDateTime
 interface Log {
 
     val time: LocalDateTime
-    val message: String
+    val message: String?
     override fun toString(): String
 }

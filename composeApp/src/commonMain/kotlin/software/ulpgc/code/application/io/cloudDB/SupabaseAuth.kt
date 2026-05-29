@@ -4,8 +4,6 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import software.ulpgc.code.architecture.control.commands.CommandBuilder
-import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBState
 import software.ulpgc.code.architecture.io.Store
@@ -60,9 +58,5 @@ object SupabaseAuth {
 
     fun isLoggedIn(): Boolean {
         return auth.currentSessionOrNull() != null
-    }
-
-    suspend fun refresh() {
-        auth.refreshCurrentSession()
     }
 }

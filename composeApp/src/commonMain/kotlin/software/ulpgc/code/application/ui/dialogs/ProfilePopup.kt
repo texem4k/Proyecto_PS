@@ -19,9 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.logout
-import software.ulpgc.code.application.ui.EditGroup
-import software.ulpgc.code.application.ui.JoinGroup
-import software.ulpgc.code.application.ui.LocalThemeState
+import software.ulpgc.code.application.ui.cruds.EditGroup
+import software.ulpgc.code.application.ui.cruds.JoinGroup
 import software.ulpgc.code.architecture.control.coroutines.runBlocking
 import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
@@ -34,7 +33,6 @@ fun UserMenuCard(
     role: String,
     onDismiss: () -> Unit,
 ) {
-    val theme = LocalThemeState.current
     var manageGroups by remember { mutableStateOf(false) }
     var joinGroup by remember { mutableStateOf(false) }
 
@@ -113,11 +111,11 @@ fun UserMenuCard(
     }
 
     if (manageGroups) {
-        EditGroup({ manageGroups = false }, onSubmit = {})
+        EditGroup({ manageGroups = false })
     }
 
     if (joinGroup) {
-        JoinGroup({ joinGroup = false }, { "" })
+        JoinGroup({ joinGroup = false }, { })
     }
 }
 @Composable

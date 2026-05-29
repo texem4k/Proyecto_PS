@@ -7,7 +7,7 @@ import software.ulpgc.code.architecture.control.logs.Log
 import software.ulpgc.code.architecture.control.logs.LogMaster
 import kotlin.time.Clock
 
-open class AppException internal constructor (override val time: LocalDateTime, msg: String) :
+open class AppException internal constructor (override val time: LocalDateTime, msg: String?=null) :
     Exception(msg), Log {
 
     constructor(msg: String) : this(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), msg)
@@ -20,5 +20,5 @@ open class AppException internal constructor (override val time: LocalDateTime, 
         return "**AppException** [$time]: '$message'"
     }
 
-    override val message: String = msg
+    override val message: String? = msg
 }

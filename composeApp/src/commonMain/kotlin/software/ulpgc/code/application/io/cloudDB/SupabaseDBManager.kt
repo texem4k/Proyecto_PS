@@ -7,7 +7,6 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
-import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.io.DBManager
 import software.ulpgc.code.architecture.io.DBObject
 import software.ulpgc.code.architecture.io.DBState
@@ -44,7 +43,7 @@ data class TopicData(val id: Uuid, val groupId: Uuid, val name: String, val colo
 }
 
 @Serializable
-data class TagData(val id: Uuid, val topicId: Uuid, val name: String,){
+data class TagData(val id: Uuid, val topicId: Uuid, val name: String){
     constructor(tag: Tag) : this(tag.id,tag.topicId,tag.name)
 
     fun parse(): Tag {

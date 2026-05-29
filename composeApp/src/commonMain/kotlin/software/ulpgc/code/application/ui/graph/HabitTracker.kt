@@ -1,6 +1,5 @@
 package software.ulpgc.code.application.ui.graph
 
-import TaskCompletionChart
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -322,7 +321,7 @@ fun HourlyDensityChart(
             val x = i * 24f / 240f
             hours.sumOf { h ->
                 val z = (x - h) / bandwidth
-                exp(-0.5 * z * z).toDouble()
+                exp(-0.5 * z * z)
             }.toFloat()
         }
         val rawMax = raw.max().coerceAtLeast(1e-6f)

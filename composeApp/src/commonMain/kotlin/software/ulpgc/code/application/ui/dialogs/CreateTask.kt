@@ -35,7 +35,7 @@ import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import software.ulpgc.code.application.ui.dataStructure.DatePickerField
 import software.ulpgc.code.application.ui.dataStructure.DropdownCustom
 import software.ulpgc.code.application.ui.dataStructure.DropdownSelection
@@ -62,9 +62,9 @@ data class FormState(
     var taskTopic: Uuid? = null,
     var taskTags: List<Uuid> = emptyList(),
     var taskStartDateString: String = "",
-    var taskStartDate: kotlin.time.Instant? = null,
+    var taskStartDate: Instant? = null,
     var taskFinalDateString: String = "",
-    var taskFinalDate: kotlin.time.Instant? = null,
+    var taskFinalDate: Instant? = null,
     var taskInterval: TaskInterval = TaskInterval.NONE,
     var taskDuration: String = "",
     var taskPriority: String = "",

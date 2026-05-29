@@ -26,12 +26,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
 import com.kizitonwose.calendar.core.CalendarYear
 
 @Composable
@@ -78,11 +78,14 @@ fun CalendarHeader(
 private fun LegendDropdown(scrollState: androidx.compose.foundation.ScrollState) {
     var expanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(scrollState.value) {
-        if (expanded) expanded = false
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.value }
+            .collect {
+                if (expanded) expanded = false
+            }
     }
 
-    Box() {
+    Box {
         Button(onClick = { expanded = true }) {
             Text(text = "Leyenda")
         }
@@ -143,8 +146,11 @@ private fun FilterAndViewMode(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(scrollState.value) {
-        if (expanded) expanded = false
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.value }
+            .collect {
+                if (expanded) expanded = false
+            }
     }
 
     Box(contentAlignment = Alignment.TopEnd) {
@@ -183,7 +189,6 @@ private fun FilterAndViewMode(
 @Composable
 fun YearHeader(
     year: CalendarYear,
-    yearState: YearCalendarState,
     viewMode: CalendarViewMode,
     onViewModeChange: (CalendarViewMode) -> Unit,
     onPreviousYear: () -> Unit,

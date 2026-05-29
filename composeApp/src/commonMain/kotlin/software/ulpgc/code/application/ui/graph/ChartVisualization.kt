@@ -1,3 +1,5 @@
+package software.ulpgc.code.application.ui.graph
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.multiplatform.cartesian.Zoom
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLabelComponent
@@ -27,16 +28,14 @@ import com.patrykandpatrick.vico.multiplatform.cartesian.layer.LineCartesianLaye
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.multiplatform.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.multiplatform.cartesian.rememberCartesianChart
-import software.ulpgc.code.application.ui.graph.DayStats
 import com.patrykandpatrick.vico.multiplatform.common.Fill
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisLineComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.multiplatform.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.multiplatform.cartesian.marker.Interaction
 import com.patrykandpatrick.vico.multiplatform.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.multiplatform.common.component.rememberTextComponent
-import software.ulpgc.code.application.ui.graph.ChartMode
+import kotlinx.datetime.number
 
 @Composable
 fun TaskCompletionChart(
@@ -67,19 +66,16 @@ fun TaskCompletionChart(
         )
     }
 
-    val bottomAxisFormatter: CartesianValueFormatter = remember(stats) {
+    val bottomAxisFormatter: CartesianValueFormatter = remember(stats, mode) {
         CartesianValueFormatter { _, value, _ ->
-            val idx = value.toInt()
-            if (idx in stats.indices) {
-                val d = stats[idx].date
+            stats.getOrNull(value.toInt())?.date?.let { d ->
                 when (mode) {
                     ChartMode.ANNUAL -> "${d.year}"
-                    else -> "${d.dayOfMonth}/${d.monthNumber}/${d.year}"
+                    else -> "${d.day}/${d.month.number}/${d.year}"
                 }
-            } else ""
+            } ?: ""
         }
     }
-
     Surface(
         color    = Color(0xFF0D0D0D),
         shape    = RoundedCornerShape(16.dp),

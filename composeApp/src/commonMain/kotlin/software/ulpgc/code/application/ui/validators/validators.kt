@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.validators
 
-import software.ulpgc.code.application.ui.CreateGroupFormState
+import software.ulpgc.code.application.ui.cruds.CreateGroupFormState
 import software.ulpgc.code.application.ui.dataStructure.createInstantFromDateAndHour
 import software.ulpgc.code.application.ui.dialogs.FormState
 import kotlin.time.Clock
@@ -102,9 +102,13 @@ fun validateStep1(form: FormState): String? {
 }
 
 fun validateEmail(email: String): Boolean {
-    return "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex().matches(email)
+    return """^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"""
+        .toRegex()
+        .matches(email)
 }
 
 fun validatePassword(pass: String): Boolean {
-    return "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}\$".toRegex().matches(pass)
+    return """^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"""
+        .toRegex()
+        .matches(pass)
 }

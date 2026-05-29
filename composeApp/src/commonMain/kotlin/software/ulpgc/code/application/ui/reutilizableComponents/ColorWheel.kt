@@ -110,9 +110,8 @@ private fun DrawScope.drawColorWheel() {
         val hue = i.toFloat()
 
         for (r in 0..rings) {
-            val t = r.toFloat() / rings
-            val currentRadius = innerRadius + t * (radius - innerRadius)
-            val saturation = t
+            val saturation = r.toFloat() / rings
+            val currentRadius = innerRadius + saturation * (radius - innerRadius)
 
             drawArc(
                 color = Color.hsl(hue = hue, saturation = saturation, lightness = 0.5f),

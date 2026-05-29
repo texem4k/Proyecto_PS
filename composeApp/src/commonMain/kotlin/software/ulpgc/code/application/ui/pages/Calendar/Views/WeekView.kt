@@ -104,10 +104,10 @@ fun WeekView(
     Column(modifier = Modifier.fillMaxSize()) {
         CalendarHeader(
             title = if (startDate.month == endDate.month) {
-                "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${CalendarConstants.MONTH_NAMES_ES[startDate.month.ordinal]} ${startDate.year}"
+                "${startDate.day} - ${endDate.day} ${CalendarConstants.MONTH_NAMES_ES[startDate.month.ordinal]} ${startDate.year}"
             } else {
-                "${startDate.dayOfMonth} ${CalendarConstants.MONTH_NAMES_ES[startDate.month.ordinal]} - " +
-                        "${endDate.dayOfMonth} ${CalendarConstants.MONTH_NAMES_ES[endDate.month.ordinal]} ${endDate.year}"
+                "${startDate.day} ${CalendarConstants.MONTH_NAMES_ES[startDate.month.ordinal]} - " +
+                        "${endDate.day} ${CalendarConstants.MONTH_NAMES_ES[endDate.month.ordinal]} ${endDate.year}"
             },
             onPreviousClick = { weekOffset-- },
             onNextClick = { weekOffset++ },
@@ -150,16 +150,17 @@ fun WeekView(
                         }
 
                         Text(
-                            text = date.dayOfMonth.toString(),
+                            text = date.day.toString(),
                             fontSize = 13.sp,
-                            fontWeight = when {
-                                date == currentDate -> FontWeight.Bold
-                                date == selectedDate -> FontWeight.Bold
+                            fontWeight = when (date) {
+                                currentDate,
+                                selectedDate -> FontWeight.Bold
+
                                 else -> FontWeight.Normal
                             },
-                            color = when {
-                                date == currentDate -> Color.White
-                                date == selectedDate -> Color(0xFF4F6EF7)
+                            color = when (date) {
+                                currentDate -> Color.White
+                                selectedDate -> Color(0xFF4F6EF7)
                                 else -> MaterialTheme.colorScheme.onPrimaryContainer
                             }
                         )
@@ -212,7 +213,6 @@ fun WeekView(
                             date = date,
                             entries = entries,
                             isToday = date == currentDate,
-                            isSelected = date == selectedDate,
                             hourHeight = HOUR_HEIGHT,
                             onEntryClick = { entry ->
                                 onDateSelected(date)

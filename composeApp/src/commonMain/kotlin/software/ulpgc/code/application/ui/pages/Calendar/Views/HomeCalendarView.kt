@@ -1,6 +1,6 @@
 package software.ulpgc.code.application.ui.pages.Calendar.Views
 
-import Screen
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -68,7 +68,6 @@ fun HomeCalendar(
     sampleEntries: Map<LocalDate, List<SampleEntry>>,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    onNavigate: (Screen) -> Unit,
     onTaskCreated: () -> Unit,
     onDeleted: () -> Unit,
     onEdit: () -> Unit
@@ -118,7 +117,7 @@ fun HomeCalendar(
                 modifier = Modifier.fillMaxSize(),
                 state = calendarState,
                 monthHeader = { month ->
-                    miniCalendarHeader(
+                    MiniCalendarHeader(
                         month = month,
                         onPreviousClick = {
                             coroutineScope.launch {
@@ -133,7 +132,6 @@ fun HomeCalendar(
                     )
                 },
                 dayContent = { day ->
-                    val isSelected = day.date == selectedDate
                     val entries = sampleEntries[day.date] ?: emptyList()
                     Box(
                         modifier = Modifier
@@ -141,9 +139,9 @@ fun HomeCalendar(
                             .height(cellHeight)
                             .clip(RoundedCornerShape(6.dp))
                             .background(
-                                when {
-                                    day.date == selectedDate -> MaterialTheme.colorScheme.primary
-                                    day.date == today -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                when (day.date) {
+                                    selectedDate -> MaterialTheme.colorScheme.primary
+                                    today -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                     else -> Color.Transparent
                                 }
                             )
@@ -159,7 +157,7 @@ fun HomeCalendar(
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                text = day.date.dayOfMonth.toString(),
+                                text = day.date.day.toString(),
                                 fontSize = 10.sp,
                                 color = when {
                                     day.date == selectedDate -> Color.White
@@ -181,7 +179,7 @@ fun HomeCalendar(
                                 ) {
                                     Text(
                                         text = entries.size.toString(),
-                                        modifier = Modifier.offset(y = -2.dp),
+                                        modifier = Modifier.offset(y = (-2).dp),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimary                                    )
@@ -207,10 +205,9 @@ fun HomeCalendar(
     }
 }
 
-// ── miniCalendarHeader ────────────────────────────────────────────────────────
 
 @Composable
-fun miniCalendarHeader(
+fun MiniCalendarHeader(
     month: CalendarMonth,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
