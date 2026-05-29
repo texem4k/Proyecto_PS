@@ -1,15 +1,9 @@
 package software.ulpgc.code.architecture.io
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import software.ulpgc.code.architecture.control.exceptions.AppException
-import software.ulpgc.code.architecture.control.logs.LogMaster
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task

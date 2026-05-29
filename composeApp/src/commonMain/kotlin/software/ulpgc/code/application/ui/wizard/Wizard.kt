@@ -1,5 +1,6 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.wizard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -99,7 +100,7 @@ fun WizardNavigation(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
-                border = androidx.compose.foundation.BorderStroke(
+                border = BorderStroke(
                     1.dp, MaterialTheme.colorScheme.primary
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)

@@ -13,9 +13,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.ColorWheelPicker
-import software.ulpgc.code.application.ui.TextFieldCustom
-import software.ulpgc.code.application.ui.toRgbString
+import software.ulpgc.code.application.ui.reutilizableComponents.ColorWheelPicker
+import software.ulpgc.code.application.ui.dataStructure.TextFieldCustom
+import software.ulpgc.code.application.ui.reutilizableComponents.toRgbString
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType

@@ -25,8 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.TaskInformationDialog
-import software.ulpgc.code.application.ui.UncompleteTaskIcon
+import software.ulpgc.code.application.ui.dialogs.TaskInformationDialog
+import software.ulpgc.code.application.ui.reutilizableComponents.UncompleteTaskIcon
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 

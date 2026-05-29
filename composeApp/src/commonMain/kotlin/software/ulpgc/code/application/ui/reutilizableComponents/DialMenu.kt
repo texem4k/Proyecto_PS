@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.reutilizableComponents
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -56,7 +56,6 @@ fun DialMenu(
 ) {
     val authReady = SupabaseAuth.ready.collectAsState()
 
-    // Privilegio del usuario actual en el grupo
     val currentUserId = Store.currentUser()
     val currentUserPrivilege = Store.currentGroup().users[currentUserId]
     val canCreateContent = currentUserPrivilege != Privilege.READER

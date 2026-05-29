@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.reutilizableComponents
 
 import Screen
 import androidx.compose.foundation.*
@@ -23,6 +23,9 @@ import software.ulpgc.code.application.ui.CRUDs.DeleteTopic
 import software.ulpgc.code.application.ui.CRUDs.EditTag
 import software.ulpgc.code.application.ui.CRUDs.EditTopic
 import software.ulpgc.code.application.ui.CRUDs.RemoveTag
+import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
+import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
+import software.ulpgc.code.application.ui.dialogs.TaskInformationDialog
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType

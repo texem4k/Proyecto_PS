@@ -21,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,7 +42,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
-import software.ulpgc.code.application.ui.CreateTask
+import software.ulpgc.code.application.ui.dialogs.CreateTask
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarConstants
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarHeader
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode

@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import software.ulpgc.code.application.ui.widgets.KpiDashboard
 import software.ulpgc.code.architecture.io.Store
-import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.widgets.SideBar
 import software.ulpgc.code.application.ui.graph.BarGraph
 import software.ulpgc.code.application.ui.graph.HabitTrackerChart
 import software.ulpgc.code.application.ui.graph.HourlyDensityChart

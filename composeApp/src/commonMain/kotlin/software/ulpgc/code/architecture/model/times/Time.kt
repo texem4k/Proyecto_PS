@@ -1,8 +1,8 @@
 package software.ulpgc.code.architecture.model.times
 
 import kotlinx.datetime.TimeZone
-import software.ulpgc.code.application.ui.toFormattedDateDisplay
-import software.ulpgc.code.application.ui.toFormattedHour
+import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
+import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant

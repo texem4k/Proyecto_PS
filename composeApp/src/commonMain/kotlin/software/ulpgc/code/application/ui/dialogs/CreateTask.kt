@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.dialogs
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -36,6 +36,22 @@ import software.ulpgc.code.architecture.control.commands.CommandType
 import software.ulpgc.code.architecture.model.tasks.Task
 import software.ulpgc.code.architecture.model.tasks.TaskInterval
 import kotlinx.datetime.Instant
+import software.ulpgc.code.application.ui.dataStructure.DatePickerField
+import software.ulpgc.code.application.ui.dataStructure.DropdownCustom
+import software.ulpgc.code.application.ui.dataStructure.DropdownSelection
+import software.ulpgc.code.application.ui.wizard.StepLabel
+import software.ulpgc.code.application.ui.dataStructure.TextFieldCustom
+import software.ulpgc.code.application.ui.dataStructure.TimePickerField
+import software.ulpgc.code.application.ui.wizard.WizardHeader
+import software.ulpgc.code.application.ui.wizard.WizardNavigation
+import software.ulpgc.code.application.ui.wizard.WizardStep
+import software.ulpgc.code.application.ui.validators.buildTime
+import software.ulpgc.code.application.ui.dataStructure.toFormattedDate
+import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
+import software.ulpgc.code.application.ui.validators.validateBasicFields
+import software.ulpgc.code.application.ui.validators.validateDateErrorMessage
+import software.ulpgc.code.application.ui.validators.validateStep0
+import software.ulpgc.code.application.ui.validators.validateStep1
 import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
 
@@ -254,7 +270,10 @@ fun CreateTask(
                             .set("interval", form.taskInterval.toString())
                             .set("tags", form.taskTags.joinToString(", "))
                             .set("time", time.toString())
-                            .set("users", if (isRoot || form.taskUsers.isEmpty()) "" else form.taskUsers.joinToString(", "))
+                            .set(
+                                "users",
+                                if (isRoot || form.taskUsers.isEmpty()) "" else form.taskUsers.joinToString(", ")
+                            )
 
                         val command = if (task != null) {
                             builder.set("id", task.id.toString()).build(CommandType.UPDATE_TASK)
@@ -326,10 +345,6 @@ private fun UserInfo(form: FormState, onFormChange: (FormState) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         StepLabel("Asignar usuarios")
-
-        val currentUserGroup = Store.groups().find { group ->
-            group.users.contains(Store.currentUser())
-        }
 
         val usersInGroup = Store.currentGroup().users.keys.mapNotNull { id ->
             Store.users().find { it.id == id }

@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.widgets
 
 import Screen
 import androidx.compose.foundation.BorderStroke
@@ -37,6 +37,9 @@ import androidx.compose.ui.window.PopupProperties
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth
 import software.ulpgc.code.application.io.cloudDB.SupabaseAuth.isLoggedIn
 import software.ulpgc.code.application.io.network.NetworkMonitor.hasConnection
+import software.ulpgc.code.application.ui.theme.AppThemeType
+import software.ulpgc.code.application.ui.dialogs.AuthFlow
+import software.ulpgc.code.application.ui.dialogs.UserMenuCard
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.Group
 import kotlin.uuid.Uuid
@@ -173,7 +176,6 @@ fun SideBar(
                         },
                         name = currentUserName,
                         role = currentUserRol,
-                        isLocalGroup = isLocalGroup,
                         onDismiss = { showPopup = false }
                     )
                 }
@@ -236,10 +238,7 @@ fun SideBar(
             }
             else if (showPopup && authReady.value) {
                 AuthFlow(
-                    onDismiss = { showPopup = false },
-                    onAuthSuccess = {
-                        showPopup = false
-                    }
+                    onDismiss = { showPopup = false }
                 )
             }
         }

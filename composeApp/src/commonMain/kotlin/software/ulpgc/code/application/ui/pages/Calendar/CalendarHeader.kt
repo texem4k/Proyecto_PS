@@ -33,8 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarState
 import com.kizitonwose.calendar.core.CalendarYear
-import software.ulpgc.code.application.ui.DropdownCustom
-import software.ulpgc.code.application.ui.DropdownSelection
 
 @Composable
 fun CalendarHeader(

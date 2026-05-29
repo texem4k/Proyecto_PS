@@ -8,21 +8,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.widgets.SideBar
 import software.ulpgc.code.application.ui.CRUDs.CreateTagDialog
 import software.ulpgc.code.application.ui.CRUDs.CreateTopicDialog
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
-import software.ulpgc.code.application.ui.CreateTask
+import software.ulpgc.code.application.ui.dialogs.CreateTask
 import software.ulpgc.code.application.ui.CreateGroup
 import software.ulpgc.code.application.ui.pages.SearchBar
 import software.ulpgc.code.application.ui.pages.ShowDialMenu
 import software.ulpgc.code.application.ui.pages.setUndoRedo
+import software.ulpgc.code.application.ui.reutilizableComponents.UpcomingTasksPanel
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.architecture.model.tasks.Task
 
@@ -161,7 +161,7 @@ fun TasksScreen(
                                 val topicName =
                                     Store.topics().find { it.id == titulo }?.name ?: "Sin tópico"
 
-                                _root_ide_package_.software.ulpgc.code.application.ui.UpcomingTasksPanel(
+                                UpcomingTasksPanel(
                                     tareasGrupo,
                                     topicName,
                                     onEdit = { task ->

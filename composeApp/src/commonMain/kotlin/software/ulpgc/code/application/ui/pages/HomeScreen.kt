@@ -48,8 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import software.ulpgc.code.application.ui.DialMenu
-import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.reutilizableComponents.DialMenu
+import software.ulpgc.code.application.ui.widgets.SideBar
 import software.ulpgc.code.application.ui.widgets.MenuTareas
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -57,13 +57,13 @@ import kotlin.time.Clock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import software.ulpgc.code.architecture.control.optimizer.TaskOptimizer
-import software.ulpgc.code.application.ui.MarkTaskIcon
-import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.reutilizableComponents.MarkTaskIcon
+import software.ulpgc.code.application.ui.dialogs.TaskInformationDialog
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.application.ui.pages.Calendar.Views.HomeCalendar
 import software.ulpgc.code.application.ui.pages.Calendar.getFilteredEntries
-import software.ulpgc.code.application.ui.toFormattedDateDisplay
-import software.ulpgc.code.application.ui.toFormattedHour
+import software.ulpgc.code.application.ui.dataStructure.toFormattedDateDisplay
+import software.ulpgc.code.application.ui.dataStructure.toFormattedHour
 import software.ulpgc.code.architecture.io.Store
 import software.ulpgc.code.isDesktop
 

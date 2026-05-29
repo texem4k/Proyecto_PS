@@ -13,13 +13,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import software.ulpgc.code.application.ui.TextFieldCustom
+import software.ulpgc.code.application.ui.dataStructure.TextFieldCustom
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
-import software.ulpgc.code.application.ui.DropdownCustom
-import software.ulpgc.code.application.ui.DropdownSelection
-import software.ulpgc.code.application.ui.TopicsNotExists
+import software.ulpgc.code.application.ui.dataStructure.DropdownCustom
+import software.ulpgc.code.application.ui.dataStructure.DropdownSelection
+import software.ulpgc.code.application.ui.dialogs.TopicsNotExists
 import software.ulpgc.code.architecture.io.Store
 import kotlin.uuid.Uuid
 

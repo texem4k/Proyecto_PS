@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.dialogs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import software.ulpgc.code.application.ui.dataStructure.CustomButton
 import software.ulpgc.code.architecture.control.commands.CommandBuilder
 import software.ulpgc.code.architecture.control.commands.CommandLauncher
 import software.ulpgc.code.architecture.control.commands.CommandType
@@ -72,13 +73,13 @@ fun TaskInformationDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CustomButton(onClick = {
-                    if(Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
-                        Store.currentGroup().users[Store.currentUser()]?.name ==Privilege.MOD.name){
+                    if (Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
+                        Store.currentGroup().users[Store.currentUser()]?.name == Privilege.MOD.name
+                    ) {
                         onEdit(selectedTask)
                         onRequestEditNavigation?.invoke()
-                    }
-                    else{
-                        showWarning=true
+                    } else {
+                        showWarning = true
                     }
 
                 }) {
@@ -86,12 +87,12 @@ fun TaskInformationDialog(
                 }
 
                 CustomButton(onClick = {
-                    if(Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
-                        Store.currentGroup().users[Store.currentUser()]?.name ==Privilege.MOD.name){
+                    if (Store.currentGroup().users[Store.currentUser()]?.name == Privilege.ADMIN.name ||
+                        Store.currentGroup().users[Store.currentUser()]?.name == Privilege.MOD.name
+                    ) {
                         showDeleteConfirmation = true
-                    }
-                    else {
-                        showWarning=true
+                    } else {
+                        showWarning = true
                     }
                 }) {
                     Text("Eliminar tarea")

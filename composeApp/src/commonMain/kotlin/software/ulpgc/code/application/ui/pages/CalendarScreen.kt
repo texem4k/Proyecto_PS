@@ -36,7 +36,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import software.ulpgc.code.application.ui.SideBar
+import software.ulpgc.code.application.ui.widgets.SideBar
 import software.ulpgc.code.application.ui.filters.FilterContent
 import software.ulpgc.code.application.ui.filters.TaskFilters
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -47,8 +47,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.focus.FocusRequester
 import software.ulpgc.code.application.ui.pages.Calendar.CalendarViewMode
 import software.ulpgc.code.application.ui.pages.Calendar.SampleEntry
-import software.ulpgc.code.application.ui.CreateTask
-import software.ulpgc.code.application.ui.TaskInformationDialog
+import software.ulpgc.code.application.ui.dialogs.CreateTask
+import software.ulpgc.code.application.ui.dialogs.TaskInformationDialog
 import software.ulpgc.code.application.ui.pages.Calendar.Views.DayView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.MonthView
 import software.ulpgc.code.application.ui.pages.Calendar.Views.WeekView

@@ -1,4 +1,4 @@
-package software.ulpgc.code.application.ui
+package software.ulpgc.code.application.ui.dataStructure
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
