@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import software.ulpgc.code.architecture.control.exceptions.AppException
+import software.ulpgc.code.architecture.io.Storage.stats
 import software.ulpgc.code.architecture.model.*
 import software.ulpgc.code.architecture.model.tasks.CompletionStat
 import software.ulpgc.code.architecture.model.tasks.Task
@@ -96,6 +97,13 @@ object Store {
         Storage.restartCurrent()
         Storage.clearAll()
         LocalDBStore.onInit()
+    }
+
+    fun clear() {
+        Storage.topics.removeAll {it.isLocalDisabled()}
+        Storage.tags.removeAll {it.isLocalDisabled()}
+        Storage.tasks.removeAll {it.isLocalDisabled()}
+        stats.removeAll {it.isLocalDisabled()}
     }
 }
 

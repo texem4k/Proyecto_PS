@@ -126,6 +126,7 @@ object CloudDBStore: Coroutinable {
         deleteRequired(dbObjects().filter { it.cloudDBState == DBState.DELETED })
         updateRequired(dbObjects().filter { it.isCloudUpdated() })
         insertRequired(dbObjects().filter { it.isCloudNew() })
+        Store.clear()
         loadDBData()
     }
 
