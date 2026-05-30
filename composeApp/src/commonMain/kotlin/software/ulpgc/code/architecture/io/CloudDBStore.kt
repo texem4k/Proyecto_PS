@@ -52,15 +52,20 @@ object CloudDBStore: Coroutinable {
     }
 
     private suspend fun loadDBData() {
-        insertOrUpdate(manager.groups().getOrThrow().asSequence())
-        insertOrUpdate(manager.users().getOrThrow().asSequence())
-        insertOrUpdate(manager.topics().getOrThrow().asSequence())
-        insertOrUpdate(manager.tags().getOrThrow().asSequence())
-        insertOrUpdate(manager.tasks().getOrThrow().asSequence())
-        insertOrUpdate(manager.completionStats().getOrThrow().asSequence())
+        insertOrUpdate(manager.groups().getOrThrow(), setOf())
+        insertOrUpdate(manager.users().getOrThrow(), setOf())
+        insertOrUpdate(manager.topics().getOrThrow(), Store.topics().toSet())
+        insertOrUpdate(manager.tags().getOrThrow(), Store.tags().toSet())
+        insertOrUpdate(manager.tasks().getOrThrow(), Store.tasks().toSet())
+        insertOrUpdate(manager.completionStats().getOrThrow(), Store.completions().toSet())
     }
 
-    private fun <T: DBObject> insertOrUpdate(objects: Sequence<T>) {
+    private fun <T: DBObject> insertOrUpdate(objects: List<T>, storeSet: Set<T>) {
+        storeSet.filter{ it.isCloudDefault() }.minus(objects.toSet()).forEach {
+            it.cloudDBState = DBState.CLEARED
+            it.localDBState = DBState.CLEARED
+            Store.refresh()
+        }
         objects.forEach {
             val obj = Store.tryFind(it)
             if (obj == null) {
@@ -126,7 +131,6 @@ object CloudDBStore: Coroutinable {
         deleteRequired(dbObjects().filter { it.cloudDBState == DBState.DELETED })
         updateRequired(dbObjects().filter { it.isCloudUpdated() })
         insertRequired(dbObjects().filter { it.isCloudNew() })
-        Store.clear()
         loadDBData()
     }
 

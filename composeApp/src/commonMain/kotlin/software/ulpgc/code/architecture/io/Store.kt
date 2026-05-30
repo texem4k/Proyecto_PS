@@ -98,13 +98,6 @@ object Store {
         Storage.clearAll()
         LocalDBStore.onInit()
     }
-
-    fun clear() {
-        Storage.topics.removeAll {it.isLocalDisabled()}
-        Storage.tags.removeAll {it.isLocalDisabled()}
-        Storage.tasks.removeAll {it.isLocalDisabled()}
-        stats.removeAll {it.isLocalDisabled()}
-    }
 }
 
 private object Storage {

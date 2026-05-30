@@ -17,6 +17,7 @@ fun DBObject.isLocalCleared() = localDBState == DBState.CLEARED
 fun DBObject.isLocalDisabled() = localDBState == DBState.DISABLED
 
 fun DBObject.isCloudNew()     = cloudDBState == NEW
+fun DBObject.isCloudDefault()     = cloudDBState == DBState.DEFAULT
 fun DBObject.isCloudUpdated() = cloudDBState == UPDATED
 fun DBObject.isCloudDeleted() = cloudDBState == DELETED || cloudDBState == DBState.CLEARED
 fun DBObject.isCloudUnknown() = cloudDBState == UNKNOWN
