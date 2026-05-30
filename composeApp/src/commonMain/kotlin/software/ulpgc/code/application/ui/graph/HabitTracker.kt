@@ -164,31 +164,30 @@ fun BarGraph(
     val textColor   = Color.White
     val gridColor   = Color.White.copy(alpha = 0.15f)
     val axisColor   = Color.White.copy(alpha = 0.5f)
-    val tz          = TimeZone.currentSystemDefault()
 
-    val taskMap = remember(tasks) { tasks.associateBy { it.id } }
+    val completionStat = remember(completionStat) {completionStat.toList()}
+    val taskList = remember(tasks) { tasks.toList() }
 
-    val beforeTotal = remember(completionStat, taskMap) {
+    val beforeTotal = remember(completionStat, taskList) {
         completionStat.count { stat ->
             if (!stat.completed) return@count false
-            val deadline = taskMap[stat.taskId]?.time?.end?.toLocalDateTime(tz)?.date ?: return@count false
-            stat.endDate.toLocalDateTime(tz).date <= deadline.minus(1, DateTimeUnit.DAY)
+            stat.endDate < stat.proposedDate
         }
     }
 
-    val onTimeTotal = remember(completionStat, taskMap) {
+    val onTimeTotal = remember(completionStat, taskList) {
         completionStat.count { stat ->
             if (!stat.completed) return@count false
-            val deadline = taskMap[stat.taskId]?.time?.end ?: return@count false
-            stat.endDate.toLocalDateTime(tz).date == deadline.toLocalDateTime(tz).date && stat.endDate <= deadline
+            val deadline = taskList.find{it.id == stat.taskId}?.time?.duration() ?: return@count false
+            stat.endDate >= stat.proposedDate && stat.endDate <= stat.proposedDate+deadline
         }
     }
 
-    val lateTotal = remember(completionStat, taskMap) {
+    val lateTotal = remember(completionStat, taskList) {
         completionStat.count { stat ->
             if (!stat.completed) return@count false
-            val deadline = taskMap[stat.taskId]?.time?.end ?: return@count false
-            stat.endDate >= deadline
+            val deadline = taskList.find{it.id == stat.taskId}?.time?.duration() ?: return@count false
+            stat.endDate > stat.proposedDate+deadline
         }
     }
 
